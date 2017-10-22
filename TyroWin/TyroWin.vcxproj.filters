@@ -78,7 +78,7 @@
     <ClCompile Include="Source\Core\RASkeleton.cpp" />
     <ClCompile Include="Source\Core\ES2\RAES2Context.cpp" />
     <ClCompile Include="Source\Core\ES2\RAES2Renderer.cpp" />
-    <ClCompile Include="Source\handmade.cpp" />
+    <ClCompile Include="Source\main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Math\Algebra\Wm5APoint.h" />

@@ -125,7 +125,7 @@ namespace RAEngine
 		//GL_CHECK_ERROR;
 
 		//[mContext presentRenderbuffer : GL_RENDERBUFFER];
-		mContext->swapBuffers();
+		 mContext->swapBuffers();
 	}
 
 	void ES2Renderer::RenderPrimitive(const ES2Renderable* renderable) const
@@ -145,6 +145,11 @@ namespace RAEngine
 		DisableAttributes(effect->GetVertexFormat(), renderable->GetVertexBuffer());
 	}
 
+	void ES2Renderer::SetClearColor(const Wm5::Vector4f& clearColor) 
+	{
+		mClearColor = clearColor;
+		glClearColor(mClearColor[0], mClearColor[1], mClearColor[2], mClearColor[3]);
+	}
 
 	void ES2Renderer::SetShader(const ES2ShaderProgram* shaderProgram) const
 	{

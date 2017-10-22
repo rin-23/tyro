@@ -155,7 +155,7 @@
     <ClCompile Include="Source\Core\Scene\RANode.cpp" />
     <ClCompile Include="Source\Core\Scene\RASpatial.cpp" />
     <ClCompile Include="Source\Engine\RAAxisAlignedBBox.cpp" />
-    <ClCompile Include="Source\handmade.cpp" />
+    <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\Math\Algebra\Wm5APoint.cpp" />
     <ClCompile Include="Source\Math\Algebra\Wm5AVector.cpp" />
     <ClCompile Include="Source\Math\Algebra\Wm5HMatrix.cpp" />

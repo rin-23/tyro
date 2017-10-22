@@ -1,16 +1,16 @@
-#version 100
-attribute vec4 aPosition; //local space
-attribute vec3 aNormal; //local space
+#version 400
+in vec4 aPosition; //local space
+in vec3 aNormal; //local space
 
 uniform mat4 uMVPMatrix;
 uniform mat3 uNMatrix;
-uniform lowp vec4 uColor;
+uniform vec4 uColor;
 
 const float c_zero = 0.0;
 const float c_one = 1.0;
 const vec3 cLightDir = vec3(c_zero, c_zero, c_one);
 
-varying lowp vec4 vColor;
+out vec4 vColor;
 
 void main()
 {

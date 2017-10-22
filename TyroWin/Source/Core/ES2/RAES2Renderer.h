@@ -26,8 +26,10 @@ namespace RAEngine
         ~ES2Renderer();
         
         void RenderVisibleSet(const VisibleSet* visibleSet, const Camera* camera);
-        
-    private:
+    
+		void SetClearColor(const Wm5::Vector4f& clearColor);
+    
+	private:
  
         ES2Context* mContext;
 
