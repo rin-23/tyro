@@ -56,7 +56,6 @@
     <ClCompile Include="Source\Core\Renderables\RAES2DefaultTriMesh.cpp" />
     <ClCompile Include="Source\Core\Scene\RANode.cpp" />
     <ClCompile Include="Source\Core\Scene\RASpatial.cpp" />
-    <ClCompile Include="Source\Core\RACamera.cpp" />
     <ClCompile Include="Source\Core\RAHardwareBuffer.cpp" />
     <ClCompile Include="Source\Core\RAIndexHardwareBuffer.cpp" />
     <ClCompile Include="Source\Core\RALogManager.cpp" />
@@ -79,6 +78,8 @@
     <ClCompile Include="Source\Core\ES2\RAES2Context.cpp" />
     <ClCompile Include="Source\Core\ES2\RAES2Renderer.cpp" />
     <ClCompile Include="Source\main.cpp" />
+    <ClCompile Include="Source\Core\RAiOSCamera.cpp" />
+    <ClCompile Include="Source\Core\RACamera.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Math\Algebra\Wm5APoint.h" />

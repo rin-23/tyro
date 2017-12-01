@@ -24,48 +24,7 @@ namespace RAEngine
 //        sptr->Init(type);
 //        return sptr;
 //    }
-
-//
-//    void ES2Renderable::GenerateVertexArray()
-//    {
-//        if (mVertexBuffer && mVisualEffect)
-//        {
-//            if (mVertexArray == NULL)
-//            {
-//                mVertexArray = new ES2VertexArray();
-//            }
-//            mVertexArray->Bind();
-//
-//            mVertexBuffer->Bind();
-//            for (int i = 0; i < mVisualEffect->GetVertexFormat()->GetNumOfAttributes(); ++i)
-//            {
-//                int shaderLocation;
-//                GLint size;
-//                GLsizeiptr offset;
-//                GLenum dataType;
-//                GLboolean normalized;
-//                GLboolean enabled;
-//                mVisualEffect->GetVertexFormat()->GetGLAttribute(i, shaderLocation, size, offset, dataType, normalized, enabled);
-//                
-//                if (enabled)
-//                {
-//                    mVertexBuffer->PrepareToDraw(shaderLocation, size, offset, dataType, normalized);
-//                    mVertexBuffer->EnableAttribute(shaderLocation);
-//                }
-//                else
-//                {
-//                    mVertexBuffer->DisableAttribute(shaderLocation);
-//                }
-//            }
-//            
-//            mVertexArray->Unbind();
-//        }
-//        else
-//        {
-//            assert(false);
-//        }
-//    }
-
+		
     void ES2Renderable::UpdateBounds()
     {
         WorldBoundBox = AxisAlignedBBox::TransformAffine(WorldTransform, LocalBoundBox);

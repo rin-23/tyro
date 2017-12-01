@@ -14,14 +14,14 @@
 #include "RAES2Renderer.h"
 #include "RAVisibleSet.h"
 #include "RAES2StandardMesh.h"
-#include "RACamera.h"
+#include "RAiOSCamera.h"
 
 using namespace RAEngine;
 using namespace Wm5;
 
 void window_close_callback(GLFWwindow* window);
 
-int main() {
+int kjhmain() {
 	// start GL context and O/S window using the GLFW helper library
 	if (!glfwInit()) {
 		fprintf(stderr, "ERROR: could not start GLFW3\n");
@@ -30,7 +30,7 @@ int main() {
 
 	// uncomment these lines if on Apple OS X
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
 
 
 	GLFWwindow* window = glfwCreateWindow(640, 480, "Hello Triangle", NULL, NULL);
@@ -74,7 +74,7 @@ int main() {
 	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-						  // close GL context and any other GLFW resources
+	
 	const char* vertex_shader =
 		"#version 400\n"
 		"in vec3 vp;"
@@ -118,7 +118,7 @@ int main() {
 	return 0;
 }
 
-int mainwrong(void)
+int main(void)
 {
 
     GLFWwindow* window;
@@ -130,7 +130,7 @@ int mainwrong(void)
 		return -1;
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
 
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(800, 800, "Hello World", NULL, NULL);
@@ -150,46 +150,50 @@ int mainwrong(void)
 
 	ES2Context* glContext = new ES2Context(window);
 	ES2Renderer* glRend = new ES2Renderer(glContext);
-	glRend->SetClearColor(Vector4f(1.0, 0.0, 0.0, 1.0));
+	glRend->SetClearColor(Vector4f(0.0, 1.0, 0.0, 1.0));
     //setup objects to draw
 	// Need to add scene first otherwise no Worldbound
-    ES2SphereSPtr sphere = ES2Sphere::Create(10, 10, 10);
-	sphere->Update(true);
+    ES2SphereSPtr object = ES2Sphere::Create(100, 100, 100);
+	
+	//Wm5::Vector3f points[2] = { Wm5::Vector3f(0,0,0), Wm5::Vector3f(1,0,0) };
+	//ES2LineSPtr object = ES2Line::Create(points, 2, true);
+	object->Update(true);
 	VisibleSet* vsSet = new VisibleSet();
-	vsSet->Insert(sphere.get());
+	vsSet->Insert(object.get());
     
     //setup camera
-    APoint worldCenter = sphere->WorldBoundBox.GetCenter();
-	float radius = sphere->WorldBoundBox.GetRadius()*2;
-	float aspect = 1.0;
+    APoint worldCenter = object->WorldBoundBox.GetCenter();
+	float radius = std::abs(object->WorldBoundBox.GetRadius()*2);
+	
     
 	int mViewWidth, mViewHeight;
     glContext->getFramebufferSize(&mViewWidth, &mViewHeight);
-    
+	float aspect = 1.0;
 	Vector4i viewport(0, 0, mViewWidth, mViewHeight);
-    APoint mInitialPosition = worldCenter;
-	mInitialPosition.Z() += radius;
-    
-    Camera* camera = new Camera(mInitialPosition, worldCenter, viewport, aspect, true);
+
+	iOSCamera* camera = new iOSCamera(worldCenter, radius, aspect, 2, viewport, true);
     
 	/* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
         /* Render here */
-		//glClear(GL_COLOR_BUFFER_BIT);
-		//glClearColor(1.0, 0.0, 0.0,  1.0);
-       		
+			
 		glRend->RenderVisibleSet(vsSet, camera);
 
         /* Poll for and process events */
         glfwPollEvents();
+		
 		/* Swap front and back buffers */
 		//glfwSwapBuffers(window);
 	}
 
-	//delete glRenderer;
-	//delete glContext;
-    glfwTerminate();
+	object = nullptr;
+	delete camera;
+	delete vsSet;
+	delete glRend;
+	delete glContext;
+
+	glfwTerminate();
     return 0;
 }
 

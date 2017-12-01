@@ -40,9 +40,9 @@ namespace RAEngine
         
         inline ES2PrimitiveType GetPrimitiveType() const;
         
-//        void GenerateVertexArray();
-//        inline const ES2VertexArray* GetVertexArray() const;
-//        inline ES2VertexArray* GetVertexArray();
+		inline void SetVertexArray(ES2VertexArraySPtr vertexArray);
+		inline const ES2VertexArraySPtr GetVertexArray() const;
+        inline ES2VertexArraySPtr GetVertexArray();
         
         inline void SetVisualEffect(ES2VisualEffectSPtr visualEffect);
         inline const ES2VisualEffectSPtr GetVisualEffect() const;
@@ -58,7 +58,7 @@ namespace RAEngine
         
         virtual void UpdateUniformsWithCamera(const Camera* camera) = 0;
 
-        virtual void GetVisibleSet (RAEngine::VisibleSet* visibleSet) override;
+        virtual void GetVisibleSet(RAEngine::VisibleSet* visibleSet) override;
         
         virtual void GetHitProxies(RAEngine::VisibleSet* visibleSet) override;
         
@@ -93,9 +93,9 @@ namespace RAEngine
         AxisAlignedBBox LocalBoundBox;
     
     private:
-//        ES2VertexArray* mVertexArray;
         ES2PrimitiveType mPrimitiveType;
-        ES2VisualEffectSPtr mVisualEffect;
+		ES2VertexArraySPtr mVertexArray;
+		ES2VisualEffectSPtr mVisualEffect;
         ES2VertexHardwareBufferSPtr mVertexBuffer;
         ES2IndexHardwareBufferSPtr mIndexBuffer;
     };
@@ -161,6 +161,21 @@ namespace RAEngine
     {
         return mIndexBuffer;
     }
+	
+	inline void ES2Renderable::SetVertexArray(ES2VertexArraySPtr vertexArray)
+	{
+		mVertexArray = vertexArray;
+	}
+
+	inline const ES2VertexArraySPtr ES2Renderable::GetVertexArray() const
+	{
+		return mVertexArray;
+	}
+
+	inline ES2VertexArraySPtr ES2Renderable::GetVertexArray()
+	{
+		return mVertexArray;
+	}
 }
 
 CEREAL_REGISTER_TYPE(RAEngine::ES2Renderable);

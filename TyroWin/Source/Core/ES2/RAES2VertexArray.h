@@ -10,15 +10,18 @@
 
 //#include <OpenGLES/gltypes.h>
 #include <GL/glew.h>
+#include "RAEnginePrerequisites.h"
 
 namespace RAEngine
 {
     class ES2VertexArray
     {
     public:
-        ES2VertexArray();
-
-        GLuint GetName() const;
+        ES2VertexArray(const ES2VisualEffectSPtr visualEffect, const ES2VertexHardwareBufferSPtr vertexBuffer);
+		
+		~ES2VertexArray();
+        
+		GLuint GetName() const;
         
         void Bind() const;
         

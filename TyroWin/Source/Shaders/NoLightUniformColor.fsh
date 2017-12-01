@@ -1,7 +1,9 @@
-uniform lowp vec4 uColor;
+#version 400
+uniform vec4 uColor;
+out vec4 fFragColor;
 
 void main()
 {
-    gl_FragColor = uColor;
+    fFragColor = uColor;
 }
 

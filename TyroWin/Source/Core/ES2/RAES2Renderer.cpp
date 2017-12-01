@@ -33,8 +33,7 @@ namespace RAEngine
 	{}
 
 	ES2Renderer::ES2Renderer(ES2Context* glContext)
-	{
-		
+	{		
 		mContext = glContext;
 		mClearColor = Wm5::Vector4f(200 / 255.0f, 200 / 255.0f, 200 / 255.0f, 1.0f);
 		glContext->getFramebufferSize(&mViewWidth, &mViewHeight);
@@ -45,7 +44,6 @@ namespace RAEngine
 		GL_CHECK_ERROR;
 
 		RA_LOG_VERBOSE("Finished creating framebuffers");
-		
 	}
 
 	ES2Renderer::~ES2Renderer()
@@ -125,7 +123,7 @@ namespace RAEngine
 		//GL_CHECK_ERROR;
 
 		//[mContext presentRenderbuffer : GL_RENDERBUFFER];
-		 mContext->swapBuffers();
+		mContext->swapBuffers();
 	}
 
 	void ES2Renderer::RenderPrimitive(const ES2Renderable* renderable) const
@@ -136,13 +134,21 @@ namespace RAEngine
 
 		SetShader(effect->GetShader());
 		UpdateUniforms(effect->GetUniforms());
-		PrepareVertexBuffers(effect->GetVertexFormat(), renderable->GetVertexBuffer());
+		if (renderable->GetVertexArray()) 
+		{
+			renderable->GetVertexArray()->Bind();
+		}
+		else 
+		{
+			PrepareVertexBuffers(effect->GetVertexFormat(), renderable->GetVertexBuffer());
+		}
+		
 		SetTexture(effect->GetTexture2D());
 		SetAlphaState(effect->GetAlphaState());
 		SetCullState(effect->GetCullState());
 		SetDepthState(effect->GetDepthState());
 		DrawPrimitive(renderable);
-		DisableAttributes(effect->GetVertexFormat(), renderable->GetVertexBuffer());
+		//DisableAttributes(effect->GetVertexFormat(), renderable->GetVertexBuffer());
 	}
 
 	void ES2Renderer::SetClearColor(const Wm5::Vector4f& clearColor) 
@@ -296,9 +302,9 @@ namespace RAEngine
 			vertexFormat->GetGLAttribute(i, shaderLocation, size, offset, dataType, normalized, enabled);
 
 			if (enabled)
-			{
-				vertexBufffer->PrepareToDraw(shaderLocation, size, offset, dataType, normalized);
+			{	
 				vertexBufffer->EnableAttribute(shaderLocation);
+				vertexBufffer->PrepareToDraw(shaderLocation, size, offset, dataType, normalized);
 			}
 			else
 			{

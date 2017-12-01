@@ -171,6 +171,8 @@ namespace RAEngine
     using ES2IndexHardwareBufferSPtr = std::shared_ptr<ES2IndexHardwareBuffer>;
     using ES2IndexHardwareBufferWPtr = std::weak_ptr<ES2IndexHardwareBuffer>;
     
+	using ES2VertexArraySPtr = std::shared_ptr<ES2VertexArray>;
+
     using NormalProxySPtr = std::shared_ptr<NormalProxy>;
     using NormalProxyUPtr = std::unique_ptr<NormalProxy>;
     using NormalProxyWPtr = std::weak_ptr<NormalProxy>;

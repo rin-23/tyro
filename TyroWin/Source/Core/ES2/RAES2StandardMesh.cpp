@@ -393,6 +393,8 @@ void ES2Sphere::Init(int zSamples, int radialSamples, float radius)
     LocalBoundBox.ComputeExtremes(vbuffer->GetNumOfVerticies(), vbuffer->GetVertexSize(), vbuffer->MapRead());
     vbuffer->Unmap();
     SetVertexBuffer(vbuffer);
+	ES2VertexArraySPtr varray = std::make_shared<ES2VertexArray>(this->GetVisualEffect(), vbuffer);
+	SetVertexArray(varray);
     SetIndexBuffer(ibuffer);
 }
 
@@ -533,7 +535,8 @@ void ES2Line::Init(const Wm5::Vector3f* points, int numOfPoints, bool isContegio
     float stride = sizeof(Vector3f);
     ES2VertexHardwareBufferSPtr vbuffer = std::make_shared<ES2VertexHardwareBuffer>(stride, numOfPoints, points, HardwareBuffer::BU_STATIC);
     SetVertexBuffer(vbuffer);
-    
+	ES2VertexArraySPtr varray = std::make_shared<ES2VertexArray>(this->GetVisualEffect(), vbuffer);
+	SetVertexArray(varray);
     LocalBoundBox.ComputeExtremes(vbuffer->GetNumOfVerticies(), vbuffer->GetVertexSize(), vbuffer->MapRead());
     vbuffer->Unmap();
 }
