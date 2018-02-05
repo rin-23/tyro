@@ -130,3 +130,6 @@ UpgradeLog*.htm
 *.exe
 *.out
 *.app
+
+build/
+CMakeFiles/
