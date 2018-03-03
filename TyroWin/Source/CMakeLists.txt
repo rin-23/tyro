@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 3.0.0)
-
+cmake_minimum_required(VERSION 3.9.0)
 project(Tyro)
 
 # Set OS-specific things here
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-message(STATUS "Compiling on Unix")
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+message(STATUS "Compiling on Unix")
 
 find_package(PkgConfig REQUIRED)
 pkg_search_module(GLFW glfw3)
@@ -25,11 +25,49 @@ if (NOT GLEW_FOUND)
 endif()
 
 
+add_subdirectory(Math)
+
+set(TYRO_MATH_INC_EXE 
+    "./"
+    "./Math"
+	"./Math/Algebra"
+    "./Math/Approximation"
+    "./Math/Assert"
+    "./Math/Base"
+    "./Math/ComputationalGeometry"
+    "./Math/Containment"
+    "./Math/CurvesSurfacesVolumes"
+    "./Math/DataTypes"
+    "./Math/Distance"
+    "./Math/InputOutput"
+    "./Math/Interpolation"
+    "./Math/Intersection"
+    "./Math/Memory"
+    "./Math/Meshes"
+    "./Math/Miscellaneous"
+    "./Math/NumericalAnalysis"
+    "./Math/Objects2D"
+    "./Math/Objects3D"
+    "./Math/ObjectSystems"
+    "./Math/Query"
+    "./Math/Rational"
+    "./Math/Threading"
+    "./Math/Time"
+    "./Math/Tools"
+    "./Math/Transformation"
+    "./External"
+    )
+
+include_directories(${TYRO_MATH_INC_EXE})
+
 include_directories(${GLFW_INCLUDE_DIRS})
 include_directories(${OPENGL_INCLUDE_DIR})
 include_directories(${GLEW_INCLUDE_DIR})
 
+
 add_executable(tyro mainTest.cpp)
+
 target_link_libraries(tyro ${OPENGL_gl_LIBRARY})
 target_link_libraries(tyro ${GLFW_LIBRARIES})
 target_link_libraries(tyro ${GLEW_LIBRARIES})
+target_link_libraries(tyro TyroMath)

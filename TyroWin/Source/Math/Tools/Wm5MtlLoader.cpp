@@ -10,6 +10,7 @@
 #include <cassert>
 #include <cfloat>
 #include <fstream>
+#include <cstring>
 
 // Disable Microsoft warning about unsafe functions (security).
 #pragma warning(disable:4996)
@@ -386,7 +387,7 @@ bool MtlLoader::GetCharArg (const vector<string>& tokens, int imax,
 
     value = tokens[i][0];
     bool isValid = false;
-    for (int j = 0; j < (int)strlen(valid); ++j)
+        for (int j = 0; j < (int)strlen(valid); ++j)
     {
         if (value == valid[j])
         {

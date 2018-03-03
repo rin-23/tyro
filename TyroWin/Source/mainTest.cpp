@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "Wm5Mathematics.h"
+
 void window_close_callback(GLFWwindow* window);
 
 int main() {
