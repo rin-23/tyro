@@ -1,5 +1,6 @@
 {
     "files.associations": {
         "ftstroke.c": "cpp"
-    }
+    },
+    "python.linting.enabled": false
 }
