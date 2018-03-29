@@ -9,6 +9,7 @@
 #pragma once
 
 #include <string>
+#include <fstream>
 
 namespace RAEngine
 {
@@ -51,6 +52,8 @@ namespace RAEngine
         
         int LoadASCIISTL(FILE* pFile, void* gpuBufferPtr, bool needNormals);
         int LoadBinarySTL(FILE* pFile, void* gpuBufferPtr, bool needNormals);
+        size_t getline(char **lineptr, size_t *n, FILE *stream);
+
         std::string mFilePath;
     };
 }

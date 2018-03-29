@@ -10,8 +10,8 @@
 
 #include "RAES2Texture2D.h"
 #include "Wm5Vector2.h"
-#include <memory>
 #include "RAEnginePrerequisites.h"
+#include <memory>
 
 //Ref:
 //http://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Text_Rendering_01

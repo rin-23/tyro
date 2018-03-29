@@ -15,7 +15,7 @@ namespace RAEngine
     {	
 		//@TODO: Remove full path
 		//std::string shaderFolder = "C:/Workspace/TyroWin/TyroWin/Source/Shaders/";
-		std::string shaderFolder = "C:/Workspace/Tyro/TyroWin/Source/Shaders/";
+		std::string shaderFolder = "/home/rinat/Workspace/Tyro/TyroWin/Source/Shaders/";
 		std::string fullPath = shaderFolder + fileName + std::string(".") + extension;
 		RA_LOG_INFO(fullPath.data());
 		return fullPath;

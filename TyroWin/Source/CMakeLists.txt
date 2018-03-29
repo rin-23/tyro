@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9.0)
+cmake_minimum_required(VERSION 3.5.0)
 project(Tyro)
 
 # Set OS-specific things here
@@ -11,6 +11,7 @@ find_package(PkgConfig REQUIRED)
 pkg_search_module(GLFW glfw3)
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
+find_package(Freetype REQUIRED)
 
 if (NOT GLFW_FOUND )
     message(STATUS "NOT Found glfw")
@@ -24,11 +25,16 @@ if (NOT GLEW_FOUND)
     message(STATUS "NOT Found glew")
 endif()
 
+if (NOT FREETYPE_FOUND)
+    message(STATUS "NOT Found freetype")
+endif()
+
 
 add_subdirectory(Math)
+include(Core/CMakeSources.cmake)
+include(Engine/CMakeSources.cmake)
 
 set(TYRO_MATH_INC_EXE 
-    "./"
     "./Math"
 	"./Math/Algebra"
     "./Math/Approximation"
@@ -55,19 +61,32 @@ set(TYRO_MATH_INC_EXE
     "./Math/Time"
     "./Math/Tools"
     "./Math/Transformation"
-    "./External"
     )
 
-include_directories(${TYRO_MATH_INC_EXE})
+set(TYRO_CORE_INC_EXE 
+    "./Core"
+	"./Core/ES2"
+    "./Core/Renderables"
+    "./Core/Scene"
+    "./Core/Tools"
+    )
 
+
+set(TYRO_ENGINE_INC_EXE
+    "./Engine"
+)
+
+include_directories("./" ${TYRO_MATH_INC_EXE} ${TYRO_CORE_INC_EXE} ${TYRO_ENGINE_INC_EXE} "./External")
 include_directories(${GLFW_INCLUDE_DIRS})
 include_directories(${OPENGL_INCLUDE_DIR})
 include_directories(${GLEW_INCLUDE_DIR})
+include_directories(${FREETYPE_INCLUDE_DIRS})
 
-
-add_executable(tyro mainTest.cpp)
+add_executable(tyro main.cpp ${TYRO_CORE_SRC} ${TYRO_ENGINE_SRC})
 
 target_link_libraries(tyro ${OPENGL_gl_LIBRARY})
 target_link_libraries(tyro ${GLFW_LIBRARIES})
 target_link_libraries(tyro ${GLEW_LIBRARIES})
+target_link_libraries(tyro ${FREETYPE_LIBRARIES})
 target_link_libraries(tyro TyroMath)
+#target_link_libraries(tyro TyroCore)

@@ -8,6 +8,7 @@
 
 #include "RAES2ShaderUniforms.h"
 #include "RALogManager.h"
+#include <cstring>
 
 namespace RAEngine
 {

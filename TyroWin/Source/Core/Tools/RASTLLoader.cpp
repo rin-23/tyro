@@ -7,7 +7,6 @@
 //
 
 #include "RASTLLoader.h"
-#include <fstream>
 #include "RALogManager.h"
 #include "RAMath.h"
 
@@ -24,7 +23,7 @@ namespace RAEngine
     {
     }
     
-	size_t getline(char **lineptr, size_t *n, FILE *stream) {
+	size_t STLLoader::getline(char **lineptr, size_t *n, FILE *stream) {
 		char *bufptr = NULL;
 		char *p = bufptr;
 		size_t size;
@@ -103,7 +102,7 @@ namespace RAEngine
             size_t len = 0;
             size_t read;
 
-            while ((read = getline(&line, &len, pFile)) != -1)
+            while ((read = STLLoader::getline(&line, &len, pFile)) != -1)
             {
                 float x, y,z;
                 if (sscanf(line, "%*[ \n\t]facet normal %f %f %f", &x, &y, &z))
@@ -207,7 +206,7 @@ namespace RAEngine
 //        bool error = false;
         int nTrianglesCounter = 0;
         
-        while ((read = getline(&line, &len, pFile)) != -1)
+        while ((read = STLLoader::getline(&line, &len, pFile)) != -1)
         {
 //            if (error)
 //            {
@@ -228,12 +227,12 @@ namespace RAEngine
                 }
                 
                 //read outer loop line
-                getline(&line, &len, pFile);
+                STLLoader::getline(&line, &len, pFile);
 
                 //read vertex lines
                 for (int i = 0; i < 3; i++)
                 {
-                    getline(&line, &len, pFile);
+                    STLLoader::getline(&line, &len, pFile);
                     Vertex v;
                     memcpy(v.normal, normal, 3*sizeof(float));
                     

@@ -10,6 +10,7 @@
 #include "RAFileManager.h"
 #include "RALogManager.h"
 #include <assert.h>
+#include <algorithm>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
@@ -57,8 +58,8 @@ int ES2Font::Init(const std::string& tffFontPath, float sizePnts, int ppi)
     FT_GlyphSlot glyph = face->glyph;
 
     //Get texture dimensions
-    int atlas_width = 0;
-    int atlas_height = 0;
+    unsigned int atlas_width = 0;
+    unsigned int atlas_height = 0;
     for (int i = 32; i < 128; i++)
     {
         if (FT_Load_Char(face, i, FT_LOAD_RENDER))

@@ -1,7 +1,8 @@
 include(CMakeSources.cmake)
 
 set(TYRO_MATH_INC 
-	"./"
+    "./"
+    "../External"
 	"./Algebra" 
     "./Approximation" 
     "./Assert"
@@ -28,6 +29,6 @@ set(TYRO_MATH_INC
     "./Tools" 
     "./Transformation")
 
-include_directories(${TYRO_MATH_INC} "../External")	
+include_directories(${TYRO_MATH_INC})	
 
 add_library(TyroMath SHARED ${TYRO_MATH_SRC})
