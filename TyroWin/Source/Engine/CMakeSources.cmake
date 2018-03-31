@@ -6,6 +6,7 @@ set(TYRO_INC_LOCAL
 "Engine/RANormalMapProxy.h" 
 "Engine/RAOverlayManager.h" 
 "Engine/RAPointOctree.h" 
+"Engine/TyroWindow.h"
 )
 
 set(TYRO_SRC_LOCAL 
@@ -15,7 +16,8 @@ set(TYRO_SRC_LOCAL
 "Engine/RAHitProxy.cpp" 
 "Engine/RANormalMapProxy.cpp" 
 "Engine/RAOverlayManager.cpp" 
-"Engine/RAPointOctree.cpp" 
+"Engine/RAPointOctree.cpp"
+"Engine/TyroWindow.cpp" 
 )
 
 set(TYRO_ENGINE_SRC
