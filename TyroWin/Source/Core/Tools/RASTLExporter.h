@@ -18,13 +18,13 @@ namespace Ossa
     class STLExporter
     {
     public:
-//        static int ExportToBinarySTL(const RAEngine::ES2TriMesh& mesh, const std::string& path);
-//        static int ExportToBinarySTL(const RAEngine::ES2TriMesh& mesh, const std::string& path, Wm5::Transform transform);
+//        static int ExportToBinarySTL(const tyro::ES2TriMesh& mesh, const std::string& path);
+//        static int ExportToBinarySTL(const tyro::ES2TriMesh& mesh, const std::string& path, Wm5::Transform transform);
         
-        static int ExportToBinarySTL(RAEngine::ES2TriMesh* mesh, const std::string& path);
+        static int ExportToBinarySTL(tyro::ES2TriMesh* mesh, const std::string& path);
         
-        //static int ExportToBinarySTL(RAEngine::ES2TriMesh* node, const std::string& path);
+        //static int ExportToBinarySTL(tyro::ES2TriMesh* node, const std::string& path);
 
-//        int ExportToASCIISTL(const RAEngine::ES2TriMesh& plate, const std::string& path);
+//        int ExportToASCIISTL(const tyro::ES2TriMesh& plate, const std::string& path);
     };
 }

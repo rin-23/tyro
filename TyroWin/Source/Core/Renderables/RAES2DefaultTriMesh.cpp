@@ -10,7 +10,7 @@
 #include "RAES2CoreVisualEffects.h"
 #include "RACamera.h"
 
-namespace RAEngine
+namespace tyro
 {
 
 void ES2DefaultTriMesh::Init()
@@ -37,7 +37,7 @@ void ES2DefaultTriMesh::SetColor(Wm5::Vector4f color)
     mColor = color;
 }
 
-void ES2DefaultTriMesh::UpdateUniformsWithCamera(const RAEngine::Camera* camera)
+void ES2DefaultTriMesh::UpdateUniformsWithCamera(const tyro::Camera* camera)
 {
     Wm5::HMatrix viewMatrix = camera->GetViewMatrix();
     Wm5::HMatrix modelViewMatrix = viewMatrix * WorldTransform.Matrix();

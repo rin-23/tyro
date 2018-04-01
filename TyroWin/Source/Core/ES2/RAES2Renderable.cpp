@@ -10,7 +10,7 @@
 #include "Wm5TransformBox3.h"
 #include "RAVisibleSet.h"
 
-namespace RAEngine
+namespace tyro
 {
     void ES2Renderable::Init(ES2PrimitiveType type)
     {
@@ -30,7 +30,7 @@ namespace RAEngine
         WorldBoundBox = AxisAlignedBBox::TransformAffine(WorldTransform, LocalBoundBox);
     }
     
-    void ES2Renderable::GetVisibleSet (RAEngine::VisibleSet* visibleSet)
+    void ES2Renderable::GetVisibleSet (tyro::VisibleSet* visibleSet)
     {
         if (this->Visible)
         {
@@ -39,6 +39,6 @@ namespace RAEngine
         }
     }
     
-    void ES2Renderable::GetHitProxies(RAEngine::VisibleSet* visibleSet)
+    void ES2Renderable::GetHitProxies(tyro::VisibleSet* visibleSet)
     {}
 }

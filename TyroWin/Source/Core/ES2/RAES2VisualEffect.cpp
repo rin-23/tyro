@@ -8,7 +8,7 @@
 
 #include "RAES2VisualEffect.h"
 
-namespace RAEngine
+namespace tyro
 {
 
 ES2VisualEffect::ES2VisualEffect()

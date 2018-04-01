@@ -13,7 +13,7 @@
 #include "RAES2VertexHardwareBuffer.h"
 #include "RAES2VisualEffect.h"
 
-namespace RAEngine
+namespace tyro
 {
 ES2VertexArray::ES2VertexArray(const ES2VisualEffectSPtr visualEffect, const ES2VertexHardwareBufferSPtr vertexBuffer)
 {

@@ -11,7 +11,7 @@
 #include "RAEnginePrerequisites.h"
 #include "RAHardwareBuffer.h"
 
-namespace RAEngine
+namespace tyro
 {
     class ES2Renderable;
     

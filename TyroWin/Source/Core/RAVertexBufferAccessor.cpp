@@ -11,7 +11,7 @@
 #include "RAES2VertexFormat.h"
 #include "RAVertexHardwareBuffer.h"
 
-namespace RAEngine
+namespace tyro
 {
 
 VertexBufferAccessor::VertexBufferAccessor(ES2VertexFormat* format, VertexHardwareBuffer* buffer)

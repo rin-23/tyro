@@ -13,7 +13,7 @@
 
 using namespace Wm5;
 
-namespace RAEngine
+namespace tyro
 {
     //Orbiting camera araound worldCenter at radius
     iOSCamera::iOSCamera(const Wm5::APoint& worldCenter,
@@ -23,7 +23,7 @@ namespace RAEngine
                          const Wm5::Vector4i& viewport,
                          bool isOrtho)
     :
-    RAEngine::Camera(APoint(0,0,0), worldCenter, viewport, aspect, isOrtho)
+    tyro::Camera(APoint(0,0,0), worldCenter, viewport, aspect, isOrtho)
      {
         mInitialPosition = worldCenter;
         mInitialPosition.Z() += radius;

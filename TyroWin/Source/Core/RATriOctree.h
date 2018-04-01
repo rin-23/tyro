@@ -19,7 +19,7 @@
 #include "RAAxisAlignedBBox.h"
 #include "GLStructures.h"
 
-namespace RAEngine
+namespace tyro
 {
     class TriOctree
     {

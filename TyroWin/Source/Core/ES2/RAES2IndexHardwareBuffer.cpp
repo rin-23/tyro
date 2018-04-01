@@ -11,7 +11,7 @@
 #include <GL/glew.h>
 //#include <OpenGLES/ES2/glext.h>
 
-namespace RAEngine
+namespace tyro
 {
 
 ES2IndexHardwareBuffer::ES2IndexHardwareBuffer()

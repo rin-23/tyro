@@ -8,7 +8,7 @@
 
 #pragma once
 
-namespace RAEngine
+namespace tyro
 {
 extern const int edgeTable[256];
 extern const int triTable[256][16];

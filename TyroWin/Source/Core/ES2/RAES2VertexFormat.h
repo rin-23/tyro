@@ -12,7 +12,7 @@
 //#include <OpenGLES/gltypes.h>
 #include <string>
 
-namespace RAEngine
+namespace tyro
 {
     class ES2VertexFormat
     {

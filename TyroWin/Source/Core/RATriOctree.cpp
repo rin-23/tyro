@@ -13,7 +13,7 @@
 
 using Wm5::Vector3f;
 
-namespace RAEngine
+namespace tyro
 {
 
 TriOctree::TriOctree(TriOctree* parent, const Wm5::Vector3f& origin, const Wm5::Vector3f& halfDimension, int maxDepth)

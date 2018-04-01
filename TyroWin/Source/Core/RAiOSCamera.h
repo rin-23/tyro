@@ -12,7 +12,7 @@
 #include "Wm5Vector2.h"
 #include "RAEnginePrerequisites.h"
 
-namespace RAEngine
+namespace tyro
 {
     class iOSCamera : public Camera
     {

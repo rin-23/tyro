@@ -14,7 +14,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-namespace RAEngine
+namespace tyro
 {
 
 ES2Font::ES2Font()

@@ -14,7 +14,7 @@
 #include "RAES2VisualStates.h"
 #include "RAES2Texture2D.h"
 
-namespace RAEngine
+namespace tyro
 {
     class ES2VisualEffect
     {

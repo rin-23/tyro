@@ -16,7 +16,7 @@
 using namespace std;
 using namespace Wm5;
 
-namespace RAEngine
+namespace tyro
 {
     ES2STLMesh::ES2STLMesh()
     {}
@@ -73,7 +73,7 @@ namespace RAEngine
         return 1;
     }
     
-    void ES2STLMesh::UpdateUniformsWithCamera(const RAEngine::Camera* camera)
+    void ES2STLMesh::UpdateUniformsWithCamera(const tyro::Camera* camera)
     {
         HMatrix modelViewMatrix = camera->GetViewMatrix() * WorldTransform.Matrix();
         HMatrix modelViewProjectionMatrix =  camera->GetProjectionMatrix() * modelViewMatrix;

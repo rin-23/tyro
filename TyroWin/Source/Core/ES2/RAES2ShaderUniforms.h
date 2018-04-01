@@ -12,7 +12,7 @@
 //#include <OpenGLES/gltypes.h>
 #include <GL/glew.h>
 
-namespace RAEngine
+namespace tyro
 {
     class ES2ShaderUniforms
     {

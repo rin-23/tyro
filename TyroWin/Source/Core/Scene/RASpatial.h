@@ -20,7 +20,7 @@
 #include <cereal/access.hpp>
 #include <cereal/archives/binary.hpp>
 
-namespace RAEngine
+namespace tyro
 {
     using ObjectID = int;
     
@@ -43,9 +43,9 @@ namespace RAEngine
         
         void Update(bool initiator);
 
-        virtual void GetVisibleSet(RAEngine::VisibleSet* visibleSet);
+        virtual void GetVisibleSet(tyro::VisibleSet* visibleSet);
 
-        virtual void GetHitProxies(RAEngine::VisibleSet* visibleSet);
+        virtual void GetHitProxies(tyro::VisibleSet* visibleSet);
     
         inline void SetName(std::string name);
 
@@ -63,7 +63,7 @@ namespace RAEngine
         
         inline bool GetShowBBox();
         
-        bool operator == (const RAEngine::Spatial &Ref) const
+        bool operator == (const tyro::Spatial &Ref) const
         {
             return (this->GetID() == Ref.GetID());
         }
@@ -156,4 +156,4 @@ namespace RAEngine
     }
 }
 
-CEREAL_REGISTER_TYPE(RAEngine::Spatial);
+CEREAL_REGISTER_TYPE(tyro::Spatial);

@@ -10,7 +10,7 @@
 #include "Wm5Float3.h"
 #include "RAVertexBufferAccessor.h"
 
-namespace RAEngine
+namespace tyro
 {
     void ES2TriMesh::Init()
     {

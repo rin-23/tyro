@@ -14,7 +14,7 @@
 #include <memory>
 #include "RAEnginePrerequisites.h"
 
-namespace RAEngine
+namespace tyro
 {
     class ES2Texture2D : public Texture
     {

@@ -10,7 +10,7 @@
 #include "RALogManager.h"
 #include <cstring>
 
-namespace RAEngine
+namespace tyro
 {
     ES2ShaderUniforms::ES2ShaderUniforms(int numOfUniforms)
     {

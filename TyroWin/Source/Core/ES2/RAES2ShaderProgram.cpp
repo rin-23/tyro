@@ -13,7 +13,7 @@
 #include <GL/glew.h>
 #include "RALogManager.h"
 
-namespace RAEngine
+namespace tyro
 {
     std::map<std::string, GLuint> ES2ShaderProgram::mShaderNameToProgramMap;
     std::map<std::string, int> ES2ShaderProgram::mShaderNameToCountMap;

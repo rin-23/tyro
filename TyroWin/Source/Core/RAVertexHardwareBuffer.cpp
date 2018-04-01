@@ -8,7 +8,7 @@
 
 #include "RAVertexHardwareBuffer.h"
 
-namespace RAEngine
+namespace tyro
 {
     
 VertexHardwareBuffer::VertexHardwareBuffer()

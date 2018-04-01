@@ -12,7 +12,7 @@
 #include "RAES2CoreVisualEffects.h"
 #include "RAAxisAlignedBBox.h"
 
-namespace RAEngine
+namespace tyro
 {
     
 void ES2BBox::Init()

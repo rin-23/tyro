@@ -13,7 +13,7 @@
 //#include <OpenGLES/ES2/glext.h>
 #include <GL/glew.h>
 
-namespace RAEngine
+namespace tyro
 {
 
 int ES2VertexFormat::msComponentSize[AT_QUANTITY] =

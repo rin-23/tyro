@@ -12,14 +12,14 @@
 #include "RAiOSCamera.h"
 #include "TyroWindow.h"
 
-using namespace RAEngine;
+using namespace tyro;
 using namespace Wm5;
 
 void window_close_callback(GLFWwindow* window);
 
 int main(void) 
 {	
-	RAEngine::Window tyro_window;
+	tyro::Window tyro_window;
 	tyro_window.Init();
 
 	/*

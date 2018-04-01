@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 
-namespace RAEngine
+namespace tyro
 {
     class HardwareBuffer
     {

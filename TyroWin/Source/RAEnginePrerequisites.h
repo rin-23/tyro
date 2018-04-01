@@ -11,7 +11,7 @@
 #include "RALogManager.h"
 #include <memory>
 
-namespace RAEngine
+namespace tyro
 {
     /// Gesture State. Similar to iOS
     enum class GestureState {Possible, Began, Changed, Ended, Canceled, Failed};

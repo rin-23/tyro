@@ -11,7 +11,7 @@
 #include "RAMarchingCubesTable.h"
 #include "Wm5Vector3.h"
 
-namespace RAEngine
+namespace tyro
 {
     class MarchingCubes
     {

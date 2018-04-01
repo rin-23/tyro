@@ -8,7 +8,7 @@
 
 #include "RAMarchingCubesTable.h"
 
-namespace RAEngine
+namespace tyro
 {
     const int edgeTable[256] =
     {

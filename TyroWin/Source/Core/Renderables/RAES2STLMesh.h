@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include "RAES2TriMesh.h"
 
-namespace RAEngine
+namespace tyro
 {
     class ES2STLMesh : public ES2TriMesh
     {
@@ -21,7 +21,7 @@ namespace RAEngine
         virtual ~ES2STLMesh();
 
         int createWithSTL(const std::string& filePath);
-        virtual void UpdateUniformsWithCamera(const RAEngine::Camera* camera) override;
+        virtual void UpdateUniformsWithCamera(const tyro::Camera* camera) override;
     private:
     
     };

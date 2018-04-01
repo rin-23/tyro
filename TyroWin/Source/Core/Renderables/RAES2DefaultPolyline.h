@@ -11,7 +11,7 @@
 #include "RAES2Polyline.h"
 #include "Wm5Vector4.h"
 
-namespace RAEngine
+namespace tyro
 {
     class ES2DefaultPolyline : public ES2Polyline
     {
@@ -32,14 +32,14 @@ namespace RAEngine
         template<class Archive>
         void save(Archive & archive, std::uint32_t const version) const
         {
-            archive(cereal::virtual_base_class<RAEngine::ES2Polyline>(this));
+            archive(cereal::virtual_base_class<tyro::ES2Polyline>(this));
             archive(mColor);
         }
         
         template<class Archive>
         void load(Archive & archive, std::uint32_t const version)
         {
-            archive(cereal::virtual_base_class<RAEngine::ES2Polyline>(this));
+            archive(cereal::virtual_base_class<tyro::ES2Polyline>(this));
             archive(mColor);
             InitSerialized();
         }
@@ -53,5 +53,5 @@ namespace RAEngine
     };
 }
 
-CEREAL_REGISTER_TYPE(RAEngine::ES2DefaultPolyline);
+CEREAL_REGISTER_TYPE(tyro::ES2DefaultPolyline);
 

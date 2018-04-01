@@ -14,7 +14,7 @@
 #include "RAVertexBufferAccessor.h"
 #include "RACamera.h"
 
-namespace RAEngine
+namespace tyro
 {
 
 void HitProxy::Init(TouchableSPtr touchable, ObjectID touchable_id, HitProxyPriority priority)
@@ -155,7 +155,7 @@ RectHitProxySPtr RectHitProxy::Create(TouchableSPtr touchable, ObjectID touchabl
     return ptr;
 }
     
-void RectHitProxy::UpdateUniformsWithCamera(const RAEngine::Camera* camera)
+void RectHitProxy::UpdateUniformsWithCamera(const tyro::Camera* camera)
 {
     Wm5::HMatrix MVPMatrix =  camera->GetProjectionMatrix() * camera->GetViewMatrix() * WorldTransform.Matrix();
     GetVisualEffect()->GetUniforms()->UpdateFloatUniform(0, MVPMatrix.Transpose());
@@ -182,7 +182,7 @@ void TriHitProxy::Init(ES2TriMeshSPtr mesh, TouchableSPtr touchable, ObjectID to
     LocalBoundBox = mesh->LocalBoundBox;
 }
 
-void TriHitProxy::UpdateUniformsWithCamera(const RAEngine::Camera* camera)
+void TriHitProxy::UpdateUniformsWithCamera(const tyro::Camera* camera)
 {
     Wm5::HMatrix MVPMatrix =  camera->GetProjectionMatrix() * camera->GetViewMatrix() * WorldTransform.Matrix();
     GetVisualEffect()->GetUniforms()->UpdateFloatUniform(0, MVPMatrix.Transpose());

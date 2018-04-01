@@ -12,7 +12,7 @@
 #include "RAFont.h"
 #include "RACamera.h"
 
-namespace RAEngine
+namespace tyro
 {
     
 void ES2TextOverlay::Init(const std::string& text, const Wm5::Vector2f& origin, ES2FontSPtr font, const Wm5::Vector4f& color, const Wm5::Vector4i& viewport)

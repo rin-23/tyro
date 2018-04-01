@@ -15,7 +15,7 @@
 #include "RAES2VertexArray.h"
 #include "RAEnginePrerequisites.h"
 
-namespace RAEngine
+namespace tyro
 {
     class ES2Renderable : public Spatial
     {
@@ -58,9 +58,9 @@ namespace RAEngine
         
         virtual void UpdateUniformsWithCamera(const Camera* camera) = 0;
 
-        virtual void GetVisibleSet(RAEngine::VisibleSet* visibleSet) override;
+        virtual void GetVisibleSet(tyro::VisibleSet* visibleSet) override;
         
-        virtual void GetHitProxies(RAEngine::VisibleSet* visibleSet) override;
+        virtual void GetHitProxies(tyro::VisibleSet* visibleSet) override;
         
     public: //Serialization
         template<class Archive>
@@ -178,5 +178,5 @@ namespace RAEngine
 	}
 }
 
-CEREAL_REGISTER_TYPE(RAEngine::ES2Renderable);
+CEREAL_REGISTER_TYPE(tyro::ES2Renderable);
 

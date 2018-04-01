@@ -10,7 +10,7 @@
 #include "RAES2CoreVisualEffects.h"
 #include "RACamera.h"
 
-namespace RAEngine
+namespace tyro
 {
     
 void ES2DefaultPolyline::Init(bool isContigious)

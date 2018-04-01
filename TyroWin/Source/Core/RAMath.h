@@ -15,7 +15,7 @@
 #include "Wm5Matrix2.h"
 #include "Wm5HMatrix.h"
 
-namespace RAEngine
+namespace tyro
 {
     class Math
     {

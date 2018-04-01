@@ -11,7 +11,7 @@
 #include "RAEnginePrerequisites.h"
 #include "RAES2TextOverlay.h"
 
-namespace RAEngine
+namespace tyro
 {
     class OverlayManager
     {
@@ -20,7 +20,7 @@ namespace RAEngine
         
         ~OverlayManager() {}
         
-        RAEngine::ObjectID AddOverlay(ES2TextOverlaySPtr overlay);
+        tyro::ObjectID AddOverlay(ES2TextOverlaySPtr overlay);
         
         ES2TextOverlaySPtr GetOverlay(ObjectID objID);
         

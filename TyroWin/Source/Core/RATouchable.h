@@ -17,7 +17,7 @@
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/archives/binary.hpp>
 
-namespace RAEngine
+namespace tyro
 {
     struct TouchInfo
     {
@@ -94,22 +94,22 @@ namespace RAEngine
             return false;
         }
         
-        virtual void HandleOneFingerTap(RAEngine::HitProxy* proxy, RAEngine::TouchInfo& tInfo, const RAEngine::Camera* camera)
+        virtual void HandleOneFingerTap(tyro::HitProxy* proxy, tyro::TouchInfo& tInfo, const tyro::Camera* camera)
         {}
         
-        virtual void HandleOneFingerPan(RAEngine::HitProxy* proxy, RAEngine::TouchInfo& tInfo, const RAEngine::Camera* camera)
+        virtual void HandleOneFingerPan(tyro::HitProxy* proxy, tyro::TouchInfo& tInfo, const tyro::Camera* camera)
         {}
         
-        virtual void HandleTwoFingerPan(RAEngine::HitProxy* proxy, RAEngine::TouchInfo& tInfo, const RAEngine::Camera* camera)
+        virtual void HandleTwoFingerPan(tyro::HitProxy* proxy, tyro::TouchInfo& tInfo, const tyro::Camera* camera)
         {}
         
-        virtual void HandleTwoFingerPinch(RAEngine::HitProxy* proxy, RAEngine::TouchInfo& tInfo, const RAEngine::Camera* camera)
+        virtual void HandleTwoFingerPinch(tyro::HitProxy* proxy, tyro::TouchInfo& tInfo, const tyro::Camera* camera)
         {}
         
-        virtual void HandleTwoFingerRotation(RAEngine::HitProxy* proxy, RAEngine::TouchInfo& tInfo, const RAEngine::Camera* camera)
+        virtual void HandleTwoFingerRotation(tyro::HitProxy* proxy, tyro::TouchInfo& tInfo, const tyro::Camera* camera)
         {}
 
-//        virtual bool ContainsHitProxy(RAEngine::HitProxy* proxy)
+//        virtual bool ContainsHitProxy(tyro::HitProxy* proxy)
 //        {
 //            return false;
 //        }
@@ -132,5 +132,5 @@ namespace RAEngine
     };
 }
 
-CEREAL_REGISTER_TYPE(RAEngine::Touchable);
+CEREAL_REGISTER_TYPE(tyro::Touchable);
 

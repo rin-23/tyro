@@ -12,7 +12,7 @@
 #include <GL/glew.h>
 #include "RAEnginePrerequisites.h"
 
-namespace RAEngine
+namespace tyro
 {
     class ES2VertexArray
     {

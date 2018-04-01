@@ -3,7 +3,7 @@
 //#define GLFW_DLL
 
 
-namespace RAEngine
+namespace tyro
 {
 
 void window_close_callback(GLFWwindow* window)

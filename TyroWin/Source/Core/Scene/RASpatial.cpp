@@ -12,7 +12,7 @@
 #include "Wm5APoint.h"
 #include "RAES2BBox.h"
 
-namespace RAEngine
+namespace tyro
 {
     ObjectID Spatial::mNextID = 1;
     
@@ -79,7 +79,7 @@ namespace RAEngine
         }
      }
     
-    void Spatial::GetHitProxies(RAEngine::VisibleSet* visibleSet)
+    void Spatial::GetHitProxies(tyro::VisibleSet* visibleSet)
     {}
     
     Wm5::Vector3f Spatial::ConvertWorldToLocalPosition(const Wm5::Vector3f& pos) const

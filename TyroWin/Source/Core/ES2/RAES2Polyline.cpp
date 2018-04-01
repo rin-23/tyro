@@ -8,7 +8,7 @@
 
 #include "RAES2Polyline.h"
 
-namespace RAEngine
+namespace tyro
 {
     void ES2Polyline::Init(bool isContigious)
     {

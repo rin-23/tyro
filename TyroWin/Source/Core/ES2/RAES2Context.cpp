@@ -2,8 +2,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-using namespace RAEngine;
-
+namespace tyro 
+{
 ES2Context::ES2Context(GLFWwindow* window)
 :
 mWindow(window)
@@ -27,4 +27,5 @@ void ES2Context::swapBuffers()
 void ES2Context::getFramebufferSize(int* width, int* height) 
 {
 	glfwGetFramebufferSize(mWindow, width, height);
+}
 }

@@ -21,12 +21,12 @@
 namespace Ossa
 {
 
-//int STLExporter::ExportToBinarySTL(const RAEngine::ES2TriMesh& mesh, const std::string& path)
+//int STLExporter::ExportToBinarySTL(const tyro::ES2TriMesh& mesh, const std::string& path)
 //{
 //    return ExportToBinarySTL(mesh, path, Transform::IDENTITY);
 //}
 //
-int STLExporter::ExportToBinarySTL(RAEngine::ES2TriMesh* mesh, const std::string& path)
+int STLExporter::ExportToBinarySTL(tyro::ES2TriMesh* mesh, const std::string& path)
 {
     FILE* pFile;
     pFile = fopen(path.data(), "wb");
@@ -52,7 +52,7 @@ int STLExporter::ExportToBinarySTL(RAEngine::ES2TriMesh* mesh, const std::string
         return 0;
     }
     
-    RAEngine::VertexBufferAccessor vba(mesh->GetVisualEffect()->GetVertexFormat(), mesh->GetVertexBuffer().get());
+    tyro::VertexBufferAccessor vba(mesh->GetVisualEffect()->GetVertexFormat(), mesh->GetVertexBuffer().get());
     vba.MapRead();
     unsigned int* indicies = (unsigned int*) mesh->GetIndexBuffer()->MapRead();
 
@@ -119,7 +119,7 @@ int STLExporter::ExportToBinarySTL(Ossa::ES2Plate* mesh, const std::string& path
         return 0;
     }
     
-    RAEngine::VertexBufferAccessor vba(mesh->GetVisualEffect()->GetVertexFormat(), mesh->GetVertexBuffer().get());
+    tyro::VertexBufferAccessor vba(mesh->GetVisualEffect()->GetVertexFormat(), mesh->GetVertexBuffer().get());
     vba.MapRead();
     unsigned int* indicies = (unsigned int*) mesh->GetIndexBuffer()->MapRead();
     
@@ -199,7 +199,7 @@ int STLExporter::ExportToBinarySTL(Ossa::ScrewNode* node, const std::string& pat
     ScrewNode* s_node = node;
     assert(s_node);
     
-    RAEngine::ES2CylinderSPtr meshes[2] = {s_node->GetHeadShaftNode()->GetHead(), s_node->GetHeadShaftNode()->GetShaft()};
+    tyro::ES2CylinderSPtr meshes[2] = {s_node->GetHeadShaftNode()->GetHead(), s_node->GetHeadShaftNode()->GetShaft()};
 
     uint32_t nTriangles = meshes[0]->GetNumTriangles() + meshes[1]->GetNumTriangles();
     if (fwrite(&nTriangles, sizeof(uint32_t), 1, pFile) != 1)
@@ -211,8 +211,8 @@ int STLExporter::ExportToBinarySTL(Ossa::ScrewNode* node, const std::string& pat
     
     for (int m_index = 0; m_index < 2; ++m_index)
     {
-        RAEngine::ES2CylinderSPtr head = meshes[m_index];
-        RAEngine::VertexBufferAccessor vba(head->GetVisualEffect()->GetVertexFormat(), head->GetVertexBuffer().get());
+        tyro::ES2CylinderSPtr head = meshes[m_index];
+        tyro::VertexBufferAccessor vba(head->GetVisualEffect()->GetVertexFormat(), head->GetVertexBuffer().get());
         vba.MapRead();
         unsigned int* indicies = (unsigned int*) head->GetIndexBuffer()->MapRead();
         
@@ -254,7 +254,7 @@ int STLExporter::ExportToBinarySTL(Ossa::ScrewNode* node, const std::string& pat
 }
 */
 
-//int STLExporter::ExportToASCIISTL(const RAEngine::ES2TriMesh& plate, const std::string& path)
+//int STLExporter::ExportToASCIISTL(const tyro::ES2TriMesh& plate, const std::string& path)
 //{
 //    return 0;
 //}

@@ -5,7 +5,7 @@
 #include <GLFW/glfw3.h>
 #include "RAES2Context.h"
 
-namespace RAEngine 
+namespace tyro 
 {
     class Window 
     {

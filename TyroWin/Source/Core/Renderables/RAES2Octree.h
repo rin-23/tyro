@@ -10,7 +10,7 @@
 
 #include "RAES2DefaultPolyline.h"
 
-namespace RAEngine
+namespace tyro
 {
     class ES2Octree : public ES2DefaultPolyline
     {
@@ -28,17 +28,17 @@ namespace RAEngine
         template<class Archive>
         void save(Archive & archive, std::uint32_t const version) const
         {
-            archive(cereal::virtual_base_class<RAEngine::ES2DefaultPolyline>(this));
+            archive(cereal::virtual_base_class<tyro::ES2DefaultPolyline>(this));
         }
         
         template<class Archive>
         void load(Archive & archive, std::uint32_t const version)
         {
-            archive(cereal::virtual_base_class<RAEngine::ES2DefaultPolyline>(this));
+            archive(cereal::virtual_base_class<tyro::ES2DefaultPolyline>(this));
         }
     protected:
         void Init();
     };
 }
 
-CEREAL_REGISTER_TYPE(RAEngine::ES2Octree);
+CEREAL_REGISTER_TYPE(tyro::ES2Octree);

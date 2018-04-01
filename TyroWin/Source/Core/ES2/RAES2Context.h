@@ -2,7 +2,7 @@
 
 struct GLFWwindow;
 
-namespace RAEngine 
+namespace tyro 
 {
 	class ES2Context
 	{

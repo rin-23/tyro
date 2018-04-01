@@ -12,7 +12,7 @@
 //#include <OpenGLES/ES2/glext.h>
 #include <GL/glew.h>
 
-namespace RAEngine
+namespace tyro
 {
 
 ES2VertexHardwareBuffer::ES2VertexHardwareBuffer()

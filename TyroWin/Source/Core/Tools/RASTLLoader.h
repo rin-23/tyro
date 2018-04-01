@@ -11,7 +11,7 @@
 #include <string>
 #include <fstream>
 
-namespace RAEngine
+namespace tyro
 {
     class STLLoader
     {

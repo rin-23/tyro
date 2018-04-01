@@ -1,7 +1,7 @@
 #include "RAPointOctree.h"
 #include "Wm5IntrBox3Box3.h"
 
-namespace RAEngine
+namespace tyro
 {
     PointOctree::PointOctree(const Wm5::Vector3f& origin, const Wm5::Vector3f& halfDimension, const int& maxDepth)
     {

@@ -11,7 +11,7 @@
 #include "RALogManager.h"
 #include "Wm5Vector2.h"
 
-namespace RAEngine
+namespace tyro
 {
     TextureBuffer::TextureBuffer(int format, int type, void* data, int width, int height)
     {

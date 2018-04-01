@@ -8,7 +8,7 @@
 
 #include "RAES2Polypoint.h"
 
-namespace RAEngine
+namespace tyro
 {
     void ES2Polypoint::Init()
     {

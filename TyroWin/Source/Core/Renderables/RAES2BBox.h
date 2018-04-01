@@ -10,7 +10,7 @@
 
 #include "RAES2DefaultPolyline.h"
 
-namespace RAEngine
+namespace tyro
 {
     class ES2BBox : public ES2DefaultPolyline
     {
@@ -43,4 +43,4 @@ namespace RAEngine
     };
 }
 
-CEREAL_REGISTER_TYPE(RAEngine::ES2BBox);
+CEREAL_REGISTER_TYPE(tyro::ES2BBox);

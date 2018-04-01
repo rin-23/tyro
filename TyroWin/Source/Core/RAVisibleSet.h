@@ -13,7 +13,7 @@
 #include <functional>
 #include "RAEnginePrerequisites.h"
 
-namespace RAEngine
+namespace tyro
 {
     class VisibleSet
     {

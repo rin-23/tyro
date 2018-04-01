@@ -27,7 +27,7 @@
 #include "RAES2Renderable.h"
 
 
-namespace RAEngine 
+namespace tyro 
 {
 	ES2Renderer::ES2Renderer()
 	{}

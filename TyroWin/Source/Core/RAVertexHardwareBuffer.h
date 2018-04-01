@@ -10,7 +10,7 @@
 
 #include "RAHardwareBuffer.h"
 
-namespace RAEngine
+namespace tyro
 {
     class VertexHardwareBuffer : public HardwareBuffer
     {

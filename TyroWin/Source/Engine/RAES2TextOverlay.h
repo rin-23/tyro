@@ -13,7 +13,7 @@
 #include "Wm5Vector3.h"
 #include "Wm5Vector4.h"
 
-namespace RAEngine
+namespace tyro
 {
     class ES2TextOverlay : public ES2Renderable
     {

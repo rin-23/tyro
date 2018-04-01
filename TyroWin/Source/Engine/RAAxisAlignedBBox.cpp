@@ -13,7 +13,7 @@ using Wm5::Vector3f;
 using Wm5::HMatrix;
 using Wm5::APoint;
 
-namespace RAEngine
+namespace tyro
 {
 
 AxisAlignedBBox::AxisAlignedBBox() : AxisAlignedBox3()

@@ -11,7 +11,7 @@
 #include "RAEnginePrerequisites.h"
 #include "Wm5AxisAlignedBox3.h"
 
-namespace RAEngine
+namespace tyro
 {
     class AxisAlignedBBox : public Wm5::AxisAlignedBox3<float>
     {

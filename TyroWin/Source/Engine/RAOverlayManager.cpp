@@ -11,7 +11,7 @@
 #include "RAES2TextOverlay.h"
 #include "RAVisibleSet.h"
 
-namespace RAEngine
+namespace tyro
 {
 
 OverlayManager* OverlayManager::mInstance = 0;
@@ -25,7 +25,7 @@ OverlayManager* OverlayManager::GetSingleton()
     return mInstance;
 }
 
-RAEngine::ObjectID OverlayManager::AddOverlay(ES2TextOverlaySPtr overlay)
+tyro::ObjectID OverlayManager::AddOverlay(ES2TextOverlaySPtr overlay)
 {
     auto it = mOverlays.find(overlay->GetID());
     if (it == mOverlays.end())

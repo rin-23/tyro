@@ -10,7 +10,7 @@
 
 #include "RAES2TriMesh.h"
 
-namespace RAEngine
+namespace tyro
 {   
     //Abstract class thats meant to be subclassed
     class HitProxy : public ES2TriMesh
@@ -66,7 +66,7 @@ namespace RAEngine
 
         static RectHitProxySPtr Create(TouchableSPtr touchable, ObjectID touchable_id);
         
-        virtual void UpdateUniformsWithCamera(const RAEngine::Camera* camera) override;
+        virtual void UpdateUniformsWithCamera(const tyro::Camera* camera) override;
     protected:
         void Init(TouchableSPtr touchable, ObjectID touchable_id);
     };
@@ -79,7 +79,7 @@ namespace RAEngine
 
         static TriHitProxySPtr Create(ES2TriMeshSPtr mesh, TouchableSPtr touchable, ObjectID touchable_id);
 
-        virtual void UpdateUniformsWithCamera(const RAEngine::Camera* camera) override;
+        virtual void UpdateUniformsWithCamera(const tyro::Camera* camera) override;
     protected:
         void Init(ES2TriMeshSPtr mesh, TouchableSPtr touchable, ObjectID touchable_id);
     };

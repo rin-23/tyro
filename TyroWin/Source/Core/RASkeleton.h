@@ -11,7 +11,7 @@
 #include "Wm5HMatrix.h"
 #include "RAEnginePrerequisites.h"
 
-namespace RAEngine
+namespace tyro
 {
     struct Joint
     {

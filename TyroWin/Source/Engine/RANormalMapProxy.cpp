@@ -12,7 +12,7 @@
 #include "RAES2VisualEffect.h"
 #include "RAES2ShaderUniforms.h"
 
-namespace RAEngine
+namespace tyro
 {
 void NormalProxy::Init(ES2TriMeshSPtr mesh)
 {
@@ -30,7 +30,7 @@ NormalProxySPtr NormalProxy::Create(ES2TriMeshSPtr mesh)
     return ptr;
 }
 
-void NormalProxy::UpdateUniformsWithCamera(const RAEngine::Camera* camera)
+void NormalProxy::UpdateUniformsWithCamera(const tyro::Camera* camera)
 {
     Wm5::HMatrix modelViewMatrix = camera->GetViewMatrix() * WorldTransform.Matrix();
     Wm5::HMatrix MVPMatrix =  camera->GetProjectionMatrix() * modelViewMatrix;

@@ -11,7 +11,7 @@
 #include "RAEnginePrerequisites.h"
 #include "Wm5Vector4.h"
 
-namespace RAEngine
+namespace tyro
 {
     class TextureBuffer
     {

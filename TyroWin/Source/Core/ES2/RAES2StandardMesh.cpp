@@ -20,7 +20,7 @@
 
 using Wm5::Vector3f;
 
-namespace RAEngine
+namespace tyro
 {
 
 void ES2Cylinder::Init(int axisSamples, int radialSamples, float topRadius, float btmRadius, float height, bool open)
@@ -186,7 +186,7 @@ void ES2Sphere::Init(int zSamples, int radialSamples, float radius)
     bool mHasTCoords = false;
     
     // Create a vertex buffer.
-    ES2VertexHardwareBufferSPtr vbuffer = std::make_shared<RAEngine::ES2VertexHardwareBuffer>(stride, numVertices, nullptr, HardwareBuffer::BU_STATIC);
+    ES2VertexHardwareBufferSPtr vbuffer = std::make_shared<tyro::ES2VertexHardwareBuffer>(stride, numVertices, nullptr, HardwareBuffer::BU_STATIC);
     
     VertexBufferAccessor vba(GetVisualEffect()->GetVertexFormat(), vbuffer.get());
     vba.Map(HardwareBuffer::BL_READ_WRITE);

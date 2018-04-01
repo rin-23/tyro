@@ -8,7 +8,7 @@
 
 #include "RAHardwareBuffer.h"
 
-namespace RAEngine
+namespace tyro
 {
 //zero size and static usage
 HardwareBuffer::HardwareBuffer()

@@ -17,7 +17,7 @@
 //http://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Text_Rendering_01
 //http://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Text_Rendering_02
 
-namespace RAEngine
+namespace tyro
 {
     class ES2Font
     {

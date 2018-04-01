@@ -10,7 +10,7 @@
 
 #include "RAES2TriMesh.h"
 
-namespace RAEngine
+namespace tyro
 {
     class NormalProxy : public ES2TriMesh
     {
@@ -21,7 +21,7 @@ namespace RAEngine
         
         static NormalProxySPtr Create(ES2TriMeshSPtr mesh);
         
-        virtual void UpdateUniformsWithCamera(const RAEngine::Camera* camera) override;
+        virtual void UpdateUniformsWithCamera(const tyro::Camera* camera) override;
         
     protected:
         

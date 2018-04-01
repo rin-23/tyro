@@ -10,7 +10,7 @@
 #include "RAES2CoreVisualEffects.h"
 #include "RATriOctree.h"
 
-namespace RAEngine
+namespace tyro
 {
     
 void ES2Octree::Init()

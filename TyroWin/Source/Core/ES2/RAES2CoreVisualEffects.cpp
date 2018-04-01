@@ -11,7 +11,7 @@
 #include "GLStructures.h"
 #include "RAES2VisualEffect.h"
 
-namespace RAEngine
+namespace tyro
 {
 
 ES2VisualEffectSPtr ES2CoreVisualEffects::ColorPicking()

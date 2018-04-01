@@ -12,7 +12,7 @@
 #include <GL/glew.h>
 #include "RALogManager.h"
 
-namespace RAEngine
+namespace tyro
 {
 
 ES2Texture2D::ES2Texture2D(TextureFormat format, int width, int height)

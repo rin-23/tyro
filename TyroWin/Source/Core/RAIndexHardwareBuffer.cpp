@@ -8,7 +8,7 @@
 
 #include "RAIndexHardwareBuffer.h"
 
-namespace RAEngine
+namespace tyro
 {
 
 IndexHardwareBuffer::IndexHardwareBuffer()

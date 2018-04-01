@@ -15,7 +15,7 @@
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/memory.hpp>
 
-namespace RAEngine
+namespace tyro
 {
     class ES2IndexHardwareBuffer : public IndexHardwareBuffer
     {

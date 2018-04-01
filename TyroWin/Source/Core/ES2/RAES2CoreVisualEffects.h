@@ -10,7 +10,7 @@
 
 #include "RAEnginePrerequisites.h"
 
-namespace RAEngine
+namespace tyro
 {
     class ES2CoreVisualEffects
     {

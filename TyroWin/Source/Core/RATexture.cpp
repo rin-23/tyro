@@ -8,7 +8,7 @@
 
 #include "RATexture.h"
 
-namespace RAEngine
+namespace tyro
 {
 
 Texture::Texture(TextureFormat format, TextureType type)

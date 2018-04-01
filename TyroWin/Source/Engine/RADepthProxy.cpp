@@ -10,7 +10,7 @@
 #include "RAES2CoreVisualEffects.h"
 #include "RACamera.h"
 
-namespace RAEngine
+namespace tyro
 {
 
 DepthProxySPtr DepthProxy::Create(ES2TriMeshSPtr mesh)
@@ -29,7 +29,7 @@ void DepthProxy::Init(ES2TriMeshSPtr mesh)
     LocalBoundBox = mesh->LocalBoundBox;
 }
 
-void DepthProxy::UpdateUniformsWithCamera(const RAEngine::Camera* camera)
+void DepthProxy::UpdateUniformsWithCamera(const tyro::Camera* camera)
 {
     Wm5::HMatrix MVPMatrix = camera->GetProjectionMatrix() * camera->GetViewMatrix() * WorldTransform.Matrix();
     GetVisualEffect()->GetUniforms()->UpdateFloatUniform(0, MVPMatrix.Transpose());

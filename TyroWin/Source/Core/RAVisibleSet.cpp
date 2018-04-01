@@ -10,7 +10,7 @@
 #include "RASpatial.h"
 #include <algorithm>
 
-namespace RAEngine
+namespace tyro
 {
 
 VisibleSet::VisibleSet()

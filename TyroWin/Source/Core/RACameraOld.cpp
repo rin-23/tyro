@@ -19,7 +19,7 @@ using Wm5::HMatrix;
 using Wm5::AVector;
 using Wm5::APoint;
 
-namespace RAEngine
+namespace tyro
 {
     Camera::Camera()
     {

@@ -12,7 +12,7 @@
 #include "RAES2DefaultPolyline.h"
 #include "RAEnginePrerequisites.h"
 
-namespace RAEngine
+namespace tyro
 {
     class ES2Cylinder : public ES2DefaultTriMesh
     {
@@ -208,10 +208,10 @@ namespace RAEngine
 }
 
 
-CEREAL_REGISTER_TYPE(RAEngine::ES2Cylinder);
-CEREAL_REGISTER_TYPE(RAEngine::ES2Sphere);
-CEREAL_REGISTER_TYPE(RAEngine::ES2Box);
-CEREAL_REGISTER_TYPE(RAEngine::ES2Line);
-CEREAL_REGISTER_TYPE(RAEngine::ES2Rectangle);
-CEREAL_REGISTER_TYPE(RAEngine::ES2Vector);
+CEREAL_REGISTER_TYPE(tyro::ES2Cylinder);
+CEREAL_REGISTER_TYPE(tyro::ES2Sphere);
+CEREAL_REGISTER_TYPE(tyro::ES2Box);
+CEREAL_REGISTER_TYPE(tyro::ES2Line);
+CEREAL_REGISTER_TYPE(tyro::ES2Rectangle);
+CEREAL_REGISTER_TYPE(tyro::ES2Vector);
 

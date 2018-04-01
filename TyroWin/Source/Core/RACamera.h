@@ -12,7 +12,7 @@
 #include "Wm5HQuaternion.h"
 #include "Wm5Vector4.h"
 
-namespace RAEngine
+namespace tyro
 {
     class Camera
     {

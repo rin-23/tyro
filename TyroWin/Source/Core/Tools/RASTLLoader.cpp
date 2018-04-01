@@ -10,7 +10,7 @@
 #include "RALogManager.h"
 #include "RAMath.h"
 
-namespace RAEngine
+namespace tyro
 {
     STLLoader::STLLoader(const std::string& filePath)
     :

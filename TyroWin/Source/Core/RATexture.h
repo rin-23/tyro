@@ -8,7 +8,7 @@
 
 #pragma once
 
-namespace RAEngine
+namespace tyro
 {
     class Texture
     {

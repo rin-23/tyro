@@ -8,7 +8,7 @@
 
 #include "RANode.h"
 
-namespace RAEngine
+namespace tyro
 {
 
 void Node::Init()
@@ -187,7 +187,7 @@ void Node::UpdateTransformations()
     }
 }
 
-void Node::GetVisibleSet (RAEngine::VisibleSet* visibleSet)
+void Node::GetVisibleSet (tyro::VisibleSet* visibleSet)
 {
     if (this->Visible)
     {
@@ -203,7 +203,7 @@ void Node::GetVisibleSet (RAEngine::VisibleSet* visibleSet)
     }
 }
 
-void Node::GetHitProxies(RAEngine::VisibleSet* visibleSet)
+void Node::GetHitProxies(tyro::VisibleSet* visibleSet)
 {
     if (this->Visible)
     {

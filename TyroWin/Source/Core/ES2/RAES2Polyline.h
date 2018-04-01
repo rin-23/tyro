@@ -10,7 +10,7 @@
 
 #include "RAES2Renderable.h"
 
-namespace RAEngine
+namespace tyro
 {
     class ES2Polyline : public ES2Renderable
     {
@@ -22,21 +22,21 @@ namespace RAEngine
         
         int GetNumberOfSegments() const;
         
-        virtual void UpdateUniformsWithCamera(const RAEngine::Camera* camera) override = 0;
+        virtual void UpdateUniformsWithCamera(const tyro::Camera* camera) override = 0;
 
     public: //Serialization
         
         template<class Archive>
         void save(Archive & archive, std::uint32_t const version) const
         {
-            archive(cereal::virtual_base_class<RAEngine::ES2Renderable>(this));
+            archive(cereal::virtual_base_class<tyro::ES2Renderable>(this));
             archive(mIsContigious);
         }
         
         template<class Archive>
         void load(Archive & archive, std::uint32_t const version)
         {
-            archive(cereal::virtual_base_class<RAEngine::ES2Renderable>(this));
+            archive(cereal::virtual_base_class<tyro::ES2Renderable>(this));
             archive(mIsContigious);
         }
 
@@ -50,6 +50,6 @@ namespace RAEngine
     };
 }
 
-CEREAL_REGISTER_TYPE(RAEngine::ES2Polyline);
+CEREAL_REGISTER_TYPE(tyro::ES2Polyline);
 
 

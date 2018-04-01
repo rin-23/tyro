@@ -13,7 +13,7 @@
 //#include <OpenGLES/ES2/gl.h>
 #include <GL/glew.h>
 
-namespace RAEngine
+namespace tyro
 {
     class ES2ShaderProgram
     {

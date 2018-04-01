@@ -10,7 +10,7 @@
 
 #include <string>
 
-namespace RAEngine
+namespace tyro
 {
     std::string GetFilePath(const std::string& fileName, const std::string& extension);
 }

@@ -10,7 +10,7 @@
 #include <GL/glew.h>
 #include "RALogManager.h"
 
-namespace RAEngine
+namespace tyro
 {
     ES2OffScreenBuffer::ES2OffScreenBuffer(){ }
     

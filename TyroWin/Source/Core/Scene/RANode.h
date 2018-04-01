@@ -13,7 +13,7 @@
 #include "RAEnginePrerequisites.h"
 #include <cereal/types/vector.hpp>
 
-namespace RAEngine
+namespace tyro
 {
     class Node : public Spatial
     {
@@ -40,9 +40,9 @@ namespace RAEngine
         
         SpatialSPtr GetChildAt(NodeID index) const;
         
-        virtual void GetVisibleSet (RAEngine::VisibleSet* visibleSet) override;
+        virtual void GetVisibleSet (tyro::VisibleSet* visibleSet) override;
         
-        virtual void GetHitProxies(RAEngine::VisibleSet* visibleSet) override;
+        virtual void GetHitProxies(tyro::VisibleSet* visibleSet) override;
         
     public://Serialization
         template<class Archive>
@@ -78,4 +78,4 @@ namespace RAEngine
     }    
 }
 
-CEREAL_REGISTER_TYPE(RAEngine::Node);
+CEREAL_REGISTER_TYPE(tyro::Node);
