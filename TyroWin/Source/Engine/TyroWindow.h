@@ -18,9 +18,9 @@ namespace tyro
             MB_Middle
         };
         
-        Window() {}
+        Window();
         
-        ~Window() {}
+        ~Window();
 
         //setup glfw
         //return -1 if failed to initialize glfw window
@@ -44,10 +44,17 @@ namespace tyro
         std::function<bool(Window& window, unsigned int key, int modifiers)> callback_key_pressed;
         std::function<bool(Window& window, unsigned int key, int modifiers)> callback_key_down;
         std::function<bool(Window& window, unsigned int key, int modifiers)> callback_key_up;
+        std::function<bool(Window& window, unsigned int w, unsigned int h)> callback_window_resize;
 
         bool mouse_down(MouseButton button, int modifier);
         bool mouse_up(MouseButton button, int modifier);
-
+        bool mouse_move(int mouse_x, int mouse_y);
+        bool mouse_scroll(float delta_y);
+        bool key_pressed(unsigned int unicode_key, int modifiers);
+        bool key_down(int key, int modifiers);
+        bool key_up(int key, int modifiers);
+        bool window_resize(unsigned w, unsigned int h);
+        
     private:
         GLFWwindow* m_glfw_window;
         ES2Context* m_gl_context;

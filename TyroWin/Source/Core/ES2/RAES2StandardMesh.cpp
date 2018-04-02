@@ -505,6 +505,8 @@ void ES2Box::Init (float xExtent, float yExtent, float zExtent)
     LocalBoundBox = AxisAlignedBBox(Vector3f(xExtent, yExtent, zExtent), Vector3f(-xExtent, -yExtent, -zExtent));
 
     SetVertexBuffer(vbuffer);
+    ES2VertexArraySPtr varray = std::make_shared<ES2VertexArray>(this->GetVisualEffect(), vbuffer);
+	SetVertexArray(varray);
     SetIndexBuffer(ibuffer);
 }
     

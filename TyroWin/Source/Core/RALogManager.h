@@ -6,8 +6,7 @@
 //  Copyright (c) 2014 Rinat Abdrashitov. All rights reserved.
 //
 
-#ifndef __PAM2__RALogManager__
-#define __PAM2__RALogManager__
+#pragma once 
 
 #include <assert.h>
 #include <iostream>
@@ -129,9 +128,26 @@ fprintf(stderr,"[ERROR] OpenGL ES2 error 0x%04X %s in %s at line %i\n in file:%s
 assert(false); \
 } \
 }
+
+#define GL_CHECK_ERROR_GLEW_HACK \
+{ \
+GLenum e = glGetError();\
+if (e != GL_NO_ERROR) \
+{ \
+const char * errorString = ""; \
+switch(e) \
+{ \
+case GL_INVALID_ENUM:       errorString = "GL_INVALID_ENUM";        break; \
+case GL_INVALID_VALUE:      errorString = "GL_INVALID_VALUE";       break; \
+case GL_INVALID_OPERATION:  errorString = "GL_INVALID_OPERATION";   break; \
+case GL_OUT_OF_MEMORY:      errorString = "GL_OUT_OF_MEMORY";       break; \
+default:                                                            break; \
+} \
+fprintf(stderr,"[ERROR] OpenGL ES2 error 0x%04X %s in %s at line %i\n in file:%s\n", e, errorString, __FUNCTION__, __LINE__, __FILE__); \
+} \
+}
+
 #else
 #define GL_CHECK_ERROR {}
 #endif
 
-
-#endif /* defined(__PAM2__RALogManager__) */

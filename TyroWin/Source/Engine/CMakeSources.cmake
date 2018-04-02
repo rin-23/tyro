@@ -7,6 +7,7 @@ set(TYRO_INC_LOCAL
 "Engine/RAOverlayManager.h" 
 "Engine/RAPointOctree.h" 
 "Engine/TyroWindow.h"
+"Engine/TyroApp.h"
 )
 
 set(TYRO_SRC_LOCAL 
@@ -18,6 +19,7 @@ set(TYRO_SRC_LOCAL
 "Engine/RAOverlayManager.cpp" 
 "Engine/RAPointOctree.cpp"
 "Engine/TyroWindow.cpp" 
+"Engine/TyroApp.cpp"
 )
 
 set(TYRO_ENGINE_SRC

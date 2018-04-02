@@ -7,6 +7,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 message(STATUS "Compiling on Unix")
 
+IF(CMAKE_BUILD_TYPE MATCHES Debug)
+    message("Running a debug build") 
+ENDIF()
+
+message("CMAKE_CXX_FLAGS_DEBUG is ${CMAKE_CXX_FLAGS_DEBUG}")
+message("CMAKE_CXX_FLAGS_RELEASE is ${CMAKE_CXX_FLAGS_RELEASE}")
+
 find_package(PkgConfig REQUIRED)
 pkg_search_module(GLFW glfw3)
 find_package(OpenGL REQUIRED)
@@ -84,9 +91,15 @@ include_directories(${FREETYPE_INCLUDE_DIRS})
 
 add_executable(tyro main.cpp ${TYRO_CORE_SRC} ${TYRO_ENGINE_SRC})
 
+IF(CMAKE_BUILD_TYPE MATCHES Debug)
+    add_definitions(-D_DEBUG)
+    #target_compile_definitions(tyro PRIVATE _DEBUG) 
+ENDIF()
+
 target_link_libraries(tyro ${OPENGL_gl_LIBRARY})
 target_link_libraries(tyro ${GLFW_LIBRARIES})
 target_link_libraries(tyro ${GLEW_LIBRARIES})
 target_link_libraries(tyro ${FREETYPE_LIBRARIES})
 target_link_libraries(tyro TyroMath)
 #target_link_libraries(tyro TyroCore)
+

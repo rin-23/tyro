@@ -1,5 +1,5 @@
 #include "TyroWindow.h"
-
+#include "RAEnginePrerequisites.h"
 /*
  * C-style callbacks for GLFW
  */
@@ -37,8 +37,8 @@ void glfw_char_mods_callback(GLFWwindow* window, unsigned int codepoint, int mod
 void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int modifier)
 {
     //if (key == /*
- * C-style callbacks for GLFW
- */GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    //C-style callbacks for GLFW
+    //GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     //  glfwSetWindowShouldClose(window, GL_TRUE);
 
     tyro::Window* tyro_window = nullptr;
@@ -51,13 +51,12 @@ void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, in
 }
 
 void glfw_window_size(GLFWwindow* window, int width, int height)
-{
+{   
     int w = width;
     int h = height;
-static 
     tyro::Window* tyro_window = nullptr;
     tyro_window = static_cast<tyro::Window*>(glfwGetWindowUserPointer(window));
-    tyro_window->post_resize(w, h);
+    tyro_window->window_resize(w, h);
 }
 
 void glfw_mouse_move(GLFWwindow* window, double x, double y)
@@ -80,25 +79,45 @@ void glfw_drop_callback(GLFWwindow *window,int count,const char **filenames)
 {
 }
 
-void window_close_callback(GLFWwindow* window)
+void glfw_window_close_callback(GLFWwindow* window)
 {
-	glfwSetWindowShouldClose(window, GLFW_TRUE);
+    //glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
 namespace tyro
 {
 
+Window::Window()
+{
+    // C-style callbacks
+    callback_init           = nullptr;
+    callback_pre_draw       = nullptr;
+    callback_post_draw      = nullptr;
+    callback_mouse_down     = nullptr;
+    callback_mouse_up       = nullptr;
+    callback_mouse_move     = nullptr;
+    callback_mouse_scroll   = nullptr;
+    callback_key_down       = nullptr;
+    callback_key_up         = nullptr;
+    callback_window_resize  = nullptr;
+}
+
+Window::~Window()
+{
+}
+
 int Window::Init()
 {
     /* Initialize the library */
-	if (!glfwInit())
-		return -1;
-
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
+    if (!glfwInit())
+        return -1;
+    
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
-    m_glfw_window = glfwCreateWindow(800, 800, "Hello World", NULL, NULL);
+    m_glfw_window = glfwCreateWindow(1200, 1200, "Hello World", NULL, NULL);
     if (!m_glfw_window)
     {
         glfwTerminate();
@@ -107,13 +126,17 @@ int Window::Init()
 
      /* Make the window's context current */
     glfwMakeContextCurrent(m_glfw_window);
-	glfwSetWindowCloseCallback(m_glfw_window, window_close_callback);
 
 	// start GLEW extension handler
-	glewExperimental = GL_TRUE;
-	glewInit();
-
-    // create opengl es 2 context
+	glewExperimental = true;
+	GLenum err = glewInit();
+    if (GLEW_OK != err)
+        RA_LOG_ERROR_ASSERT("Failed to initialize GLEW %s\n", glewGetErrorString(err));
+    
+    if (GLEW_VERSION_4_4) 
+        RA_LOG_INFO("Yay! OpenGL 4.4 is supported!");
+    
+    // create opengl context
     // @TODO: make genetal opengl context
 	m_gl_context = new ES2Context(m_glfw_window);
 
@@ -121,6 +144,7 @@ int Window::Init()
     glfwSetWindowUserPointer(m_glfw_window, this);
 
     // Register callbacks
+    glfwSetWindowCloseCallback(m_glfw_window, glfw_window_close_callback);
     glfwSetKeyCallback(m_glfw_window, glfw_key_callback);
     glfwSetCursorPosCallback(m_glfw_window, glfw_mouse_move);
     glfwSetWindowSizeCallback(m_glfw_window, glfw_window_size);
@@ -129,6 +153,9 @@ int Window::Init()
     glfwSetCharModsCallback(m_glfw_window, glfw_char_mods_callback);
     glfwSetDropCallback(m_glfw_window, glfw_drop_callback);
     
+    //@TODO seems to be a bug with glew
+    GL_CHECK_ERROR_GLEW_HACK;
+
     return 0;
 }
 
@@ -138,10 +165,11 @@ int Window::Terminate()
     glfwTerminate();    
 }
 
+//@TODO move all of this inside glfw methods
+
 bool Window::mouse_down(MouseButton button, int modifier)
 {   
-    printf("mouse down pressed\n");
-
+    //printf("mouse down pressed\n");
     if (callback_mouse_down)
         if (callback_mouse_down(*this,static_cast<int>(button), modifier))
             return true;
@@ -151,7 +179,7 @@ bool Window::mouse_down(MouseButton button, int modifier)
 
 bool Window::mouse_up(MouseButton button, int modifier)
 {   
-    printf("mouse up pressed\n");
+    //printf("mouse up pressed\n");
 
     if (callback_mouse_up)
         if (callback_mouse_up(*this,static_cast<int>(button),modifier))
@@ -181,102 +209,37 @@ bool Window::mouse_scroll(float delta_y)
 bool Window::key_pressed(unsigned int unicode_key, int modifiers)
 {
     if (callback_key_pressed)
-      if (callback_key_pressed(*this,unicode_key,modifiers))
-        return true;
+        if (callback_key_pressed(*this, unicode_key,modifiers))
+            return true;
 
-    switch(unicode_key)
-    {
-      case 'A':
-      case 'a':
-      {
-        core.is_animating = !core.is_animating;
-        return true;
-      }
-      case 'F':
-      case 'f':
-      {
-        data().set_face_based(!data().face_based);
-        return true;
-      }
-      case 'I':
-      case 'i':
-      {
-        data().dirty |= MeshGL::DIRTY_NORMAL;
-        data().invert_normals = !data().invert_normals;
-        return true;
-      }
-      case 'L':
-      case 'l':
-      {
-        data().show_lines = !data().show_lines;
-        return true;
-      }
-      case 'O':
-      case 'o':
-      {
-        core.orthographic = !core.orthographic;
-        return true;
-      }
-      case 'T':
-      case 't':
-      {
-        data().show_faces = !data().show_faces;
-        return true;
-      }
-      case 'Z':
-      {
-        snap_to_canonical_quaternion();
-        return true;
-      }
-      case '[':
-      case ']':
-      {
-        if(core.rotation_type == ViewerCore::ROTATION_TYPE_TRACKBALL)
-          core.set_rotation_type(ViewerCore::ROTATION_TYPE_TWO_AXIS_VALUATOR_FIXED_UP);
-        else
-          core.set_rotation_type(ViewerCore::ROTATION_TYPE_TRACKBALL);
-
-        return true;
-      }
-      case '<':
-      case '>':
-      {
-        selected_data_index =
-          (selected_data_index + data_list.size() + (unicode_key=='>'?1:-1))%data_list.size();
-        return true;
-      }
-      case ';':
-        data().show_vertid = !data().show_vertid;
-        return true;
-      case ':':
-        data().show_faceid = !data().show_faceid;
-        return true;
-      default: break;//do nothing
-    }
     return false;
   }
 
-  IGL_INLINE bool Viewer::key_down(int key,int modifiers)
-  {
+bool Window::key_down(int key, int modifiers)
+{
     if (callback_key_down)
-      if (callback_key_down(*this,key,modifiers))
-        return true;
-    for (unsigned int i = 0; i<plugins.size(); ++i)
-      if (plugins[i]->key_down(key, modifiers))
-        return true;
-    return false;
-  }
+        if (callback_key_down(*this,key,modifiers))
+            return true;
 
-  IGL_INLINE bool Viewer::key_up(int key,int modifiers)
-  {
+    return false;
+}
+
+bool Window::key_up(int key, int modifiers)
+{
     if (callback_key_up)
-      if (callback_key_up(*this,key,modifiers))
-        return true;
-
-    for (unsigned int i = 0; i<plugins.size(); ++i)
-      if (plugins[i]->key_up(key, modifiers))
-        return true;
+        if (callback_key_up(*this,key,modifiers))
+            return true;
 
     return false;
-  }
+}
+
+bool Window::window_resize(unsigned int w, unsigned int h)
+{
+    if (callback_window_resize)
+        if (callback_window_resize(*this, w, h))
+            return true;
+
+    return false;
+}
+
 }
