@@ -22,5 +22,8 @@ namespace tyro
         void mouse_up(Window& window, int button, int modifier);
         void mouse_move(Window& window, int mouse_x, int mouse_y);
         void window_resize(Window& window, unsigned int w, unsigned int h);    
+
+        bool mouse_is_down;
+        int gesture_state; 
     };
 }

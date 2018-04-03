@@ -61,24 +61,22 @@ namespace tyro
     }
 
 #pragma mark - Gesture handlers
-	/**
-    void iOSCamera::HandleOneFingerPanGesture(UIPanGestureRecognizer* sender)
+	
+    void iOSCamera::HandleOneFingerPanGesture(int state, Vector2i glTouch)
     {
-        if (sender.numberOfTouches != 1) {
-            return;
-        }
-        
-        GestureState state = GestureStateForRecognizer(sender);
-        Vector2i glTouch = TouchPointForGesture(sender);
+        //GestureState state = GestureStateForRecognizer(sender);
+        //Vector2i glTouch = TouchPointForGesture(sender);
 
-        if (state == GestureState::Began)
+        //if (state == GestureState::Began)
+        if (state == 0)
         {
             mLastLoc = glTouch;
         }
-        else if (state == GestureState::Changed || state == GestureState::Ended)
+        //else if (state == GestureState::Changed || state == GestureState::Ended)
+        else if (state == 1 || state == 2)
         {
             Vector2i diff = glTouch - mLastLoc;
-            float rotX =  Math::DegToRad(diff[1]/3.0f); //because positive angle is clockwise
+            float rotX =  Math::DegToRad(-1*diff[1]/3.0f); //because positive angle is clockwise
             float rotY =  Math::DegToRad(-1*diff[0]/3.0f);
 
             AVector xAxis = GetOrientation().Rotate(AVector::UNIT_X);
@@ -115,7 +113,7 @@ namespace tyro
             mLastLoc = glTouch;
         } 
     }
-    
+    /*
     void iOSCamera::HandleTwoFingerPanGesture(UIPanGestureRecognizer* sender)
     {
         if (sender.numberOfTouches != 2) {

@@ -13,7 +13,9 @@ namespace tyro
     :
     m_tyro_window(nullptr),
     m_gl_rend(nullptr),
-    m_camera(nullptr)
+    m_camera(nullptr),
+    mouse_is_down(false),
+    gesture_state(0)
     {}
 
     App::~App() 
@@ -103,16 +105,29 @@ namespace tyro
     void App::mouse_down(Window& window, int button, int modifier) 
     {
         RA_LOG_INFO("mouse down");
+        mouse_is_down = true;
     }
 
     void App::mouse_up(Window& window, int button, int modifier) 
     {
         RA_LOG_INFO("mouse up");
+        if (mouse_is_down) 
+        {   
+            gesture_state = 2;
+            //m_camera->HandleOneFingerPanGesture(gesture_state, Vector2i(mouse_x, mouse_y));
+        }
+        mouse_is_down = false;
+        gesture_state = 0;
     }
     
     void App::mouse_move(Window& window, int mouse_x, int mouse_y) 
     {
         RA_LOG_INFO("mouse move");
+        if (mouse_is_down) 
+        {   
+            m_camera->HandleOneFingerPanGesture(gesture_state, Vector2i(mouse_x, mouse_y));
+            gesture_state = 1;
+        }
     }
 
     void App::window_resize(Window& window, unsigned int w, unsigned int h)

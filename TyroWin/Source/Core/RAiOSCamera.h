@@ -31,7 +31,7 @@ namespace tyro
         float GetRadius() const;
         void Reset();
 
-        //void HandleOneFingerPanGesture(UIPanGestureRecognizer* sender);
+        void HandleOneFingerPanGesture(int state, Wm5::Vector2i glTouch);
         //void HandleTwoFingerPanGesture(UIPanGestureRecognizer* sender);
         //void HandleRotationGesture(UIRotationGestureRecognizer* sender);
         //void HandlePinchGesture(UIPinchGestureRecognizer* sender);
