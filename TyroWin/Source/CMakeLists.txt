@@ -32,9 +32,14 @@ if (NOT GLEW_FOUND)
     message(STATUS "NOT Found glew")
 endif()
 
+if (NOT OPENGL_GLU_FOUND)
+    message(STATUS "NOT Found glut")
+endif()
+
 if (NOT FREETYPE_FOUND)
     message(STATUS "NOT Found freetype")
 endif()
+
 
 
 add_subdirectory(Math)
@@ -96,7 +101,7 @@ IF(CMAKE_BUILD_TYPE MATCHES Debug)
     #target_compile_definitions(tyro PRIVATE _DEBUG) 
 ENDIF()
 
-target_link_libraries(tyro ${OPENGL_gl_LIBRARY})
+target_link_libraries(tyro ${OPENGL_LIBRARIES})
 target_link_libraries(tyro ${GLFW_LIBRARIES})
 target_link_libraries(tyro ${GLEW_LIBRARIES})
 target_link_libraries(tyro ${FREETYPE_LIBRARIES})

@@ -8,6 +8,11 @@ set(TYRO_INC_LOCAL
 "Engine/RAPointOctree.h" 
 "Engine/TyroWindow.h"
 "Engine/TyroApp.h"
+"Engine/Console.h"
+"Engine/stb_image_write.h"
+"Engine/stb_image.h"
+#"Engine/stbi_DDS_aug.h"
+#"Engine/stbi_DDS_aug_c.h"
 )
 
 set(TYRO_SRC_LOCAL 
@@ -20,6 +25,9 @@ set(TYRO_SRC_LOCAL
 "Engine/RAPointOctree.cpp"
 "Engine/TyroWindow.cpp" 
 "Engine/TyroApp.cpp"
+"Engine/Console.cpp"
+"Engine/stb_image_write.c"
+"Engine/stb_image.c"
 )
 
 set(TYRO_ENGINE_SRC

@@ -123,7 +123,7 @@ namespace tyro
 		//GL_CHECK_ERROR;
 
 		//[mContext presentRenderbuffer : GL_RENDERBUFFER];
-		mContext->swapBuffers();
+		//mContext->swapBuffers();
 	}
 
 	void ES2Renderer::RenderPrimitive(const ES2Renderable* renderable) const

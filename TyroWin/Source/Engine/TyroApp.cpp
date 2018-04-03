@@ -15,7 +15,8 @@ namespace tyro
     m_gl_rend(nullptr),
     m_camera(nullptr),
     mouse_is_down(false),
-    gesture_state(0)
+    gesture_state(0),
+    show_console(false)
     {}
 
     App::~App() 
@@ -85,13 +86,29 @@ namespace tyro
             this->window_resize(window, w, h);
         };
 
+        m_tyro_window->callback_key_pressed = [&](Window& window, unsigned int key, int modifiers)->bool 
+        {
+            this->key_pressed(window, key, modifiers);
+        };
+
+        m_console.print("Welcome to MeshEdit");
+        m_console.newline();
+    
         // Loop until the user closes the window
         while (!m_tyro_window->ShouldClose())
         {
             // Render here 
             m_gl_rend->RenderVisibleSet(vis_set, m_camera);
+            
+            // Draw console
+            if (show_console) 
+            {
+                glUseProgram(0);
+                m_console.display(2);
+            }
 
             // Poll for and process events
+            m_tyro_window->GetGLContext()->swapBuffers();
             m_tyro_window->ProcessUserEvents();
         }
 
@@ -104,13 +121,13 @@ namespace tyro
 
     void App::mouse_down(Window& window, int button, int modifier) 
     {
-        RA_LOG_INFO("mouse down");
+        //RA_LOG_INFO("mouse down");
         mouse_is_down = true;
     }
 
     void App::mouse_up(Window& window, int button, int modifier) 
     {
-        RA_LOG_INFO("mouse up");
+        //RA_LOG_INFO("mouse up");
         if (mouse_is_down) 
         {   
             gesture_state = 2;
@@ -122,14 +139,14 @@ namespace tyro
     
     void App::mouse_move(Window& window, int mouse_x, int mouse_y) 
     {
-        RA_LOG_INFO("mouse move");
+       // RA_LOG_INFO("mouse move");
         if (mouse_is_down) 
         {   
             m_camera->HandleOneFingerPanGesture(gesture_state, Vector2i(mouse_x, mouse_y));
             gesture_state = 1;
         }
     }
-
+    
     void App::window_resize(Window& window, unsigned int w, unsigned int h)
     {
         RA_LOG_INFO("window resized")
@@ -137,5 +154,27 @@ namespace tyro
         //Vector4i viewport(0, 0, m_gl_rend->GetViewWidth(), m_gl_rend->GetViewHeight());
         //m_camera->SetAspect(aspect);
         //m_camera->SetViewport(viewport);
-    }    
+    }
+
+    void App::key_pressed(Window& window, unsigned int key, int modifiers) 
+    {   
+        RA_LOG_INFO("Key pressed %c", key);
+        
+        if (key == '`') 
+        {
+            show_console = !show_console;
+            return;
+        }
+
+        if (show_console) 
+        {
+           m_console.keyboard(key);
+           return;
+        }
+        else 
+        {
+
+        }
+    }
+    
 }
