@@ -394,6 +394,39 @@ void Console::keyboard(unsigned char key)
     }
 }
 
+void Console::key_backspace() 
+{
+    if (m_caret > 0)
+    {
+        //delete character before caret..
+        m_current_command.erase(m_caret-1, 1);
+        m_caret--;
+    }
+}
+
+void Console::key_tab() 
+{
+    tab_completion();
+    m_caret = m_current_command.size();
+}
+
+void Console::key_enter()
+{
+    if (!m_current_command.empty())
+    {
+        std::string tmp = m_current_command;
+        m_current_command.clear();
+        m_caret = 0;
+        printf(">%s", tmp.c_str());
+
+        //add command to history..
+        m_history.push_back(tmp);
+        m_history_index = m_history.size();
+
+        execute(tmp.c_str());
+    }
+}
+
 void Console::key_left() {
     if (m_caret > 0)
         m_caret -= 1;

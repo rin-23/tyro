@@ -4,11 +4,28 @@
 #include "Wm5Vector3.h"
 #include "RAVisibleSet.h"
 #include "RAES2StandardMesh.h"
+#include <functional>
+#include <igl/readOBJ.h>
 
 using namespace Wm5;
+using namespace std;
 
 namespace tyro
-{
+{   
+    namespace
+    {
+        void console_load_obj(App* app, const std::vector<std::string> & args) 
+        {
+            RA_LOG_INFO("Loading obj model");
+
+            if (args.size() == 0)
+            {   
+                app->load_hiroki()
+                return;
+            }
+        }
+    }
+
     App::App()
     :
     m_tyro_window(nullptr),
@@ -91,9 +108,16 @@ namespace tyro
             this->key_pressed(window, key, modifiers);
         };
 
-        m_console.print("Welcome to MeshEdit");
-        m_console.newline();
-    
+        m_tyro_window->callback_key_down = [&](Window& window, unsigned int key, int modifiers)->bool 
+        {
+            this->key_down(window, key, modifiers);
+        };
+
+        register_console_function("load_obj", console_load_obj, "");
+
+        //m_console.print("Welcome to Tyro Engine Console");
+        //m_console.newline();
+
         // Loop until the user closes the window
         while (!m_tyro_window->ShouldClose())
         {
@@ -119,6 +143,11 @@ namespace tyro
 	    return 0;
     }
 
+    void App::load_hiroki() 
+    {
+        igl::readOBJ()
+    }
+        
     void App::mouse_down(Window& window, int button, int modifier) 
     {
         //RA_LOG_INFO("mouse down");
@@ -176,5 +205,35 @@ namespace tyro
 
         }
     }
+    
+    void App::key_down(Window& window, unsigned int key, int modifiers) 
+   {   
+        RA_LOG_INFO("Key down %i", key)
+        // handle not text keys   
+
+        if (key == TYRO_KEY_LEFT) 
+            m_console.key_left();
+        else if (key == TYRO_KEY_RIGHT) 
+            m_console.key_right();
+         else if (key == TYRO_KEY_ENTER)
+            m_console.key_enter();
+        else if (key == TYRO_KEY_BACKSPACE)
+            m_console.key_backspace();
+        else if (key == TYRO_KEY_UP)
+            m_console.key_up();
+        else if (key == TYRO_KEY_DOWN)
+            m_console.key_down();
+            
+    }
+
+     void App::register_console_function(const std::string& name,
+                                         const std::function<void(App*, const std::vector<std::string>&)>& con_fun,
+                                         const std::string& help_txt)
+    {
+        std::function<void (const std::vector<std::string>&)> f = bind(con_fun, this, std::placeholders::_1);
+        m_console.reg_cmdN(name, f, help_txt);
+    }
+    
+   
     
 }

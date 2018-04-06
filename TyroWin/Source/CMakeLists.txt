@@ -45,6 +45,7 @@ endif()
 add_subdirectory(Math)
 include(Core/CMakeSources.cmake)
 include(Engine/CMakeSources.cmake)
+include(../../libigl/include)
 
 set(TYRO_MATH_INC_EXE 
     "./Math"

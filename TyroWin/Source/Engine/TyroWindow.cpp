@@ -40,7 +40,9 @@ void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, in
     //C-style callbacks for GLFW
     //GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     //  glfwSetWindowShouldClose(window, GL_TRUE);
-
+    if (key == GLFW_KEY_UNKNOWN) 
+        return;
+    
     tyro::Window* tyro_window = nullptr;
     tyro_window = static_cast<tyro::Window*>(glfwGetWindowUserPointer(window));
 

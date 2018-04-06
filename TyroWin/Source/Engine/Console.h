@@ -43,7 +43,10 @@ public:
     void key_end();
     void key_up();
     void key_down();
-
+    void key_backspace();
+    void key_tab();
+    void key_enter();
+    
     //stdio-like io
     void print(const char* buffer);
     void printf(const char* format, ...);
