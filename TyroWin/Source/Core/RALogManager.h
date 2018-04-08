@@ -149,5 +149,6 @@ fprintf(stderr,"[ERROR] OpenGL ES2 error 0x%04X %s in %s at line %i\n in file:%s
 
 #else
 #define GL_CHECK_ERROR {}
+#define GL_CHECK_ERROR_GLEW_HACK {}
 #endif
 

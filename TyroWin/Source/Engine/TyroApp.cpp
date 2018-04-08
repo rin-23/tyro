@@ -20,7 +20,7 @@ namespace tyro
 
             if (args.size() == 0)
             {   
-                app->load_hiroki()
+                app->load_hiroki();
                 return;
             }
         }
@@ -145,7 +145,7 @@ namespace tyro
 
     void App::load_hiroki() 
     {
-        igl::readOBJ()
+        //igl::readOBJ()
     }
         
     void App::mouse_down(Window& window, int button, int modifier) 

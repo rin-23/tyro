@@ -14,8 +14,7 @@ namespace tyro
         
         int Launch();
 
-        void load_obj_hiroki();
-        
+        void load_hiroki();
 
     private:
         Window* m_tyro_window;
@@ -35,10 +34,10 @@ namespace tyro
         bool show_console;        
         
         Console m_console;
-    public:
+    
     void register_console_function(const std::string& name,
-                                       const std::function<void(App*, const std::vector<std::string>&)>& con_fun,
-                                       const std::string& help_txt);
+                                   const std::function<void(App*, const std::vector<std::string>&)>& con_fun,
+                                   const std::string& help_txt);
 
 
     };

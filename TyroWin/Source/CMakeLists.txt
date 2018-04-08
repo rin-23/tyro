@@ -45,7 +45,6 @@ endif()
 add_subdirectory(Math)
 include(Core/CMakeSources.cmake)
 include(Engine/CMakeSources.cmake)
-include(../../libigl/include)
 
 set(TYRO_MATH_INC_EXE 
     "./Math"
@@ -94,6 +93,8 @@ include_directories(${GLFW_INCLUDE_DIRS})
 include_directories(${OPENGL_INCLUDE_DIR})
 include_directories(${GLEW_INCLUDE_DIR})
 include_directories(${FREETYPE_INCLUDE_DIRS})
+include_directories("../../libigl/include")
+include_directories("../../libigl/external/eigen")
 
 add_executable(tyro main.cpp ${TYRO_CORE_SRC} ${TYRO_ENGINE_SRC})
 
