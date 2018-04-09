@@ -95,8 +95,8 @@ include_directories(${GLFW_INCLUDE_DIRS})
 include_directories(${OPENGL_INCLUDE_DIR})
 include_directories(${GLEW_INCLUDE_DIR})
 include_directories(${FREETYPE_INCLUDE_DIRS})
-include_directories(SYSTEM "../../libigl/include")
-include_directories(SYSTEM "../../libigl/external/eigen")
+include_directories(SYSTEM "External/libigl/include")
+include_directories(SYSTEM "External/libigl/external/eigen")
 
 add_executable(tyro main.cpp ${TYRO_CORE_SRC} ${TYRO_ENGINE_SRC})
 
