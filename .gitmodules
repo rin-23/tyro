@@ -1,3 +1,0 @@
-[submodule "libigl"]
-	path = libigl
-	url = git@github.com:rin-23/libigl.git
