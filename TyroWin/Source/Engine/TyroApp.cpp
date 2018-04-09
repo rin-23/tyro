@@ -7,6 +7,7 @@
 #include <functional>
 #include <igl/readOBJ.h>
 #include <igl/per_vertex_normals.h>
+#include "TyroIGLMesh.h"
 
 using namespace Wm5;
 using namespace std;
@@ -70,7 +71,7 @@ namespace tyro
         //ES2SphereSPtr object = ES2Sphereorner::Create(100, 100, 100);
         ES2BoxSPtr object = ES2Box::Create(10);
         object->Update(true);
-        VisibleSet* vis_set = new VisibleSet();
+        vis_set = new VisibleSet();
         vis_set->Insert(object.get());
         
         //setup camera
@@ -144,14 +145,34 @@ namespace tyro
 	    return 0;
     }
 
+
     void App::load_hiroki() 
     {   
-        std::string path = std::string("/home/rinat/tmp/BlobbyFramesOBJ/frame.0000.obj");
+        std::string path = std::string("/home/rinat/tmp/OldmanFramesOBJ/85_fixed.obj");
+        //std::string path = std::string("/home/rinat/Workspace/Tyro/libigl/tutorial/shared/armadillo.obj");
+        
         Eigen::MatrixXd V, N;
         Eigen::MatrixXi F;
         igl::readOBJ(path, V, F);
+        int num_face = F.rows();
         igl::per_vertex_normals(V,F,N);        
 
+        igl_mesh = IGLMesh::Create(V, F, N);
+        igl_mesh->Update(true);
+        vis_set->Clear();
+        vis_set->Insert(igl_mesh.get());
+
+        APoint world_center = igl_mesh->WorldBoundBox.GetCenter();
+        float radius = std::abs(igl_mesh->WorldBoundBox.GetRadius()*2);
+        float aspect = 1.0;
+        int v_width, v_height;
+        m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
+        Vector4i viewport(0, 0, v_width, v_height);
+        
+        if (m_camera)
+            delete m_camera;
+        
+        m_camera = new iOSCamera(world_center, radius, aspect, 2, viewport, true);
     }
         
     void App::mouse_down(Window& window, int button, int modifier) 

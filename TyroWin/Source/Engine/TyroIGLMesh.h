@@ -4,14 +4,14 @@
 
 namespace tyro
 {
-class ES2IGLMesh : public ES2DefaultTriMesh
+class IGLMesh : public ES2DefaultTriMesh
 {
 public:
-    ES2IGLMesh() {}
+    IGLMesh() {}
 
-    virtual ~ES2IGLMesh() {}
+    virtual ~IGLMesh() {}
     
-    static ES2IGLMeshSPtr Create(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd N);
+    static IGLMeshSPtr Create(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd N);
     
 public: //Serialization
 

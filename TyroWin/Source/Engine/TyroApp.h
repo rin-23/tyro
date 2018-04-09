@@ -34,8 +34,11 @@ namespace tyro
         bool show_console;        
         
         Console m_console;
-    
-    void register_console_function(const std::string& name,
+        VisibleSet* vis_set;
+
+        IGLMeshSPtr igl_mesh;
+
+        void register_console_function(const std::string& name,
                                    const std::function<void(App*, const std::vector<std::string>&)>& con_fun,
                                    const std::string& help_txt);
 

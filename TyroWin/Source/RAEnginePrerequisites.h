@@ -71,7 +71,7 @@ namespace tyro
     class RectHitProxy;
     class TriHitProxy;
     class DepthProxy;
-    class ES2IGLMesh;
+    class IGLMesh;
 
     using DepthProxySPtr = std::shared_ptr<DepthProxy>;
     using DepthProxyWPtr = std::weak_ptr<DepthProxy>;
@@ -182,9 +182,9 @@ namespace tyro
     using NormalProxyUPtr = std::unique_ptr<NormalProxy>;
     using NormalProxyWPtr = std::weak_ptr<NormalProxy>;
 
-    using ES2IGLMeshSPtr = std::shared_ptr<ES2IGLMesh>;
-    using ES2IGLMeshUPtr = std::unique_ptr<ES2IGLMesh>;
-    using ES2IGLMeshWPtr = std::weak_ptr<ES2IGLMesh>;
+    using IGLMeshSPtr = std::shared_ptr<IGLMesh>;
+    using IGLMeshUPtr = std::unique_ptr<IGLMesh>;
+    using IGLMeshWPtr = std::weak_ptr<IGLMesh>;
 }
 
 namespace Wm5

@@ -8,7 +8,7 @@
 namespace tyro 
 {
 
-    void ES2IGLMesh::Init(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd N)
+    void IGLMesh::Init(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd N)
     {
         ES2DefaultTriMesh::Init();
         int numVertices = V.rows();
@@ -26,9 +26,11 @@ namespace tyro
         VertexBufferAccessor vba(GetVisualEffect()->GetVertexFormat(), vbuffer.get());
         vba.MapWrite();
         for (int i = 0; i < numVertices; ++i) 
-        {
+        {   
+            //RA_LOG_INFO("V: %f %f %f", V(i, 0), V(i, 1), V(i, 2));
             vba.Position<Wm5::Float3>(i) = Wm5::Float3(V(i,0), V(i,1), V(i,2));
-            vba.Normal<Wm5::Float3>(i) = Wm5::Float3(N(i,0), N(i,1), N(i,2));
+            //RA_LOG_INFO("N: %f %f %f", N(i, 0), N(i, 1), N(i, 2));
+            vba.Normal<Wm5::Float3>(i) = Wm5::Float3(N(i, 0), N(i, 1), N(i, 2));
         }                
         vba.Unmap();
 
@@ -36,11 +38,12 @@ namespace tyro
         auto ibuffer = std::make_shared<ES2IndexHardwareBuffer>(numIndices, nullptr, HardwareBuffer::BU_STATIC);
         uint32_t* indices = static_cast<uint32_t*>(ibuffer->MapWrite());
         int iIndex = 0;
-        for (int i = 0; i < numIndices; ++i) 
-        {
-            indices[iIndex++] = F(i,0);
-            indices[iIndex++] = F(i,1);
-            indices[iIndex++] = F(i,2);
+        for (int i = 0; i < numTriangles; ++i) 
+        {         
+            //RA_LOG_INFO("F: %i %i %i", F(i, 0), F(i, 1), F(i, 2));  
+            indices[iIndex++] = F(i, 0);
+            indices[iIndex++] = F(i, 1);
+            indices[iIndex++] = F(i, 2);
         }
         ibuffer->Unmap();
 
@@ -52,11 +55,13 @@ namespace tyro
 	    ES2VertexArraySPtr varray = std::make_shared<ES2VertexArray>(this->GetVisualEffect(), vbuffer);
 	    SetVertexArray(varray);
         SetIndexBuffer(ibuffer);
+
+        GetVisualEffect()->GetCullState()->Enabled = false;
     }
 
-    ES2IGLMeshSPtr ES2IGLMesh::Create(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd N)
+    IGLMeshSPtr IGLMesh::Create(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd N)
     {
-        ES2IGLMeshSPtr sptr = std::make_shared<ES2IGLMesh>();
+        IGLMeshSPtr sptr = std::make_shared<IGLMesh>();
         sptr->Init(V,F,N);
         return sptr;
     }
