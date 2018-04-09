@@ -41,7 +41,7 @@ if (NOT FREETYPE_FOUND)
     message(STATUS "NOT Found freetype")
 endif()
 
-set(CMAKE_CXX_FLAGS "-Wall")
+#set(CMAKE_CXX_FLAGS "-Wall")
 
 
 add_subdirectory(Math)

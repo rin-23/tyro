@@ -210,7 +210,7 @@ public:
     static const HMatrix ZERO;
     static const HMatrix IDENTITY;
 
-private:
+public:
     // The matrix is stored in row-major order.
     float mEntry[16];
 };

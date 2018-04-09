@@ -2,6 +2,7 @@
 #include "RAES2Renderer.h"
 #include "RAiOSCamera.h"
 #include "Console.h"
+#include <vector>
 
 namespace tyro
 {
@@ -30,13 +31,17 @@ namespace tyro
 
         bool mouse_is_down;
         int gesture_state; 
-
+        int current_mouse_x;
+        int current_mouse_y;
         bool show_console;        
         
         Console m_console;
-        VisibleSet* vis_set;
+        //VisibleSet* vis_set;
 
         IGLMeshSPtr igl_mesh;
+        IGLMeshWireframeSPtr igl_mesh_wire;
+
+        std::vector<SpatialSPtr> object_list;
 
         void register_console_function(const std::string& name,
                                    const std::function<void(App*, const std::vector<std::string>&)>& con_fun,
