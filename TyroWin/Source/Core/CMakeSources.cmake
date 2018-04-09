@@ -9,7 +9,6 @@ set(TYRO_INC_ES2
 "Core/ES2/RAES2Renderer.h" 
 "Core/ES2/RAES2ShaderProgram.h" 
 "Core/ES2/RAES2ShaderUniforms.h" 
-"Core/ES2/RAES2StandardMesh.h" 
 "Core/ES2/RAES2Texture2D.h" 
 "Core/ES2/RAES2TriMesh.h" 
 "Core/ES2/RAES2VertexArray.h" 
@@ -30,7 +29,6 @@ set(TYRO_SRC_ES2
 "Core/ES2/RAES2Renderer.cpp" 
 "Core/ES2/RAES2ShaderProgram.cpp" 
 "Core/ES2/RAES2ShaderUniforms.cpp" 
-"Core/ES2/RAES2StandardMesh.cpp" 
 "Core/ES2/RAES2Texture2D.cpp" 
 "Core/ES2/RAES2TriMesh.cpp" 
 "Core/ES2/RAES2VertexArray.cpp" 
@@ -44,16 +42,18 @@ set(TYRO_INC_RENDERABLES
 "Core/Renderables/RAES2BBox.h" 
 "Core/Renderables/RAES2DefaultPolyline.h" 
 "Core/Renderables/RAES2DefaultTriMesh.h" 
-"Core/Renderables/RAES2Octree.h" 
-"Core/Renderables/RAES2STLMesh.h" 
+#"Core/Renderables/RAES2Octree.h" 
+"Core/Renderables/RAES2STLMesh.h"
+"Core/Renderables/RAES2StandardMesh.h" 
 )
 
 set(TYRO_SRC_RENDERABLES 
 "Core/Renderables/RAES2BBox.cpp" 
 "Core/Renderables/RAES2DefaultPolyline.cpp" 
 "Core/Renderables/RAES2DefaultTriMesh.cpp" 
-"Core/Renderables/RAES2Octree.cpp" 
+#"Core/Renderables/RAES2Octree.cpp" 
 "Core/Renderables/RAES2STLMesh.cpp" 
+"Core/Renderables/RAES2StandardMesh.cpp" 
 )
 
 set(TYRO_INC_SCENE 
@@ -90,7 +90,7 @@ set(TYRO_INC_LOCAL
 "Core/RATexture.h" 
 "Core/RATextureBuffer.h" 
 "Core/RATouchable.h" 
-"Core/RATriOctree.h" 
+#"Core/RATriOctree.h" 
 "Core/RAVertexBufferAccessor.h" 
 "Core/RAVertexHardwareBuffer.h" 
 "Core/RAVisibleSet.h" 
@@ -110,7 +110,7 @@ set(TYRO_SRC_LOCAL
 "Core/RATexture.cpp" 
 "Core/RATextureBuffer.cpp" 
 "Core/RATouchable.cpp" 
-"Core/RATriOctree.cpp" 
+#"Core/RATriOctree.cpp" 
 "Core/RAVertexBufferAccessor.cpp" 
 "Core/RAVertexHardwareBuffer.cpp" 
 "Core/RAVisibleSet.cpp" 

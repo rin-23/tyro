@@ -11,9 +11,9 @@
 
 #include "Wm5CoreLIB.h"
 #include "Wm5Assert.h"
-#include "Wm5Mutex.h"
 
 #ifdef WM5_USE_MEMORY
+#include "Wm5Mutex.h"
 // Wild Magic memory tracking for debugging.
 
 namespace Wm5

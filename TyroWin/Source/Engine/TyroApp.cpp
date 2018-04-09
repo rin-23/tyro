@@ -6,6 +6,7 @@
 #include "RAES2StandardMesh.h"
 #include <functional>
 #include <igl/readOBJ.h>
+#include <igl/per_vertex_normals.h>
 
 using namespace Wm5;
 using namespace std;
@@ -38,7 +39,7 @@ namespace tyro
 
     App::~App() 
     {
-        if (m_tyro_window) 
+        if (m_tyro_window)
         {
             m_tyro_window->Terminate();
             delete m_tyro_window; 
@@ -66,7 +67,7 @@ namespace tyro
         RA_LOG_INFO("Setup renderer");
                 
         //setup objects to draw
-        //ES2SphereSPtr object = ES2Sphere::Create(100, 100, 100);
+        //ES2SphereSPtr object = ES2Sphereorner::Create(100, 100, 100);
         ES2BoxSPtr object = ES2Box::Create(10);
         object->Update(true);
         VisibleSet* vis_set = new VisibleSet();
@@ -144,8 +145,13 @@ namespace tyro
     }
 
     void App::load_hiroki() 
-    {
-        //igl::readOBJ()
+    {   
+        std::string path = std::string("/home/rinat/tmp/BlobbyFramesOBJ/frame.0000.obj");
+        Eigen::MatrixXd V, N;
+        Eigen::MatrixXi F;
+        igl::readOBJ(path, V, F);
+        igl::per_vertex_normals(V,F,N);        
+
     }
         
     void App::mouse_down(Window& window, int button, int modifier) 

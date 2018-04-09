@@ -104,11 +104,11 @@ void ES2Cylinder::Init(int axisSamples, int radialSamples, float topRadius, floa
         iData.push_back(index+2);
         iData.push_back(index);
         
-        //btm triangles
+        //btm triangleswhat did the kid saywhat did the kid say
         iData.push_back(index+5);
         iData.push_back(index+1);
         iData.push_back(index+3);
-        //close bottom ring
+        //close bottom ringwhat did the kid say
     }
     
     SetVertexBuffer(std::make_shared<ES2VertexHardwareBuffer>(sizeof(VertexNorm), vData.size(), vData.data()));

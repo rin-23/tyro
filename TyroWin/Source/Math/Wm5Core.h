@@ -36,11 +36,11 @@
 #include "Wm5Stream.h"
 
 // Threading
-#include "Wm5Mutex.h"
-#include "Wm5MutexType.h"
-#include "Wm5ScopedCS.h"
-#include "Wm5Thread.h"
-#include "Wm5ThreadType.h"
+//#include "Wm5Mutex.h"
+//#include "Wm5MutexType.h"
+//#include "Wm5ScopedCS.h"
+//#include "Wm5Thread.h"
+//#include "Wm5ThreadType.h"
 
 // Time
 #include "Wm5Time.h"

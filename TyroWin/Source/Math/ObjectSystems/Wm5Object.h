@@ -12,7 +12,7 @@
 #include "Wm5CoreLIB.h"
 #include "Wm5Names.h"
 #include "Wm5Rtti.h"
-#include "Wm5SmartPointer.h"
+//#include "Wm5SmartPointer.h"
 #include "Wm5InStream.h"
 #include "Wm5OutStream.h"
 
@@ -77,7 +77,7 @@ public:
 };
 
 static bool gsStreamRegistered_Object = Object::RegisterFactory();
-typedef Pointer0<Object> ObjectPtr;
+//typedef Pointer0<Object> ObjectPtr;
 #include "Wm5Object.inl"
 
 }

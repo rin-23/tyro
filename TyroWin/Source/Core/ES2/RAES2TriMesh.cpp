@@ -124,7 +124,7 @@ namespace tyro
 //            
 //            // Get the vertex positions.
 //            APoint pos0 = vba.Position<Float3>(v0);
-//            APoint pos1 = vba.Position<Float3>(v1);
+//            APoint pos1 = vba.Position<Float3>(v1);Eigne
 //            APoint pos2 = vba.Position<Float3>(v2);
 //            
 //            // Compute the triangle normal.  The length of this normal is used in

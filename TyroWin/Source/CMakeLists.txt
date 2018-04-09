@@ -19,6 +19,7 @@ pkg_search_module(GLFW glfw3)
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(Freetype REQUIRED)
+find_package(Threads REQUIRED)
 
 if (NOT GLFW_FOUND )
     message(STATUS "NOT Found glfw")
@@ -40,6 +41,7 @@ if (NOT FREETYPE_FOUND)
     message(STATUS "NOT Found freetype")
 endif()
 
+set(CMAKE_CXX_FLAGS "-Wall")
 
 
 add_subdirectory(Math)
@@ -69,7 +71,7 @@ set(TYRO_MATH_INC_EXE
     "./Math/ObjectSystems"
     "./Math/Query"
     "./Math/Rational"
-    "./Math/Threading"
+    #"./Math/Threading"
     "./Math/Time"
     "./Math/Tools"
     "./Math/Transformation"
@@ -93,8 +95,8 @@ include_directories(${GLFW_INCLUDE_DIRS})
 include_directories(${OPENGL_INCLUDE_DIR})
 include_directories(${GLEW_INCLUDE_DIR})
 include_directories(${FREETYPE_INCLUDE_DIRS})
-include_directories("../../libigl/include")
-include_directories("../../libigl/external/eigen")
+include_directories(SYSTEM "../../libigl/include")
+include_directories(SYSTEM "../../libigl/external/eigen")
 
 add_executable(tyro main.cpp ${TYRO_CORE_SRC} ${TYRO_ENGINE_SRC})
 
@@ -107,6 +109,7 @@ target_link_libraries(tyro ${OPENGL_LIBRARIES})
 target_link_libraries(tyro ${GLFW_LIBRARIES})
 target_link_libraries(tyro ${GLEW_LIBRARIES})
 target_link_libraries(tyro ${FREETYPE_LIBRARIES})
+target_link_libraries(tyro ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(tyro TyroMath)
 #target_link_libraries(tyro TyroCore)
 

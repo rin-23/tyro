@@ -67,7 +67,9 @@
                 "${workspaceRoot}/Core/ES2",
                 "${workspaceRoot}/Core/Renderables",
                 "${workspaceRoot}/Core/Scene",
-                "${workspaceRoot}/Core/Tools"                
+                "${workspaceRoot}/Core/Tools",
+                "${workspaceRoot}/../../libigl/include",
+                "${workspaceRoot}/../../libigl/external/eigen"                 
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",

@@ -17,7 +17,7 @@ namespace tyro
     class ES2Cylinder : public ES2DefaultTriMesh
     {
     public:
-        //no axis samples
+        //no axis samples 
         //screw points down the Y axis;
         //center of the top ring is at (0,0,0);
         //rings lie in XZ plane

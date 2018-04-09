@@ -11,4 +11,4 @@
 using namespace Wm5;
 
 PointerBase::ReferenceMap PointerBase::msMap;
-Mutex PointerBase::msMutex;
+//Mutex PointerBase::msMutex;

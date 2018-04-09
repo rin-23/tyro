@@ -37,7 +37,7 @@ protected:
     typedef ReferenceMap::const_iterator RMCIterator;
 
     WM5_CORE_ITEM static ReferenceMap msMap;
-    WM5_CORE_ITEM static Mutex msMutex;
+    //WM5_CORE_ITEM static Mutex msMutex;
 };
 
 //----------------------------------------------------------------------------
