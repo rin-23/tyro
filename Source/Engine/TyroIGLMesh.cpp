@@ -11,7 +11,8 @@ namespace tyro
     void IGLMesh::Init(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd N)
     {
         ES2DefaultTriMesh::Init();
-
+        SetColor(Wm5::Vector4f(0.4f, 0.4f, 0.4f, 1.0f));
+        
         this->V = V;
         this->F = F;
         this->N = N;
@@ -80,7 +81,7 @@ namespace tyro
     void IGLMeshWireframe::Init(Eigen::MatrixXd& V, Eigen::MatrixXi& F)
     {
         ES2DefaultPolyline::Init(false);
-        mColor = Wm5::Vector4f(0.5,0.5,0.5,1);
+        SetColor(Wm5::Vector4f(0.05,0.05,0.05,1));
     
         //Calculate unique edges
         Eigen::MatrixXi E;

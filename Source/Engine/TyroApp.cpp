@@ -64,7 +64,7 @@ namespace tyro
                 
         //setup renderer
         m_gl_rend = new ES2Renderer(m_tyro_window->GetGLContext());
-        m_gl_rend->SetClearColor(Vector4f(0.0, 1.0, 0.0, 1.0));
+        m_gl_rend->SetClearColor(Vector4f(0.0, 153.0/255.0, 153.0/255.0, 1.0));
                 
         //setup objects to draw
         //ES2SphereSPtr object = ES2Sphereorner::Create(100, 100, 100);
@@ -333,6 +333,8 @@ namespace tyro
             m_console.key_up();
         else if (key == TYRO_KEY_DOWN)
             m_console.key_down();
+        else if (key == TYRO_KEY_TAB)
+            m_console.key_tab();
             
     }
 
