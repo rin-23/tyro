@@ -1,3 +1,3 @@
 cd Debug
-make
+make -j13
 ./tyro
