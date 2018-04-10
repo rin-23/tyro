@@ -4,9 +4,23 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "echo",
+            "label": "tyro_build",
             "type": "shell",
-            "command": "echo Hello"
+            "command": "${workspaceRoot}/buildonly.sh",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+
+        {
+            "label": "tyro_run",
+            "type": "shell",
+            "command": "${workspaceRoot}/run.sh",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
         }
     ]
 }

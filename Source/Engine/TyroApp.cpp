@@ -119,8 +119,6 @@ namespace tyro
         };
 
         register_console_function("load_obj", console_load_obj, "");
-
-        
        
 
         // Loop until the user closes the window
@@ -217,7 +215,7 @@ namespace tyro
 
         /*
          IGL_INLINE bool unproject_onto_mesh(
-        const Eigen::Vector2f& pos,
+        const Eigen::Vector2f& p   os,
         const Eigen::Matrix4f& model,
         const Eigen::Matrix4f& proj,
         const Eigen::Vector4f& viewport,
@@ -236,11 +234,19 @@ namespace tyro
                                      fid,
                                      bc))
         {
-            long vid;
-            bc.maxCoeff(&vid);
-            Eigen::RowVector3d new_c = igl_mesh->V.row(igl_mesh->F(fid,vid));
+            long c;
+            bc.maxCoeff(&c);
+            int vid = igl_mesh->F(fid, c);
+            Eigen::RowVector3d new_c = igl_mesh->V.row(vid);
             RA_LOG_INFO("Picked face_id %i vertex_id %i", fid, vid);
-
+            
+            ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.1);
+            Wm5::Transform tr;
+            tr.SetTranslate(APoint(new_c(0), new_c(1), new_c(2)));
+            object->LocalTransform = tr * object->LocalTransform;
+            object->Update(true);
+            object_list.push_back(object);
+              
             //if(s.CV.size()==0 || (s.CV.rowwise() - new_c).rowwise().norm().minCoeff() > 0)
             //{
                 //push_undo();
@@ -256,7 +262,7 @@ namespace tyro
     void App::mouse_up(Window& window, int button, int modifier) 
     {   
         if (object_list.size() == 0) return;
-        //RA_LOG_INFO("mouse up");
+        RA_LOG_INFO("modifier %i", modifier);
         if (mouse_is_down) 
         {   
             gesture_state = 2;
