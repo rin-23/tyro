@@ -20,6 +20,7 @@ void glfw_mouse_press(GLFWwindow* window, int button, int action, int modifier)
         tyro_window->mouse_down(mb, modifier);
     else
         tyro_window->mouse_up(mb, modifier);
+
 }
 
 void glfw_error_callback(int error, const char* description)

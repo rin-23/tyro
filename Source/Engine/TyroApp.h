@@ -17,6 +17,10 @@ namespace tyro
 
         void load_hiroki();
 
+        void compute_average();
+
+        void compute_deformation();
+        
     private:
         Window* m_tyro_window;
         ES2Renderer* m_gl_rend;
@@ -34,7 +38,8 @@ namespace tyro
         int current_mouse_x;
         int current_mouse_y;
         bool show_console;        
-        
+        int m_modifier;
+
         Console m_console;
         //VisibleSet* vis_set;
 
@@ -42,6 +47,22 @@ namespace tyro
         IGLMeshWireframeSPtr igl_mesh_wire;
 
         std::vector<SpatialSPtr> object_list;
+
+        typedef struct MAnimation 
+        {   
+            std::vector<Eigen::MatrixXd> v_data; // Vertex data. 3*num_vert by num_frames. 
+            std::vector<Eigen::MatrixXd> n_data; // Normal data. 3*num_vert by num_frames. 
+            Eigen::MatrixXi f_data; // Face data.   num_faces by 3
+            Eigen::MatrixXd avg_v_data;
+
+            //Eigen::MatrixXd v_data;
+            //Eigen::MatrixXd n_data;
+
+        } MAnimation;
+
+        MAnimation m_frame_data;
+
+        std::vector<int> vid_list;
 
         void register_console_function(const std::string& name,
                                    const std::function<void(App*, const std::vector<std::string>&)>& con_fun,

@@ -6,7 +6,7 @@
 #include "RAES2Context.h"
 #include <functional>
 
-    /* Printable keys */
+/* Printable keys */
 #define TYRO_KEY_SPACE              32
 #define TYRO_KEY_APOSTROPHE         39  /* ' */
 #define TYRO_KEY_COMMA              44  /* , */
@@ -129,6 +129,13 @@
 #define TYRO_KEY_RIGHT_ALT          346
 #define TYRO_KEY_RIGHT_SUPER        347
 #define TYRO_KEY_MENU               348
+
+//modifiers
+#define TYRO_MOD_NONE            0x0000
+#define TYRO_MOD_SHIFT           0x0001
+#define TYRO_MOD_CONTROL         0x0002
+#define TYRO_MOD_ALT             0x0004
+#define TYRO_MOD_SUPER           0x0008
 
 namespace tyro 
 {   

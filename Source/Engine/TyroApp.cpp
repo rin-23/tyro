@@ -16,7 +16,8 @@ using namespace std;
 namespace tyro
 {   
     namespace
-    {
+    {   
+        
         void console_load_obj(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("Loading obj model");
@@ -24,6 +25,28 @@ namespace tyro
             if (args.size() == 0)
             {   
                 app->load_hiroki();
+                return;
+            }
+        }
+
+        void console_compute_average(App* app, const std::vector<std::string> & args) 
+        {
+            RA_LOG_INFO("compute_average");
+
+            if (args.size() == 0)
+            {   
+                app->compute_average();
+                return;
+            }
+        }
+
+        void console_deform(App* app, const std::vector<std::string> & args)
+         {
+            RA_LOG_INFO("deform");
+
+            if (args.size() == 0)
+            {   
+                app->compute_deformation();
                 return;
             }
         }
@@ -151,30 +174,69 @@ namespace tyro
 	    return 0;
     }
 
+    void App::compute_deformation()
+    {
+        //do biharmonic stuff here.
+    }
+
+    void App::compute_average()
+    {
+        if (m_frame_data.v_data.size()==0)
+            RA_LOG_ERROR_ASSERT("cant compute average");
+
+        
+        m_frame_data.avg_v_data.resize(m_frame_data.v_data[0].rows(), 
+                                       m_frame_data.v_data[0].cols());
+        m_frame_data.avg_v_data.setZero();
+
+        for (auto& mat : m_frame_data.v_data) 
+        {
+            m_frame_data.avg_v_data += mat;
+        }
+        m_frame_data.avg_v_data = (1.0/m_frame_data.v_data.size()) * m_frame_data.avg_v_data;
+    }
+
+
+
     void App::load_hiroki() 
     {   
         // load OBJ file
         //std::string path = std::string("/home/rinat/tmp/OldmanFramesOBJ/85_fixed.obj");
         //std::string path = std::string("/home/rinat/Workspace/Tyro/libigl/tutorial/shared/armadillo.obj");
         //std::string path = std::string("/home/rinat/Google Drive/StopMotionProject/Claymation/data/uw/FramesOBJ/Lower/bottom-face_mesh_000001.obj");
-        std::string path = std::string("/home/rinat/Google Drive/StopMotionProject/Claymation/data/hello/FewSelected/frame.0000.obj");
         
-        Eigen::MatrixXd V, N;
-        Eigen::MatrixXi F;
-        igl::readOBJ(path, V, F);
-        int num_face = F.rows();
-        igl::per_vertex_normals(V,F,N);        
+        std::vector<std::string> path_list;
+        std::string path1 = std::string("/home/rinat/Google Drive/StopMotionProject/Claymation/data/hello/FewSelected/frame.0000.obj");
+        std::string path2 = std::string("/home/rinat/Google Drive/StopMotionProject/Claymation/data/hello/FewSelected/frame.0001.obj");
+        path_list.push_back(path1);
+        path_list.push_back(path2);
+        int num_frames = path_list.size();
+
+        for (auto& path : path_list) 
+        {
+            Eigen::MatrixXd V, N;
+            Eigen::MatrixXi F;
+            igl::readOBJ(path, V, F);
+            int num_face = F.rows();
+            igl::per_vertex_normals(V,F,N); 
+
+            m_frame_data.v_data.push_back(V);
+            m_frame_data.n_data.push_back(N);
+            m_frame_data.f_data = F;       
+        }
 
         //remove previous objects
         object_list.clear();
-        
+          
         //create renderable for mesh
-        igl_mesh = IGLMesh::Create(V, F, N);
+        igl_mesh = IGLMesh::Create(m_frame_data.v_data[0], 
+                                   m_frame_data.f_data, 
+                                   m_frame_data.n_data[0]);
         igl_mesh->Update(true);
         object_list.push_back(igl_mesh);
 
         //create renderable for mesh wireframe
-        igl_mesh_wire = IGLMeshWireframe::Create(V, F);
+        igl_mesh_wire = IGLMeshWireframe::Create(m_frame_data.v_data[0], m_frame_data.f_data);
         igl_mesh_wire->Update(true);
         object_list.push_back(igl_mesh_wire);
 
@@ -195,9 +257,13 @@ namespace tyro
     void App::mouse_down(Window& window, int button, int modifier) 
     {   
         if (object_list.size() == 0) return;
+
         //RA_LOG_INFO("mouse down");
         mouse_is_down = true;
-   
+        m_modifier = modifier;
+
+        if (m_modifier == TYRO_MOD_CONTROL) return; //rotating
+
         int fid;
         Eigen::Vector3f bc;
         // Cast a ray in the view direction starting from the mouse position
@@ -234,19 +300,30 @@ namespace tyro
                                      fid,
                                      bc))
         {
+            
             long c;
             bc.maxCoeff(&c);
             int vid = igl_mesh->F(fid, c);
-            Eigen::RowVector3d new_c = igl_mesh->V.row(vid);
-            RA_LOG_INFO("Picked face_id %i vertex_id %i", fid, vid);
+            auto it = std::find(vid_list.begin(), vid_list.end(), vid);
+            if (it == vid_list.end()) 
+            {
+                Eigen::RowVector3d new_c = igl_mesh->V.row(vid);
+                RA_LOG_INFO("Picked face_id %i vertex_id %i", fid, vid);
+                ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.1);
+                Wm5::Transform tr;
+                tr.SetTranslate(APoint(new_c(0), new_c(1), new_c(2)));
+                object->LocalTransform = tr * object->LocalTransform;
+                object->Update(true);
+                object_list.push_back(object);
+                vid_list.push_back(vid);
+            }  
+            else
+            {
+                auto index = std::distance(vid_list.begin(), it);
+                object_list.erase(object_list.begin() + index);
+                vid_list.erase(vid_list.begin() + index);
+            }                    
             
-            ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.1);
-            Wm5::Transform tr;
-            tr.SetTranslate(APoint(new_c(0), new_c(1), new_c(2)));
-            object->LocalTransform = tr * object->LocalTransform;
-            object->Update(true);
-            object_list.push_back(object);
-              
             //if(s.CV.size()==0 || (s.CV.rowwise() - new_c).rowwise().norm().minCoeff() > 0)
             //{
                 //push_undo();
@@ -276,10 +353,11 @@ namespace tyro
     {   
         if (object_list.size() == 0) return;
 
+        
        // RA_LOG_INFO("mouse move");
         current_mouse_x = mouse_x;
         current_mouse_y = mouse_y;
-        if (mouse_is_down) 
+        if (mouse_is_down && m_modifier == TYRO_MOD_CONTROL) 
         {   
             m_camera->HandleOneFingerPanGesture(gesture_state, Vector2i(mouse_x, mouse_y));
             gesture_state = 1;
