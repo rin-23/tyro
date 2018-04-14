@@ -105,9 +105,9 @@ void MultipleCurve3<Real>::InitializeLength () const
 template <typename Real>
 Real MultipleCurve3<Real>::GetLength (Real t0, Real t1) const
 {
-    assertion(mTMin <= t0 && t0 <= mTMax, "Invalid input\n");
-    assertion(mTMin <= t1 && t1 <= mTMax, "Invalid input\n");
-    assertion(t0 <= t1, "Invalid input\n");
+    //assertion(mTMin <= t0 && t0 <= mTMax, "Invalid input\n");
+    //assertion(mTMin <= t1 && t1 <= mTMax, "Invalid input\n");
+    //assertion(t0 <= t1, "Invalid input\n");
 
     if (!mLengths)
     {

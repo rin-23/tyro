@@ -93,7 +93,7 @@ Real* PolyFit4 (int numSamples, const Real* xSamples, const Real* ySamples,
 
     // Solve for the polynomial coefficients.
     bool hasSolution = LinearSystem<Real>().Solve(A, B, coeff);
-    assertion(hasSolution, "Failed to solve linear system\n");
+    //assertion(hasSolution, "Failed to solve linear system\n");
     WM5_UNUSED(hasSolution);
 
     delete1(B);

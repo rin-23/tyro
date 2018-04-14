@@ -25,7 +25,7 @@ void InitTerm::AddInitializer (Initializer function)
     }
     else
     {
-        assertion(false, "Increase MAX_ELEMENTS and recompile LibCore\n");
+        //assertion(false, "Increase MAX_ELEMENTS and recompile LibCore\n");
     }
 }
 //----------------------------------------------------------------------------
@@ -45,7 +45,7 @@ void InitTerm::AddTerminator (Terminator function)
     }
     else
     {
-        assertion(false, "Increase MAX_ELEMENTS and recompile LibCore\n");
+        //assertion(false, "Increase MAX_ELEMENTS and recompile LibCore\n");
     }
 }
 //----------------------------------------------------------------------------

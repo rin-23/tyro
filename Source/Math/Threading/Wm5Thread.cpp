@@ -40,14 +40,14 @@ Thread::~Thread ()
 void Thread::Resume ()
 {
     DWORD result = ResumeThread((HANDLE)mThread);
-    assertion(result != (DWORD)-1, "Failed to resume thread\n");
+    //assertion(result != (DWORD)-1, "Failed to resume thread\n");
     WM5_UNUSED(result);
 }
 //----------------------------------------------------------------------------
 void Thread::Suspend ()
 {
     DWORD result = SuspendThread((HANDLE)mThread);
-    assertion(result != (DWORD)-1, "Failed to suspend thread\n");
+    //assertion(result != (DWORD)-1, "Failed to suspend thread\n");
     WM5_UNUSED(result);
 }
 //----------------------------------------------------------------------------

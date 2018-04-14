@@ -122,7 +122,7 @@ public:
         const GMatrix<Real>& mat)
     {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-        assertion(vec.GetSize() == mat.GetNumRows(),
+        //assertion(vec.GetSize() == mat.GetNumRows(),
             "Mismatch in operator*\n");
 #endif
         GVector<Real> product(mat.GetNumColumns());

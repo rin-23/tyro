@@ -301,7 +301,7 @@ void InStream::ResolveLink (T*& object)
         }
         else
         {
-            assertion(false, "Unexpected link failure.\n");
+            //assertion(false, "Unexpected link failure.\n");
             object = 0;
         }
     }
@@ -330,7 +330,7 @@ void InStream::ResolveLink (Pointer0<T>& object)
         }
         else
         {
-            assertion(false, "Unexpected link failure.\n");
+            //assertion(false, "Unexpected link failure.\n");
             object = 0;
         }
     }

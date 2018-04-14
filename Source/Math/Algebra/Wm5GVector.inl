@@ -103,7 +103,7 @@ template <typename Real>
 inline const Real& GVector<Real>::operator[] (int i) const
 {
 #if defined(WM5_ASSERT_GVECTOR_OUT_OF_RANGE)
-    assertion(0 <= i && i < mSize, "Invalid index in operator[]\n");
+    //assertion(0 <= i && i < mSize, "Invalid index in operator[]\n");
 #endif
     return mTuple[i];
 }
@@ -112,7 +112,7 @@ template <typename Real>
 inline Real& GVector<Real>::operator[] (int i)
 {
 #if defined(WM5_ASSERT_GVECTOR_OUT_OF_RANGE)
-    assertion(0 <= i && i < mSize, "Invalid index in operator[]\n");
+    //assertion(0 <= i && i < mSize, "Invalid index in operator[]\n");
 #endif
     return mTuple[i];
 }
@@ -144,7 +144,7 @@ template <typename Real>
 bool GVector<Real>::operator== (const GVector& vec) const
 {
 #if defined(WM5_ASSERT_GVECTOR_OUT_OF_RANGE)
-    assertion(mSize == vec.mSize, "Mismatched sizes.\n");
+    //assertion(mSize == vec.mSize, "Mismatched sizes.\n");
 #endif
     for (int i = 0; i < mSize; ++i)
     {
@@ -160,7 +160,7 @@ template <typename Real>
 bool GVector<Real>::operator!= (const GVector& vec) const
 {
 #if defined(WM5_ASSERT_GVECTOR_OUT_OF_RANGE)
-    assertion(mSize == vec.mSize, "Mismatched sizes.\n");
+    //assertion(mSize == vec.mSize, "Mismatched sizes.\n");
 #endif
     for (int i = 0; i < mSize; ++i)
     {
@@ -176,7 +176,7 @@ template <typename Real>
 bool GVector<Real>::operator< (const GVector& vec) const
 {
 #if defined(WM5_ASSERT_GVECTOR_OUT_OF_RANGE)
-    assertion(mSize == vec.mSize, "Mismatched sizes.\n");
+    //assertion(mSize == vec.mSize, "Mismatched sizes.\n");
 #endif
     for (int i = 0; i < mSize; ++i)
     {
@@ -197,7 +197,7 @@ template <typename Real>
 bool GVector<Real>::operator<= (const GVector& vec) const
 {
 #if defined(WM5_ASSERT_GVECTOR_OUT_OF_RANGE)
-    assertion(mSize == vec.mSize, "Mismatched sizes.\n");
+    //assertion(mSize == vec.mSize, "Mismatched sizes.\n");
 #endif
     for (int i = 0; i < mSize; ++i)
     {
@@ -218,7 +218,7 @@ template <typename Real>
 bool GVector<Real>::operator> (const GVector& vec) const
 {
 #if defined(WM5_ASSERT_GVECTOR_OUT_OF_RANGE)
-    assertion(mSize == vec.mSize, "Mismatched sizes.\n");
+    //assertion(mSize == vec.mSize, "Mismatched sizes.\n");
 #endif
     for (int i = 0; i < mSize; ++i)
     {
@@ -239,7 +239,7 @@ template <typename Real>
 bool GVector<Real>::operator>= (const GVector& vec) const
 {
 #if defined(WM5_ASSERT_GVECTOR_OUT_OF_RANGE)
-    assertion(mSize == vec.mSize, "Mismatched sizes.\n");
+    //assertion(mSize == vec.mSize, "Mismatched sizes.\n");
 #endif
     for (int i = 0; i < mSize; ++i)
     {

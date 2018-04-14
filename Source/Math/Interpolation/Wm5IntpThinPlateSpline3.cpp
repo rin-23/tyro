@@ -20,7 +20,7 @@ IntpThinPlateSpline3<Real>::IntpThinPlateSpline3 (int quantity,
     :
     mSmooth(smooth)
 {
-    assertion(quantity >= 4 && X && Y && Z && F && smooth >= (Real)0,
+    //assertion(quantity >= 4 && X && Y && Z && F && smooth >= (Real)0,
         "Invalid input\n");
 
     mInitialized = false;

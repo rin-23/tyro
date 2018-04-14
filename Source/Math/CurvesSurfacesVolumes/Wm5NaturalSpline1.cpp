@@ -24,7 +24,7 @@ NaturalSpline1<Real>::NaturalSpline1 (bool free, int numSamples,
     mTimes(times),
     mA(values)
 {
-    assertion(numSamples >= 2 && times && values, "Invalid input\n");
+    //assertion(numSamples >= 2 && times && values, "Invalid input\n");
     if (free)
     {
         CreateFreeSpline();
@@ -44,7 +44,7 @@ NaturalSpline1<Real>::NaturalSpline1 (int numSamples, Real* times,
     mTimes(times),
     mA(values)
 {
-    assertion(numSamples >= 2 && times && values, "Invalid input\n");
+    //assertion(numSamples >= 2 && times && values, "Invalid input\n");
     CreateClampedSpline(slopeFirst, slopeLast);
 }
 //----------------------------------------------------------------------------
@@ -158,7 +158,7 @@ void NaturalSpline1<Real>::CreateFreeSpline ()
     // The linear system that determines C[1] through C[numSegs-1].
     bool solved = LinearSystem<Real>().SolveTri(numSegmentsM1, &delta[1],
         diagonal, &delta[1], rhs, &mC[1]);
-    assertion(solved, "Failed to solve linear system\n");
+    //assertion(solved, "Failed to solve linear system\n");
     WM5_UNUSED(solved);
 
     const Real oneThird = ((Real)1)/(Real)3;
@@ -212,7 +212,7 @@ void NaturalSpline1<Real>::CreateClampedSpline (Real slopeFirst,
     // The linear system that determines B[1] through B[numSegs-1].
     bool solved = LinearSystem<Real>().SolveTri(numSegmentsM1,&delta[2],
         diagonal,delta,rhs,&mB[1]);
-    assertion(solved, "Failed to solve linear system\n");
+    //assertion(solved, "Failed to solve linear system\n");
     WM5_UNUSED(solved);
 
     const Real oneThird = ((Real)1)/(Real)3;
@@ -336,7 +336,7 @@ void NaturalSpline1<Real>::CreatePeriodicSpline ()
 
     GVector<Real> coeff(size);
     bool solved = LinearSystem<Real>().Solve(mat, rhs, coeff);
-    assertion(solved, "Failed to solve linear system\n");
+    //assertion(solved, "Failed to solve linear system\n");
     WM5_UNUSED(solved);
 
     for (i = 0, j = 0; i < mNumSegments; ++i)

@@ -302,7 +302,7 @@ void Rational<N>::EliminatePowersOfTwo ()
     }
 
     int block1 = mDenom.GetTrailingBlock();
-    assertion(block1 >= 0, "Denominator should never be zero\n");
+    //assertion(block1 >= 0, "Denominator should never be zero\n");
     int minBlock = (block0 < block1 ? block0 : block1);
     int bit0 = mNumer.GetTrailingBit(block0);
     int bit1 = mDenom.GetTrailingBit(block1);
@@ -360,17 +360,17 @@ Rational<N>::Rational (float value)
         {
             if (mantissa & 0x00400000)
             {
-                assertion(false, "Input is quiet NaN.\n");
+                //assertion(false, "Input is quiet NaN.\n");
             }
             else
             {
                 // Payload is (mantissa & 0x003FFFFF).
-                assertion(false, "Input is signaling NaN.\n");
+                //assertion(false, "Input is signaling NaN.\n");
             }
         }
         else
         {
-            assertion(false, "Input is an infinity.\n");
+            //assertion(false, "Input is an infinity.\n");
         }
 #endif
         // The number is infinite, a quiet NaN, or a signaling NaN.  In all
@@ -547,17 +547,17 @@ Rational<N>::Rational (double value)
         {
             if (mantissa & 0x0008000000000000LL)
             {
-                assertion(false, "Input is quiet NaN.\n");
+                //assertion(false, "Input is quiet NaN.\n");
             }
             else
             {
                 // Payload is (mantissa & 0x0007FFFFFFFFFFFFLL).
-                assertion(false, "Input is signaling NaN.\n");
+                //assertion(false, "Input is signaling NaN.\n");
             }
         }
         else
         {
-            assertion(false, "Input is an infinity.\n");
+            //assertion(false, "Input is an infinity.\n");
         }
 #endif
         // The number is infinite, a quiet NaN, or a signaling NaN.  In all

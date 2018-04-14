@@ -80,19 +80,19 @@ VEManifoldMesh::EPtr VEManifoldMesh::InsertEdge (int v0, int v1)
         {
             // Second time vertex encountered.
             vertex = viter->second;
-            assertion(vertex != 0, "Unexpected condition\n");
+            //assertion(vertex != 0, "Unexpected condition\n");
 
             // Update vertex.
             if (vertex->E[1])
             {
-                assertion(false, "Mesh must be manifold\n");
+                //assertion(false, "Mesh must be manifold\n");
                 return 0;
             }
             vertex->E[1] = edge;
 
             // Update adjacent edge.
             EPtr adjacent = vertex->E[0];
-            assertion(adjacent != 0, "Unexpected condition\n");
+            //assertion(adjacent != 0, "Unexpected condition\n");
             for (int j = 0; j < 2; ++j)
             {
                 if (adjacent->V[j] == v)
@@ -125,9 +125,9 @@ bool VEManifoldMesh::RemoveEdge (int v0, int v1)
     {
         // Inform vertices you are going away.
         VMapIterator viter = mVMap.find(edge->V[i]);
-        assertion(viter != mVMap.end(), "Unexpected condition\n");
+        //assertion(viter != mVMap.end(), "Unexpected condition\n");
         Vertex* vertex = viter->second;
-        assertion(vertex != 0, "Unexpected condition\n");
+        //assertion(vertex != 0, "Unexpected condition\n");
         if (vertex->E[0] == edge)
         {
             // One-edge vertices always have pointer in slot zero.
@@ -140,7 +140,7 @@ bool VEManifoldMesh::RemoveEdge (int v0, int v1)
         }
         else
         {
-            assertion(false, "Unexpected condition\n");
+            //assertion(false, "Unexpected condition\n");
             return false;
         }
 

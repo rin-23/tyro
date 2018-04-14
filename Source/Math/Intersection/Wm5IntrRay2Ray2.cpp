@@ -171,7 +171,7 @@ void IntrRay2Ray2<Real>::SetDotThreshold (Real dotThreshold)
         return;
     }
 
-    assertion(false, "Dot threshold must be nonnegative.");
+    //assertion(false, "Dot threshold must be nonnegative.");
 }
 //----------------------------------------------------------------------------
 template <typename Real>

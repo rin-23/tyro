@@ -78,8 +78,8 @@ MinCircle2<Real>::MinCircle2 (int numPoints, const Vector2<Real>* points,
         //      ++i;
         //  }
         // This loop restarts from the beginning of the point list each time
-        // the circle needs updating.  Linus Källberg (Computer Science at
-        // Mälardalen University in Sweden) discovered that performance is
+        // the circle needs updating.  Linus Kï¿½llberg (Computer Science at
+        // Mï¿½lardalen University in Sweden) discovered that performance is
         // better when the remaining points in the array are processed before
         // restarting.  The points processed before the point that caused the
         // update are likely to be enclosed by the new circle (or near the
@@ -108,7 +108,7 @@ MinCircle2<Real>::MinCircle2 (int numPoints, const Vector2<Real>* points,
     }
     else
     {
-        assertion(false, "Input must contain points\n");
+        //assertion(false, "Input must contain points\n");
     }
 
     minimal.Radius = Math<Real>::Sqrt(minimal.Radius);

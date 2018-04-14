@@ -31,9 +31,9 @@ IncrementalDelaunay2<Real>::IncrementalDelaunay2 (Real xmin, Real ymin,
     mLastEdgeOpposite(-1),
     mLastEdgeOppositeIndex(-1)
 {
-    assertion(mXMin < mXMax && mYMin < mYMax,
+    //assertion(mXMin < mXMax && mYMin < mYMax,
         "Invalid bounding rectangle\n");
-    assertion((Real)0 <= mUncertainty && mUncertainty <= (Real)1,
+    //assertion((Real)0 <= mUncertainty && mUncertainty <= (Real)1,
         "Invalid uncertainty\n");
 
     if (mUncertainty > (Real)0)
@@ -120,7 +120,7 @@ int IncrementalDelaunay2<Real>::Insert (const Vector2<Real>& position)
     {
         // All points must lie in the supertriangle, so each point must have
         // a containing triangle.
-        assertion(false, "Unexpected condition\n");
+        //assertion(false, "Unexpected condition\n");
         return -1;
     }
 
@@ -195,7 +195,7 @@ int IncrementalDelaunay2<Real>::Insert (const Vector2<Real>& position)
     // Insert the new triangles formed by the input point and the edges of
     // the insertion polygon.
     const VEManifoldMesh::EMap& edgeMap = polygon.GetEdges();
-    assertion(edgeMap.size() >= 3 && polygon.IsClosed(),
+    //assertion(edgeMap.size() >= 3 && polygon.IsClosed(),
                 "Polygon must be at least a triangle\n");
     typename VEManifoldMesh::EMapCIterator iter = edgeMap.begin();
     typename VEManifoldMesh::EMapCIterator end = edgeMap.end();
@@ -253,7 +253,7 @@ int IncrementalDelaunay2<Real>::Remove (const Vector2<Real>& position)
         // All points must lie in the supertriangle, so each point must have
         // a containing triangle.  Moreover, in the Remove operation, the
         // point must be a vertex of a triangle.
-        assertion(false, "Unexpected condition\n");
+        //assertion(false, "Unexpected condition\n");
         return -1;
     }
 
@@ -274,7 +274,7 @@ int IncrementalDelaunay2<Real>::Remove (const Vector2<Real>& position)
         }
         if (i == 3)
         {
-            assertion(false, "Removal point must be a triangle vertex\n");
+            //assertion(false, "Removal point must be a triangle vertex\n");
             return -1;
         }
 
@@ -399,7 +399,7 @@ void IncrementalDelaunay2<Real>::GenerateRepresentation ()
                 mAdjacencies[i++] = permute[tri->Adj[2]];
             }
         }
-        assertion(i == 3*mNumTriangles, "Inconsistent condition\n");
+        //assertion(i == 3*mNumTriangles, "Inconsistent condition\n");
 
         mPathLast = -1;
         mPath = new1<int>(mNumTriangles + 1);
@@ -454,7 +454,7 @@ bool IncrementalDelaunay2<Real>::GetHull (int& numEdges, int*& indices)
             ++numEdges;
         }
     }
-    assertion(numEdges > 0, "Unexpected condition\n");
+    //assertion(numEdges > 0, "Unexpected condition\n");
     if (numEdges == 0)
     {
         return false;
@@ -936,7 +936,7 @@ IncrementalDelaunay2<Real>::GetContainingTriangleInternal (
         return tri;
     }
 
-    assertion(false, "Delaunay vertices must lie in some triangle\n");
+    //assertion(false, "Delaunay vertices must lie in some triangle\n");
     return 0;
 }
 //----------------------------------------------------------------------------
@@ -969,7 +969,7 @@ void IncrementalDelaunay2<Real>::SwapEdge (Triangle* tri0, Triangle* tri1)
     }
     if (i0 == 3)
     {
-        assertion(false, "Unexpected condition.\n");
+        //assertion(false, "Unexpected condition.\n");
         return;
     }
     i0p1 = (i0 + 1) % 3;
@@ -984,7 +984,7 @@ void IncrementalDelaunay2<Real>::SwapEdge (Triangle* tri0, Triangle* tri1)
     }
     if (i1 == 3)
     {
-        assertion(false, "Unexpected condition.\n");
+        //assertion(false, "Unexpected condition.\n");
         return;
     }
     i1p1 = (i1 + 1) % 3;
@@ -1007,7 +1007,7 @@ void IncrementalDelaunay2<Real>::SwapEdge (Triangle* tri0, Triangle* tri1)
         }
         if (j == 3)
         {
-            assertion(false, "Unexpected condition.\n");
+            //assertion(false, "Unexpected condition.\n");
             return;
         }
     }
@@ -1026,7 +1026,7 @@ void IncrementalDelaunay2<Real>::SwapEdge (Triangle* tri0, Triangle* tri1)
         }
         if (j == 3)
         {
-            assertion(false, "Unexpected condition.\n");
+            //assertion(false, "Unexpected condition.\n");
             return;
         }
     }
@@ -1129,7 +1129,7 @@ template <typename Real>
 int IncrementalDelaunay2<Real>::Triangle::DetachFrom (int adjIndex,
     Triangle* adj)
 {
-    assertion(0 <= adjIndex && adjIndex < 3 && Adj[adjIndex] == adj,
+    //assertion(0 <= adjIndex && adjIndex < 3 && Adj[adjIndex] == adj,
         "Invalid inputs\n");
     Adj[adjIndex] = 0;
     for (int i = 0; i < 3; ++i)
@@ -1260,7 +1260,7 @@ IncrementalDelaunay2<Real>::Triangulate::Triangulate (
             // Only one triangle remains.  Erase the three subtriangles
             // linked to removal point P and then insert the remaining
             // triangle.
-            assertion(mEHeap.GetNumElements() == 3,
+            //assertion(mEHeap.GetNumElements() == 3,
                 "Unexpected condition\n");
 
             mEHeap.Remove(i, weight);
@@ -1283,7 +1283,7 @@ IncrementalDelaunay2<Real>::Triangulate::Triangulate (
             }
             if (i0 == 3)
             {
-                assertion(false, "Unexpected condition\n");
+                //assertion(false, "Unexpected condition\n");
                 break;
             }
             tri0->V[i0] = vertexP.Index;
@@ -1298,7 +1298,7 @@ IncrementalDelaunay2<Real>::Triangulate::Triangulate (
             }
             if (ip == 3)
             {
-                assertion(false, "Unexpected condition\n");
+                //assertion(false, "Unexpected condition\n");
                 break;
             }
             Triangle* adj = triP->Adj[ip];
@@ -1315,7 +1315,7 @@ IncrementalDelaunay2<Real>::Triangulate::Triangulate (
                 }
                 if (i == 3)
                 {
-                    assertion(false, "Unexpected condition\n");
+                    //assertion(false, "Unexpected condition\n");
                     break;
                 }
             }
@@ -1331,7 +1331,7 @@ IncrementalDelaunay2<Real>::Triangulate::Triangulate (
             }
             if (in == 3)
             {
-                assertion(false, "Unexpected condition\n");
+                //assertion(false, "Unexpected condition\n");
                 break;
             }
             adj = triN->Adj[in];
@@ -1348,7 +1348,7 @@ IncrementalDelaunay2<Real>::Triangulate::Triangulate (
                 }
                 if (i == 3)
                 {
-                    assertion(false, "Unexpected condition\n");
+                    //assertion(false, "Unexpected condition\n");
                     break;
                 }
             }
@@ -1376,7 +1376,7 @@ IncrementalDelaunay2<Real>::Triangulate::Triangulate (
             {
                 mEHeap.Update(V(vPrev).EarRecord, (Real)-1);
                 mEHeap.Remove(i, weight);
-                assertion(i == vPrev && weight == (Real)-1,
+                //assertion(i == vPrev && weight == (Real)-1,
                     "Unexpected condition\n");
             }
         }
@@ -1406,7 +1406,7 @@ IncrementalDelaunay2<Real>::Triangulate::Triangulate (
             {
                 mEHeap.Update(V(vNext).EarRecord, (Real)-1);
                 mEHeap.Remove(i, weight);
-                assertion(i == vNext && weight == (Real)-1,
+                //assertion(i == vNext && weight == (Real)-1,
                     "Unexpected condition\n");
             }
         }
@@ -1533,7 +1533,7 @@ void IncrementalDelaunay2<Real>::Triangulate::RemoveV (int i)
 template <typename Real>
 void IncrementalDelaunay2<Real>::Triangulate::RemoveR (int i)
 {
-    assertion(mRFirst != -1 && mRLast != -1, "List must be nonempty\n");
+    //assertion(mRFirst != -1 && mRLast != -1, "List must be nonempty\n");
 
     if (i == mRFirst)
     {
@@ -1568,7 +1568,7 @@ template <typename Real>
 Real IncrementalDelaunay2<Real>::Triangulate::ComputeWeight (int v0, int p)
 {
     RPVertex& vertex0 = V(v0);
-    assertion(vertex0.IsEarTip, "Vertex must be an ear tip\n");
+    //assertion(vertex0.IsEarTip, "Vertex must be an ear tip\n");
     if (0 <= vertex0.Index && vertex0.Index <= 2)
     {
         // The vertex is a supervertex.  Return infinite weight so that the

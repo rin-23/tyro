@@ -17,7 +17,7 @@ template <typename Real>
 ParametricSurface<Real>::ParametricSurface (Real umin, Real umax,
    Real vmin, Real vmax, bool rectangular)
 {
-    assertion(umin < umax && vmin < vmax, "Invalid domain\n");
+    //assertion(umin < umax && vmin < vmax, "Invalid domain\n");
 
     mUMin = umin;
     mUMax = umax;

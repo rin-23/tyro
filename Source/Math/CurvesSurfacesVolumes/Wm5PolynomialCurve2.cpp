@@ -18,8 +18,8 @@ PolynomialCurve2<Real>::PolynomialCurve2 (Polynomial1<Real>* xPoly,
     :
     SingleCurve2<Real>((Real)0, (Real)1)
 {
-    assertion(xPoly && yPoly, "Invalid input\n");
-    assertion(xPoly->GetDegree() == yPoly->GetDegree(), "Invalid input\n");
+    //assertion(xPoly && yPoly, "Invalid input\n");
+    //assertion(xPoly->GetDegree() == yPoly->GetDegree(), "Invalid input\n");
 
     mXPoly = xPoly;
     mYPoly = yPoly;

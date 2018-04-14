@@ -102,14 +102,14 @@ TSManifoldMesh::Tetrahedron* TSManifoldMesh::Insert(int v0, int v1, int v2,
             face = titer->second;
             if (!face)
             {
-                assertion(false, "Unexpected condition.");
+                //assertion(false, "Unexpected condition.");
                 return 0;
             }
 
             // Update the face.
             if (face->T[1])
             {
-                assertion(false, "The mesh must be manifold.");
+                //assertion(false, "The mesh must be manifold.");
                 return 0;
             }
             face->T[1] = tetra;
@@ -118,7 +118,7 @@ TSManifoldMesh::Tetrahedron* TSManifoldMesh::Insert(int v0, int v1, int v2,
             Tetrahedron* adjacent = face->T[0];
             if (!adjacent)
             {
-                assertion(false, "Unexpected condition.");
+                //assertion(false, "Unexpected condition.");
                 return 0;
             }
             for (int j = 0; j < 4; ++j)
@@ -160,7 +160,7 @@ bool TSManifoldMesh::Remove(int v0, int v1, int v2, int v3)
         if (!face)
         {
             // The triangle edge should be nonnull.
-            assertion(false, "Unexpected condition.");
+            //assertion(false, "Unexpected condition.");
             return false;
         }
 
@@ -176,7 +176,7 @@ bool TSManifoldMesh::Remove(int v0, int v1, int v2, int v3)
         }
         else
         {
-            assertion(false, "Unexpected condition.");
+            //assertion(false, "Unexpected condition.");
             return false;
         }
 

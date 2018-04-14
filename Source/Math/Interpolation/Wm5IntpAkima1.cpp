@@ -19,7 +19,7 @@ IntpAkima1<Real>::IntpAkima1 (int quantity, Real* F)
 {
     // At least three data points are needed to construct the estimates of
     // the boundary derivatives.
-    assertion(quantity >= 3 && F, "Invalid input\n");
+    //assertion(quantity >= 3 && F, "Invalid input\n");
 
     mQuantity = quantity;
     mF = F;

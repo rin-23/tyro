@@ -136,7 +136,7 @@ NoniterativeEigen3x3<Real>::~NoniterativeEigen3x3 ()
 template <typename Real>
 const Real NoniterativeEigen3x3<Real>::GetEigenvalue (int i) const
 {
-    assertion(0 <= i && i < 3, "Invalid index\n");
+    //assertion(0 <= i && i < 3, "Invalid index\n");
     return mEigenvalue[i];
 }
 //----------------------------------------------------------------------------
@@ -150,7 +150,7 @@ template <typename Real>
 const Vector3<Real>& NoniterativeEigen3x3<Real>::GetEigenvector(
     int i) const
 {
-    assertion(0 <= i && i < 3, "Invalid index\n");
+    //assertion(0 <= i && i < 3, "Invalid index\n");
     return mEigenvector[i];
 }
 //----------------------------------------------------------------------------

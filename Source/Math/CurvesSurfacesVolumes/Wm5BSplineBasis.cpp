@@ -164,8 +164,8 @@ void BSplineBasis<Real>::Deallocate (Real** data)
 template <typename Real>
 int BSplineBasis<Real>::Initialize (int numCtrlPoints, int degree, bool open)
 {
-    assertion(numCtrlPoints >= 2, "Invalid input\n");
-    assertion(1 <= degree && degree <= numCtrlPoints-1, "Invalid input\n");
+    //assertion(numCtrlPoints >= 2, "Invalid input\n");
+    //assertion(1 <= degree && degree <= numCtrlPoints-1, "Invalid input\n");
 
     mNumCtrlPoints = numCtrlPoints;
     mDegree = degree;
@@ -195,12 +195,12 @@ void BSplineBasis<Real>::SetKnot (int j, Real value)
         }
         else
         {
-            assertion(false, "Knot index out of range.\n");
+            //assertion(false, "Knot index out of range.\n");
         }
     }
     else
     {
-        assertion(false, "Knots cannot be set for uniform splines.\n");
+        //assertion(false, "Knots cannot be set for uniform splines.\n");
     }
 }
 //----------------------------------------------------------------------------
@@ -214,7 +214,7 @@ Real BSplineBasis<Real>::GetKnot (int j) const
         return mKnot[i];
     }
 
-    assertion(false, "Knot index out of range.\n");
+    //assertion(false, "Knot index out of range.\n");
     return Math<Real>::MAX_REAL;
 }
 //----------------------------------------------------------------------------
@@ -270,7 +270,7 @@ template <typename Real>
 void BSplineBasis<Real>::Compute (Real t, unsigned int order, int& minIndex,
     int& maxIndex) const
 {
-    assertion(order <= 3, "Only derivatives to third order supported\n");
+    //assertion(order <= 3, "Only derivatives to third order supported\n");
 
     if (order >= 1)
     {

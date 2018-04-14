@@ -170,7 +170,7 @@ const Vector2<Real>& ConvexHull2<Real>::GetLineDirection () const
 template <typename Real>
 ConvexHull1<Real>* ConvexHull2<Real>::GetConvexHull1 () const
 {
-    assertion(mDimension == 1, "The dimension must be 1\n");
+    //assertion(mDimension == 1, "The dimension must be 1\n");
     if (mDimension != 1)
     {
         return 0;
@@ -196,7 +196,7 @@ ConvexHull2<Real>::ConvexHull2 (const char* filename, int mode)
     mQuery(0)
 {
     bool loaded = Load(filename, mode);
-    assertion(loaded, "Cannot open file %s\n", filename);
+    //assertion(loaded, "Cannot open file %s\n", filename);
     WM5_UNUSED(loaded);
 }
 //----------------------------------------------------------------------------
@@ -308,14 +308,14 @@ bool ConvexHull2<Real>::Update (Edge*& hull, int i)
 
     // Remove the visible edges.
     Edge* adj0 = visible->E[0];
-    assertion(adj0 != 0, "Expecting nonnull adjacent\n");
+    //assertion(adj0 != 0, "Expecting nonnull adjacent\n");
     if (!adj0)
     {
         return false;
     }
 
     Edge* adj1 = visible->E[1];
-    assertion(adj1 != 0, "Expecting nonnull adjacent\n");
+    //assertion(adj1 != 0, "Expecting nonnull adjacent\n");
     if (!adj1)
     {
         return false;
@@ -327,7 +327,7 @@ bool ConvexHull2<Real>::Update (Edge*& hull, int i)
     {
         hull = adj0;
         adj0 = adj0->E[0];
-        assertion(adj0 != 0, "Expecting nonnull adjacent\n");
+        //assertion(adj0 != 0, "Expecting nonnull adjacent\n");
         if (!adj0)
         {
             return false;
@@ -340,7 +340,7 @@ bool ConvexHull2<Real>::Update (Edge*& hull, int i)
     {
         hull = adj1;
         adj1 = adj1->E[1];
-        assertion(adj1 != 0, "Expecting nonnull adjacent\n");
+        //assertion(adj1 != 0, "Expecting nonnull adjacent\n");
         if (!adj1)
         {
             return false;
@@ -425,7 +425,7 @@ void ConvexHull2<Real>::Edge::DeleteAll ()
         adj = save;
     }
 
-    assertion(adj == this, "Unexpected condition\n");
+    //assertion(adj == this, "Unexpected condition\n");
     Edge* tmpThis = this;
     delete0(tmpThis);
 }

@@ -106,7 +106,7 @@ template <typename Real>
 inline const Real* GMatrix<Real>::operator[] (int row) const
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(0 <= row && row < mNumRows, "Invalid index in operator[]\n");
+    //assertion(0 <= row && row < mNumRows, "Invalid index in operator[]\n");
 #endif
     return mEntry[row];
 }
@@ -115,7 +115,7 @@ template <typename Real>
 inline Real* GMatrix<Real>::operator[] (int row)
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(0 <= row && row < mNumRows, "Invalid index in operator[]\n");
+    //assertion(0 <= row && row < mNumRows, "Invalid index in operator[]\n");
 #endif
     return mEntry[row];
 }
@@ -124,7 +124,7 @@ template <typename Real>
 inline const Real& GMatrix<Real>::operator() (int row, int col) const
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(0 <= row && row < mNumRows && 0 <= col && col < mNumColumns,
+    //assertion(0 <= row && row < mNumRows && 0 <= col && col < mNumColumns,
         "Invalid index in operator()\n");
 #endif
     return mEntry[row][col];
@@ -134,7 +134,7 @@ template <typename Real>
 inline Real& GMatrix<Real>::operator() (int row, int col)
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(0 <= row && row < mNumRows && 0 <= col && col < mNumColumns,
+    //assertion(0 <= row && row < mNumRows && 0 <= col && col < mNumColumns,
         "Invalid index in operator()\n");
 #endif
     return mEntry[row][col];
@@ -144,7 +144,7 @@ template <typename Real>
 void GMatrix<Real>::SwapRows (int row0, int row1)
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(0 <= row0 && row0 < mNumRows
+    //assertion(0 <= row0 && row0 < mNumRows
         && 0 <= row1 && row1 < mNumRows,
         "Invalid index in SwapRows\n");
 #endif
@@ -163,7 +163,7 @@ template <typename Real>
 void GMatrix<Real>::SwapColumns (int col0, int col1)
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(0 <= col0 && col0 < mNumColumns
+    //assertion(0 <= col0 && col0 < mNumColumns
         && 0 <= col1 && col1 < mNumColumns,
         "Invalid index in SwapColumns\n");
 #endif
@@ -182,7 +182,7 @@ template <typename Real>
 void GMatrix<Real>::SetRow (int row, const GVector<Real>& vec)
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(0 <= row && row < mNumRows && vec.GetSize() == mNumColumns,
+    //assertion(0 <= row && row < mNumRows && vec.GetSize() == mNumColumns,
         "Invalid index in SetRow\n");
 #endif
     for (int c = 0; c < mNumColumns; ++c)
@@ -195,7 +195,7 @@ template <typename Real>
 GVector<Real> GMatrix<Real>::GetRow (int row) const
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(0 <= row && row < mNumRows, "Invalid index in GetRow\n");
+    //assertion(0 <= row && row < mNumRows, "Invalid index in GetRow\n");
 #endif
     GVector<Real> vec(mNumColumns);
     for (int c = 0; c < mNumColumns; ++c)
@@ -209,7 +209,7 @@ template <typename Real>
 void GMatrix<Real>::SetColumn (int col, const GVector<Real>& vec)
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(0 <= col && col < mNumColumns && vec.GetSize() == mNumRows,
+    //assertion(0 <= col && col < mNumColumns && vec.GetSize() == mNumRows,
         "Invalid index in SetColumn\n");
 #endif
     for (int r = 0; r < mNumRows; ++r)
@@ -222,7 +222,7 @@ template <typename Real>
 GVector<Real> GMatrix<Real>::GetColumn (int col) const
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(0 <= col && col < mNumColumns,
+    //assertion(0 <= col && col < mNumColumns,
         "Invalid index in GetColumn\n");
 #endif
     GVector<Real> vec(mNumRows);
@@ -312,7 +312,7 @@ template <typename Real>
 bool GMatrix<Real>::operator== (const GMatrix& mat) const
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(mNumRows == mat.mNumRows && mNumColumns == mat.mNumColumns,
+    //assertion(mNumRows == mat.mNumRows && mNumColumns == mat.mNumColumns,
         "Mismatch of matrix sizes.\n");
 #endif
     for (int i = 0; i < mNumElements; ++i)
@@ -329,7 +329,7 @@ template <typename Real>
 bool GMatrix<Real>::operator!= (const GMatrix& mat) const
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(mNumRows == mat.mNumRows && mNumColumns == mat.mNumColumns,
+    //assertion(mNumRows == mat.mNumRows && mNumColumns == mat.mNumColumns,
         "Mismatch of matrix sizes.\n");
 #endif
     for (int i = 0; i < mNumElements; ++i)
@@ -346,7 +346,7 @@ template <typename Real>
 bool GMatrix<Real>::operator<  (const GMatrix& mat) const
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(mNumRows == mat.mNumRows && mNumColumns == mat.mNumColumns,
+    //assertion(mNumRows == mat.mNumRows && mNumColumns == mat.mNumColumns,
         "Mismatch of matrix sizes.\n");
 #endif
     for (int i = 0; i < mNumElements; ++i)
@@ -368,7 +368,7 @@ template <typename Real>
 bool GMatrix<Real>::operator<= (const GMatrix& mat) const
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(mNumRows == mat.mNumRows && mNumColumns == mat.mNumColumns,
+    //assertion(mNumRows == mat.mNumRows && mNumColumns == mat.mNumColumns,
         "Mismatch of matrix sizes.\n");
 #endif
     for (int i = 0; i < mNumElements; ++i)
@@ -390,7 +390,7 @@ template <typename Real>
 bool GMatrix<Real>::operator>  (const GMatrix& mat) const
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(mNumRows == mat.mNumRows && mNumColumns == mat.mNumColumns,
+    //assertion(mNumRows == mat.mNumRows && mNumColumns == mat.mNumColumns,
         "Mismatch of matrix sizes.\n");
 #endif
     for (int i = 0; i < mNumElements; ++i)
@@ -412,7 +412,7 @@ template <typename Real>
 bool GMatrix<Real>::operator>= (const GMatrix& mat) const
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(mNumRows == mat.mNumRows && mNumColumns == mat.mNumColumns,
+    //assertion(mNumRows == mat.mNumRows && mNumColumns == mat.mNumColumns,
         "Mismatch of matrix sizes.\n");
 #endif
     for (int i = 0; i < mNumElements; ++i)
@@ -434,7 +434,7 @@ template <typename Real>
 GMatrix<Real> GMatrix<Real>::operator+ (const GMatrix& mat) const
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(mNumRows == mat.mNumRows && mNumColumns == mat.mNumColumns,
+    //assertion(mNumRows == mat.mNumRows && mNumColumns == mat.mNumColumns,
         "Mismatch of matrix sizes.\n");
 #endif
     GMatrix<Real> result(mNumRows, mNumColumns);
@@ -452,7 +452,7 @@ template <typename Real>
 GMatrix<Real> GMatrix<Real>::operator- (const GMatrix& mat) const
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(mNumRows == mat.mNumRows && mNumColumns == mat.mNumColumns,
+    //assertion(mNumRows == mat.mNumRows && mNumColumns == mat.mNumColumns,
         "Mismatch of matrix sizes.\n");
 #endif
     GMatrix<Real> result(mNumRows, mNumColumns);
@@ -471,7 +471,7 @@ GMatrix<Real> GMatrix<Real>::operator* (const GMatrix& mat) const
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
     // 'this' is RxN, 'M' is NxC, 'product = this*M' is RxC
-    assertion(mNumColumns == mat.mNumRows, "Mismatch of matrix sizes.\n");
+    //assertion(mNumColumns == mat.mNumRows, "Mismatch of matrix sizes.\n");
 #endif
 
     GMatrix<Real> result(mNumRows, mat.mNumColumns);
@@ -545,7 +545,7 @@ template <typename Real>
 GMatrix<Real>& GMatrix<Real>::operator+= (const GMatrix& mat)
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(mNumRows == mat.mNumRows && mNumColumns == mat.mNumColumns,
+    //assertion(mNumRows == mat.mNumRows && mNumColumns == mat.mNumColumns,
         "Mismatch of matrix sizes.\n");
 #endif
     const Real* srcEntry = mat.mEntry[0];
@@ -561,7 +561,7 @@ template <typename Real>
 GMatrix<Real>& GMatrix<Real>::operator-= (const GMatrix& mat)
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(mNumRows == mat.mNumRows && mNumColumns == mat.mNumColumns,
+    //assertion(mNumRows == mat.mNumRows && mNumColumns == mat.mNumColumns,
         "Mismatch of matrix sizes.\n");
 #endif
     const Real* srcEntry = mat.mEntry[0];
@@ -613,7 +613,7 @@ template <typename Real>
 GVector<Real> GMatrix<Real>::operator* (const GVector<Real>& vec) const
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(vec.GetSize() == mNumColumns,
+    //assertion(vec.GetSize() == mNumColumns,
         "Mismatched sizes in operator*.\n");
 #endif
     GVector<Real> result(mNumRows);
@@ -633,7 +633,7 @@ Real GMatrix<Real>::QForm (const GVector<Real>& u, const GVector<Real>& v)
     const
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
-    assertion(u.GetSize() == mNumRows && v.GetSize() == mNumColumns,
+    //assertion(u.GetSize() == mNumRows && v.GetSize() == mNumColumns,
         "Mismatched sizes in QForm.\n");
 #endif
     return u.Dot((*this)*v);
@@ -658,7 +658,7 @@ GMatrix<Real> GMatrix<Real>::TransposeTimes (const GMatrix& mat) const
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
     // P = A^T*B, P[r][c] = sum_m A[m][r]*B[m][c]
-    assertion(mNumRows == mat.mNumRows, "Mismatch in TransposeTimes\n");
+    //assertion(mNumRows == mat.mNumRows, "Mismatch in TransposeTimes\n");
 #endif
     GMatrix<Real> result(mNumColumns, mat.mNumColumns);
     for (int r = 0; r < result.mNumRows; ++r)
@@ -679,7 +679,7 @@ GMatrix<Real> GMatrix<Real>::TimesTranspose (const GMatrix& mat) const
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
     // P = A*B^T, P[r][c] = sum_m A[r][m]*B[c][m]
-    assertion(mNumColumns == mat.mNumColumns, "Mismatch in TimesTranspose\n");
+    //assertion(mNumColumns == mat.mNumColumns, "Mismatch in TimesTranspose\n");
 #endif
     GMatrix<Real> result(mNumRows, mat.mNumRows);
     for (int r = 0; r < result.mNumRows; ++r)
@@ -701,7 +701,7 @@ GMatrix<Real> GMatrix<Real>::TransposeTimesTranspose (const GMatrix& mat)
 {
 #ifdef WM5_ASSERT_GMATRIX_OUT_OF_RANGE
     // P = A*B^T, P[r][c] = sum_m A[m][r]*B[c][m]
-    assertion(mNumColumns == mat.mNumColumns,
+    //assertion(mNumColumns == mat.mNumColumns,
         "Mismatch in TransposeTimesTranspose\n");
 #endif
     GMatrix<Real> result(mNumColumns, mat.mNumRows);

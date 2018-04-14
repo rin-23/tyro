@@ -29,7 +29,7 @@ T* Memory::New1 (const size_t bound0)
     else
     {
 #ifdef WM5_USE_MEMORY_ASSERT_ON_PREINIT_POSTTERM_OPERATIONS
-        assertion(false, "Allocations are not tracked outside a "
+        //assertion(false, "Allocations are not tracked outside a "
             "Memory::Initialize/Memory::Terminate block.\n");
 #endif
         data = new T[bound0];
@@ -63,7 +63,7 @@ T** Memory::New2 (const size_t bound0, const size_t bound1)
     else
     {
 #ifdef WM5_USE_MEMORY_ASSERT_ON_PREINIT_POSTTERM_OPERATIONS
-        assertion(false, "Allocations are not tracked outside a "
+        //assertion(false, "Allocations are not tracked outside a "
             "Memory::Initialize/Memory::Terminate block.\n");
 #endif
         data = new T*[bound1];
@@ -110,7 +110,7 @@ T*** Memory::New3 (const size_t bound0, const size_t bound1,
     else
     {
 #ifdef WM5_USE_MEMORY_ASSERT_ON_PREINIT_POSTTERM_OPERATIONS
-        assertion(false, "Allocations are not tracked outside a "
+        //assertion(false, "Allocations are not tracked outside a "
             "Memory::Initialize/Memory::Terminate block.\n");
 #endif
         data = new T**[bound2];
@@ -167,7 +167,7 @@ T**** Memory::New4 (const size_t bound0, const size_t bound1,
     else
     {
 #ifdef WM5_USE_MEMORY_ASSERT_ON_PREINIT_POSTTERM_OPERATIONS
-        assertion(false, "Allocations are not tracked outside a "
+        //assertion(false, "Allocations are not tracked outside a "
             "Memory::Initialize/Memory::Terminate block.\n");
 #endif
         data = new T***[bound3];
@@ -204,7 +204,7 @@ void Memory::Delete0 (T*& data)
         if (!msMap)
         {
 #ifdef WM5_USE_MEMORY_ASSERT_ON_PREINIT_POSTTERM_OPERATIONS
-            assertion(false, "Deallocations are not tracked outside a "
+            //assertion(false, "Deallocations are not tracked outside a "
                 "Memory::Initialize/Memory::Terminate block.\n");
 #endif
             delete data;
@@ -230,7 +230,7 @@ void Memory::Delete0 (T*& data)
             }
             else
             {
-                assertion(false, "Mismatch in dimensions.\n");
+                //assertion(false, "Mismatch in dimensions.\n");
             }
         }
         else
@@ -238,7 +238,7 @@ void Memory::Delete0 (T*& data)
 #ifdef WM5_USE_MEMORY_ALLOW_DELETE_ON_FAILED_MAP_LOOKUP
             delete data;
 #else
-            assertion(false, "Memory block not in map.\n");
+            //assertion(false, "Memory block not in map.\n");
 #endif
         }
 
@@ -256,7 +256,7 @@ void Memory::Delete1 (T*& data)
         if (!msMap)
         {
 #ifdef WM5_USE_MEMORY_ASSERT_ON_PREINIT_POSTTERM_OPERATIONS
-            assertion(false, "Deallocations are not tracked outside a "
+            //assertion(false, "Deallocations are not tracked outside a "
                 "Memory::Initialize/Memory::Terminate block.\n");
 #endif
             delete[] data;
@@ -287,7 +287,7 @@ void Memory::Delete1 (T*& data)
             }
             else
             {
-                assertion(false, "Mismatch in dimensions.\n");
+                //assertion(false, "Mismatch in dimensions.\n");
             }
         }
         else
@@ -295,7 +295,7 @@ void Memory::Delete1 (T*& data)
 #ifdef WM5_USE_MEMORY_ALLOW_DELETE_ON_FAILED_MAP_LOOKUP
             delete[] data;
 #else
-            assertion(false, "Memory block not in map.\n");
+            //assertion(false, "Memory block not in map.\n");
 #endif
         }
 
@@ -313,7 +313,7 @@ void Memory::Delete2 (T**& data)
         if (!msMap)
         {
 #ifdef WM5_USE_MEMORY_ASSERT_ON_PREINIT_POSTTERM_OPERATIONS
-            assertion(false, "Deallocations are not tracked outside a "
+            //assertion(false, "Deallocations are not tracked outside a "
                 "Memory::Initialize/Memory::Terminate block.\n");
 #endif
             delete[] data[0];
@@ -349,7 +349,7 @@ void Memory::Delete2 (T**& data)
             }
             else
             {
-                assertion(false, "Mismatch in dimensions.\n");
+                //assertion(false, "Mismatch in dimensions.\n");
             }
         }
         else
@@ -358,7 +358,7 @@ void Memory::Delete2 (T**& data)
             delete[] data[0];
             delete[] data;
 #else
-            assertion(false, "Memory block not in map.\n");
+            //assertion(false, "Memory block not in map.\n");
 #endif
         }
 
@@ -376,7 +376,7 @@ void Memory::Delete3 (T***& data)
         if (!msMap)
         {
 #ifdef WM5_USE_MEMORY_ASSERT_ON_PREINIT_POSTTERM_OPERATIONS
-            assertion(false, "Deallocations are not tracked outside a "
+            //assertion(false, "Deallocations are not tracked outside a "
                 "Memory::Initialize/Memory::Terminate block.\n");
 #endif
             delete[] data[0][0];
@@ -417,7 +417,7 @@ void Memory::Delete3 (T***& data)
             }
             else
             {
-                assertion(false, "Mismatch in dimensions.\n");
+                //assertion(false, "Mismatch in dimensions.\n");
             }
         }
         else
@@ -427,7 +427,7 @@ void Memory::Delete3 (T***& data)
             delete[] data[0];
             delete[] data;
 #else
-            assertion(false, "Memory block not in map.\n");
+            //assertion(false, "Memory block not in map.\n");
 #endif
         }
 
@@ -445,7 +445,7 @@ void Memory::Delete4 (T****& data)
         if (!msMap)
         {
 #ifdef WM5_USE_MEMORY_ASSERT_ON_PREINIT_POSTTERM_OPERATIONS
-            assertion(false, "Deallocations are not tracked outside a "
+            //assertion(false, "Deallocations are not tracked outside a "
                 "Memory::Initialize/Memory::Terminate block.\n");
 #endif
             delete[] data[0][0][0];
@@ -491,7 +491,7 @@ void Memory::Delete4 (T****& data)
             }
             else
             {
-                assertion(false, "Mismatch in dimensions.\n");
+                //assertion(false, "Mismatch in dimensions.\n");
             }
         }
         else
@@ -502,7 +502,7 @@ void Memory::Delete4 (T****& data)
             delete[] data[0];
             delete[] data;
 #else
-            assertion(false, "Memory block not in map.\n");
+            //assertion(false, "Memory block not in map.\n");
 #endif
         }
 

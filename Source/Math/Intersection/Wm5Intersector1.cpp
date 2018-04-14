@@ -15,7 +15,7 @@ namespace Wm5
 template <typename Real>
 Intersector1<Real>::Intersector1 (Real u0, Real u1, Real v0, Real v1)
 {
-    assertion(u0 <= u1 && v0 <= v1, "Malformed interval\n");
+    //assertion(u0 <= u1 && v0 <= v1, "Malformed interval\n");
     mU[0] = u0;
     mU[1] = u1;
     mV[0] = v0;
@@ -28,7 +28,7 @@ Intersector1<Real>::Intersector1 (Real u0, Real u1, Real v0, Real v1)
 template <typename Real>
 Intersector1<Real>::Intersector1 (Real u[2], Real v[2])
 {
-    assertion(u[0] <= u[1] && v[0] <= v[1], "Malformed interval\n");
+    //assertion(u[0] <= u[1] && v[0] <= v[1], "Malformed interval\n");
     for (int i = 0; i < 2; ++i)
     {
         mU[i] = u[i];

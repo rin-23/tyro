@@ -189,7 +189,7 @@ Delaunay3<Real>::Delaunay3 (int numVertices, Vector3<Real>* vertices,
                 mAdjacencies[i] = permute[tetra->S[j]];
             }
         }
-        assertion(i == 4*mNumSimplices, "Unexpected mismatch\n");
+        //assertion(i == 4*mNumSimplices, "Unexpected mismatch\n");
 
         mPathLast = -1;
         mPath = new1<int>(mNumSimplices + 1);
@@ -236,7 +236,7 @@ const Vector3<Real>& Delaunay3<Real>::GetLineDirection () const
 template <typename Real>
 Delaunay1<Real>* Delaunay3<Real>::GetDelaunay1 () const
 {
-    assertion(mDimension == 1, "The dimension must be 1\n");
+    //assertion(mDimension == 1, "The dimension must be 1\n");
     if (mDimension != 1)
     {
         return 0;
@@ -268,7 +268,7 @@ const Vector3<Real>& Delaunay3<Real>::GetPlaneDirection (int i) const
 template <typename Real>
 Delaunay2<Real>* Delaunay3<Real>::GetDelaunay2 () const
 {
-    assertion(mDimension == 2, "The dimension must be 2\n");
+    //assertion(mDimension == 2, "The dimension must be 2\n");
     if (mDimension != 2)
     {
         return 0;
@@ -289,7 +289,7 @@ Delaunay2<Real>* Delaunay3<Real>::GetDelaunay2 () const
 template <typename Real>
 bool Delaunay3<Real>::GetHull (int& numTriangles, int*& indices) const
 {
-    assertion(mDimension == 3, "The dimension must be 3\n");
+    //assertion(mDimension == 3, "The dimension must be 3\n");
     if (mDimension != 3)
     {
         return false;
@@ -307,7 +307,7 @@ bool Delaunay3<Real>::GetHull (int& numTriangles, int*& indices) const
             numTriangles++;
         }
     }
-    assertion(numTriangles > 0, "There must be at least one tetrahedron\n");
+    //assertion(numTriangles > 0, "There must be at least one tetrahedron\n");
     if (numTriangles == 0)
     {
         return false;
@@ -357,7 +357,7 @@ bool Delaunay3<Real>::GetHull (int& numTriangles, int*& indices) const
 template <typename Real>
 int Delaunay3<Real>::GetContainingTetrahedron (const Vector3<Real>& p) const
 {
-    assertion(mDimension == 3, "The dimension must be 3\n");
+    //assertion(mDimension == 3, "The dimension must be 3\n");
     if (mDimension != 3)
     {
         return -1;
@@ -481,7 +481,7 @@ int Delaunay3<Real>::GetLastFace (int& v0, int& v1, int& v2, int& v3) const
 template <typename Real>
 bool Delaunay3<Real>::GetVertexSet (int i, Vector3<Real> vertices[4]) const
 {
-    assertion(mDimension == 3, "The dimension must be 3\n");
+    //assertion(mDimension == 3, "The dimension must be 3\n");
     if (mDimension != 3)
     {
         return false;
@@ -502,7 +502,7 @@ bool Delaunay3<Real>::GetVertexSet (int i, Vector3<Real> vertices[4]) const
 template <typename Real>
 bool Delaunay3<Real>::GetIndexSet (int i, int indices[4]) const
 {
-    assertion(mDimension == 3, "The dimension must be 3\n");
+    //assertion(mDimension == 3, "The dimension must be 3\n");
     if (mDimension != 3)
     {
         return false;
@@ -523,7 +523,7 @@ bool Delaunay3<Real>::GetIndexSet (int i, int indices[4]) const
 template <typename Real>
 bool Delaunay3<Real>::GetAdjacentSet (int i, int adjacencies[4]) const
 {
-    assertion(mDimension == 3, "The dimension must be 3\n");
+    //assertion(mDimension == 3, "The dimension must be 3\n");
     if (mDimension != 3)
     {
         return false;
@@ -545,7 +545,7 @@ template <typename Real>
 bool Delaunay3<Real>::GetBarycentricSet (int i, const Vector3<Real>& p,
     Real bary[4]) const
 {
-    assertion(mDimension == 3, "The dimension must be 3\n");
+    //assertion(mDimension == 3, "The dimension must be 3\n");
     if (mDimension != 3)
     {
         return false;
@@ -574,7 +574,7 @@ Delaunay3<Real>::Delaunay3 (const char* filename, int mode)
     mPath(0)
 {
     bool loaded = Load(filename, mode);
-    assertion(loaded, "Cannot open file %s\n", filename);
+    //assertion(loaded, "Cannot open file %s\n", filename);
     WM5_UNUSED(loaded);
 }
 //----------------------------------------------------------------------------
@@ -732,7 +732,7 @@ bool Delaunay3<Real>::GetContainingTetrahedron (int i, Tetrahedron*& tetra)
         }
     }
 
-    assertion(false, "Unexpected termination of GetContainingTetrahedron\n");
+    //assertion(false, "Unexpected termination of GetContainingTetrahedron\n");
     return false;
 }
 //----------------------------------------------------------------------------
@@ -857,8 +857,8 @@ void Delaunay3<Real>::Update (int i)
             {
                 TSManifoldMesh::TMapCIterator iter = trimap.find(
                     UnorderedTriangleKey(key->V[0], key->V[1], key->V[2]));
-                assertion(iter != trimap.end(), "Unexpected condition\n");
-                assertion(iter->second->T[1] == 0, "Unexpected condition\n");
+                //assertion(iter != trimap.end(), "Unexpected condition\n");
+                //assertion(iter->second->T[1] == 0, "Unexpected condition\n");
                 Tetrahedron* adj = iter->second->T[0];
                 if (adj && candidates.find(adj) == candidates.end())
                 {

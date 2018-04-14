@@ -223,7 +223,7 @@ Integer<N> Integer<N>::operator- () const
     // Test for overflow.
     if (result.GetSign() == GetSign())
     {
-        assertion(result == 0, "Integer overflow\n");
+        //assertion(result == 0, "Integer overflow\n");
     }
 
     return result;
@@ -247,7 +247,7 @@ Integer<N> Integer<N>::operator+ (const Integer& value) const
     // Test for overflow.
     if (GetSign() == value.GetSign())
     {
-        assertion(result.GetSign() == GetSign(), "Integer overflow\n");
+        //assertion(result.GetSign() == GetSign(), "Integer overflow\n");
     }
 
     return result;
@@ -326,9 +326,9 @@ Integer<N> Integer<N>::operator* (const Integer& value) const
     // to choose the integer size.
     for (int i = 2*INT_SIZE-1; i >= INT_SIZE; --i)
     {
-        assertion(result[i] == 0, "Integer overflow\n");
+        //assertion(result[i] == 0, "Integer overflow\n");
     }
-    assertion((result[INT_LAST] & 0x8000) == 0, "Integer overflow\n");
+    //assertion((result[INT_LAST] & 0x8000) == 0, "Integer overflow\n");
 
     Integer intResult;
     memcpy(intResult.mBuffer, result, INT_BYTES);
@@ -640,7 +640,7 @@ bool Integer<N>::GetDivMod (const Integer& numer, const Integer& denom,
 {
     if (denom == 0)
     {
-        assertion(false, "Division by zero\n");
+        //assertion(false, "Division by zero\n");
         quotient = 0;
         remainder = 0;
         return false;
@@ -692,7 +692,7 @@ bool Integer<N>::GetDivMod (const Integer& numer, const Integer& denom,
 
 #ifdef _DEBUG
     Integer test = numer - denom*quotient - remainder;
-    assertion(test == 0, "Invalid result\n");
+    //assertion(test == 0, "Invalid result\n");
 #endif
     return true;
 }
@@ -726,7 +726,7 @@ void Integer<N>::DivSingle (const Integer& numer, short denom,
             lastNonZero = i;
         }
     }
-    assertion(lastNonZero >= 0, "Unexpected result\n");
+    //assertion(lastNonZero >= 0, "Unexpected result\n");
 
     // Get the remainder.
     remainder = 0;
@@ -765,7 +765,7 @@ void Integer<N>::DivMultiple (const Integer& numer,
     int adjust = 0x10000/(leadingDigit + 1);
     Integer adjNum = adjust*numer;
     Integer adjDen = adjust*denom;
-    assertion(adjDen.GetLeadingBlock() == dInit, "Unexpected result\n");
+    //assertion(adjDen.GetLeadingBlock() == dInit, "Unexpected result\n");
 
     // Get first two "digits" of denominator.
     unsigned int d1 = adjDen.ToUnsignedInt(dInit);
@@ -773,7 +773,7 @@ void Integer<N>::DivMultiple (const Integer& numer,
 
     // Determine the maximum necessary division steps.
     int nInit = adjNum.GetLeadingBlock();
-    assertion(nInit >= dInit, "Unexpected result\n");
+    //assertion(nInit >= dInit, "Unexpected result\n");
     int qInit;
     unsigned int rHat;
     if (nInit != dInit)
@@ -808,7 +808,7 @@ void Integer<N>::DivMultiple (const Integer& numer,
         unsigned int tmp = (n0 << 16) | n1;
         unsigned int qHat = (n0 != d1 ? tmp/d1 : 0x0000FFFF);
         unsigned int prod = qHat*d1;
-        assertion(tmp >= prod, "Unexpected result\n");
+        //assertion(tmp >= prod, "Unexpected result\n");
         rHat = tmp - prod;
         if (d2*qHat > 0x10000*rHat + n2)
         {
@@ -835,7 +835,7 @@ void Integer<N>::DivMultiple (const Integer& numer,
         {
             qHat--;
             adjNum += adjDen;
-            assertion(adjNum >= 0, "Unexpected result\n");
+            //assertion(adjNum >= 0, "Unexpected result\n");
         }
 
         // Set quotient digit.
@@ -895,7 +895,7 @@ int Integer<N>::GetTrailingBlock () const
 template <int N>
 int Integer<N>::GetLeadingBit (int i) const
 {
-    assertion(0 <= i && i <= INT_LAST, "Input out of range\n");
+    //assertion(0 <= i && i <= INT_LAST, "Input out of range\n");
     if (i < 0 || i > INT_LAST)
     {
         return -1;
@@ -1015,7 +1015,7 @@ int Integer<N>::GetLeadingBit (int i) const
 template <int N>
 int Integer<N>::GetTrailingBit (int i) const
 {
-    assertion(0 <= i && i <= INT_LAST, "Input out of range\n");
+    //assertion(0 <= i && i <= INT_LAST, "Input out of range\n");
     if (i < 0 || i > INT_LAST)
     {
         return -1;

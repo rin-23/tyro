@@ -185,13 +185,13 @@ void TriangulateEC<Real>::InitializePositions (const Positions& positions,
     Query::Type queryType, Real epsilon, int extraElements)
 {
     int numPositions = (int)positions.size();
-    assertion(numPositions >= 3, "Must have at least one triangle\n");
+    //assertion(numPositions >= 3, "Must have at least one triangle\n");
     int numPosExtras = numPositions + extraElements;
     mSPositions.resize(numPosExtras);
 
     if (queryType == Query::QT_FILTERED)
     {
-        assertion((Real)0 <= epsilon && epsilon <= (Real)1,
+        //assertion((Real)0 <= epsilon && epsilon <= (Real)1,
             "Epsilon must be in [0,1]\n");
     }
 
@@ -585,7 +585,7 @@ void TriangulateEC<Real>::CombinePolygons (Query::Type queryType,
         {
             // The current closest point is a vertex shared by multiple edges;
             // thus, endMin and currentMin refer to the same point.
-            assertion(endMin != -1 && currentEndMin != -1,
+            //assertion(endMin != -1 && currentEndMin != -1,
                 "Unexpected condition\n");
 
             // We need to select the edge closest to M.  The previous closest
@@ -621,7 +621,7 @@ void TriangulateEC<Real>::CombinePolygons (Query::Type queryType,
     {
         // If you reach this assert, there is a good chance that you have two
         // inner polygons that share a vertex or an edge.
-        assertion(v0min >= 0 && v1min >= 0, "Unexpected condition\n");
+        //assertion(v0min >= 0 && v1min >= 0, "Unexpected condition\n");
 
         // Select one of Outer[v0min] and Outer[v1min] that has an x-value
         // larger than M.x, call this vertex P.  The triangle <M,I,P> must
@@ -971,7 +971,7 @@ int TriangulateEC<Real>::RemoveE (int i)
 template <typename Real>
 void TriangulateEC<Real>::RemoveR (int i)
 {
-    assertion(mRFirst != -1 && mRLast != -1, "Reflex vertices must exist\n");
+    //assertion(mRFirst != -1 && mRLast != -1, "Reflex vertices must exist\n");
 
     if (i == mRFirst)
     {

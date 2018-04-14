@@ -12,6 +12,10 @@ set(TYRO_INC_LOCAL
 "Engine/stb_image_write.h"
 "Engine/stb_image.h"
 "Engine/TyroIGLMesh.h"
+"Engine/stop_motion_data.h"
+"Engine/TyroTimeLine.h"
+
+
 #"Engine/stbi_DDS_aug.h"
 #"Engine/stbi_DDS_aug_c.h"
 )
@@ -30,6 +34,8 @@ set(TYRO_SRC_LOCAL
 "Engine/stb_image_write.c"
 "Engine/stb_image.c"
 "Engine/TyroIGLMesh.cpp"
+"Engine/stop_motion_data.cpp"
+"Engine/TyroTimeLine.cpp"
 )
 
 set(TYRO_ENGINE_SRC

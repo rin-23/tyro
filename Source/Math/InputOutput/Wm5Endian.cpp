@@ -108,8 +108,8 @@ void Endian::Swap8 (int numItems, void* data)
 //----------------------------------------------------------------------------
 void Endian::Swap (size_t itemSize, void* data)
 {
-    assertion(itemSize == 2 || itemSize == 4 || itemSize == 8,
-        "Size must be 2, 4, or 8\n");
+    //assertion(itemSize == 2 || itemSize == 4 || itemSize == 8,
+       // "Size must be 2, 4, or 8\n");
 
     int size = (int)itemSize;
     char* bytes = (char*) data;
@@ -123,8 +123,8 @@ void Endian::Swap (size_t itemSize, void* data)
 //----------------------------------------------------------------------------
 void Endian::Swap (size_t itemSize, int numItems, void* data)
 {
-    assertion(itemSize == 2 || itemSize == 4 || itemSize == 8,
-        "Size must be 2, 4, or 8\n");
+    //assertion(itemSize == 2 || itemSize == 4 || itemSize == 8,
+      //  "Size must be 2, 4, or 8\n");
 
     int size = (int)itemSize;
     char* bytes = (char*) data;

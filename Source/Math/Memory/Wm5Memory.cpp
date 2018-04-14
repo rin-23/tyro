@@ -32,7 +32,7 @@ void Memory::Initialize (Allocator allocator, Deallocator deallocator)
 
     // You must use 'new', not 'new0', otherwise you have an infinite
     // loop trying to allocate msMap (over and over and over...).
-    assertion(msMap == 0, "The map already exists.  Did you call"
+    //assertion(msMap == 0, "The map already exists.  Did you call"
         " Memory::Initialize twice in a row?\n");
     if (msMap == 0)
     {
@@ -46,7 +46,7 @@ void Memory::Terminate (const std::string& filename)
 {
     msMutex.Enter();
 
-    assertion(msMap != 0, "The map does not exist.  Did you call"
+    //assertion(msMap != 0, "The map does not exist.  Did you call"
         "Memory::Terminate twice in a row?\n");
     if (!msMap)
     {

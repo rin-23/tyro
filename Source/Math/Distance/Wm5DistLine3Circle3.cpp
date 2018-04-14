@@ -347,7 +347,7 @@ Real DistLine3Circle3<Real>::BisectF (Real m2b2, Real rm0sqr, Real m0sqr,
         }
     }
 
-    assertion(false, "Exceeded maximum iterations.");
+    //assertion(false, "Exceeded maximum iterations.");
     return s;
 }
 //----------------------------------------------------------------------------

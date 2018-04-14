@@ -20,9 +20,9 @@ IntpTricubic3<Real>::IntpTricubic3 (int xBound, int yBound, int zBound,
 {
     // At least a 4x4x4 block of data points are needed to construct the
     // tricubic interpolation.
-    assertion(xBound >= 4 && yBound >= 4 && zBound >= 4 && F,
+    //assertion(xBound >= 4 && yBound >= 4 && zBound >= 4 && F,
         "Invalid input\n");
-    assertion(xSpacing > (Real)0 && ySpacing > (Real)0 && zSpacing > (Real)0,
+    //assertion(xSpacing > (Real)0 && ySpacing > (Real)0 && zSpacing > (Real)0,
         "Invalid input\n");
 
     mXBound = xBound;

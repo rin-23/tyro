@@ -80,8 +80,8 @@ MinSphere3<Real>::MinSphere3 (int numPoints, const Vector3<Real>* points,
         //      ++i;
         //  }
         // This loop restarts from the beginning of the point list each time
-        // the sphere needs updating.  Linus Källberg (Computer Science at
-        // Mälardalen University in Sweden) discovered that performance is
+        // the sphere needs updating.  Linus Kï¿½llberg (Computer Science at
+        // Mï¿½lardalen University in Sweden) discovered that performance is
         // better when the remaining points in the array are processed before
         // restarting.  The points processed before the point that caused the
         // update are likely to be enclosed by the new sphere (or near the
@@ -110,7 +110,7 @@ MinSphere3<Real>::MinSphere3 (int numPoints, const Vector3<Real>* points,
     }
     else
     {
-        assertion(false, "Input must contain points\n");
+        //assertion(false, "Input must contain points\n");
     }
 
     minimal.Radius = Math<Real>::Sqrt(minimal.Radius);

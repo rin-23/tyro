@@ -13,7 +13,7 @@ Query3<Real>::Query3 (int numVertices, const Vector3<Real>* vertices)
     mNumVertices(numVertices),
     mVertices(vertices)
 {
-    assertion(mNumVertices > 0 && mVertices, "Invalid inputs\n");
+    //assertion(mNumVertices > 0 && mVertices, "Invalid inputs\n");
 }
 //----------------------------------------------------------------------------
 template <typename Real>

@@ -80,7 +80,7 @@ bool LinearSystem<Real>::Inverse (const GMatrix<Real>& A,
     GMatrix<Real>& invA)
 {
     // Computations are performed in-place.
-    assertion(A.GetNumRows() == A.GetNumColumns(), "Matrix must be square\n");
+    //assertion(A.GetNumRows() == A.GetNumColumns(), "Matrix must be square\n");
 
     int size = invA.GetNumRows();
     invA = A;
@@ -452,7 +452,7 @@ bool LinearSystem<Real>::SolveSymmetricCG (const GMatrix<Real>& A,
     const Real* B, Real* X)
 {
     // Based on the algorithm in "Matrix Computations" by Golum and Van Loan.
-    assertion(A.GetNumRows() == A.GetNumColumns(), "Matrix must be square\n");
+    //assertion(A.GetNumRows() == A.GetNumColumns(), "Matrix must be square\n");
     int size = A.GetNumRows();
     Real* R = new1<Real>(size);
     Real* P = new1<Real>(size);

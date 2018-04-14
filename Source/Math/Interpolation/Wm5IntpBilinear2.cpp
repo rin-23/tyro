@@ -18,8 +18,8 @@ IntpBilinear2<Real>::IntpBilinear2 (int xBound, int yBound, Real xMin,
     Real xSpacing, Real yMin, Real ySpacing, Real** F)
 {
     // At least a 2x2 block of data points are needed.
-    assertion(xBound >= 2 && yBound >= 2 && F, "Invalid input\n");
-    assertion(xSpacing > (Real)0 && ySpacing > (Real)0, "Invalid input\n");
+    //assertion(xBound >= 2 && yBound >= 2 && F, "Invalid input\n");
+    //assertion(xSpacing > (Real)0 && ySpacing > (Real)0, "Invalid input\n");
 
     mXBound = xBound;
     mYBound = yBound;

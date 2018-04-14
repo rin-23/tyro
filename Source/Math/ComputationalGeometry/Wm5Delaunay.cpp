@@ -26,7 +26,7 @@ Delaunay<Real>::Delaunay (int numVertices, Real epsilon, bool owner,
     mEpsilon(epsilon),
     mOwner(owner)
 {
-    assertion(mNumVertices >= 0 && mEpsilon >= (Real)0, "Invalid inputs\n");
+    //assertion(mNumVertices >= 0 && mEpsilon >= (Real)0, "Invalid inputs\n");
 }
 //----------------------------------------------------------------------------
 template <typename Real>
@@ -105,7 +105,7 @@ bool Delaunay<Real>::Load (FileIO& inFile)
     inFile.Read(sizeof(int), &numIndices);
     if (1 <= mDimension && mDimension <= 3)
     {
-        assertion(numIndices == (mDimension+1)*mNumSimplices,
+        //assertion(numIndices == (mDimension+1)*mNumSimplices,
             "Inconsistent index count\n");
         mIndices = new1<int>(numIndices);
         mAdjacencies = new1<int>(numIndices);

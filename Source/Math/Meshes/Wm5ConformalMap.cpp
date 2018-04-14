@@ -76,7 +76,7 @@ ConformalMap<Real>::ConformalMap (int numPoints,
         v0 = iter->first.first;
         v1 = iter->first.second;
         value = iter->second;
-        assertion(v0 != v1, "Unexpected condition\n");
+        //assertion(v0 != v1, "Unexpected condition\n");
         tmp[v0] -= value;
         tmp[v1] -= value;
     }
@@ -85,7 +85,7 @@ ConformalMap<Real>::ConformalMap (int numPoints,
         AMat[std::make_pair(v, v)] = tmp[v];
     }
 
-    assertion(numPoints + numEdges == (int)AMat.size(),
+    //assertion(numPoints + numEdges == (int)AMat.size(),
         "Mismatch in sizes\n");
 
     // Construct column vector B (happens to be sparse).
@@ -120,7 +120,7 @@ ConformalMap<Real>::ConformalMap (int numPoints,
     Real* result = new1<Real>(numPoints);
     bool solved = LinearSystem<Real>().SolveSymmetricCG(numPoints, AMat, tmp,
         result);
-    assertion(solved, "Failed to solve linear system\n");
+    //assertion(solved, "Failed to solve linear system\n");
     WM5_UNUSED(solved);
     for (i = 0; i < numPoints; ++i)
     {
@@ -134,7 +134,7 @@ ConformalMap<Real>::ConformalMap (int numPoints,
     tmp[v2] = -im2;
     solved = LinearSystem<Real>().SolveSymmetricCG(numPoints, AMat, tmp,
         result);
-    assertion(solved, "Failed to solve linear system\n");
+    //assertion(solved, "Failed to solve linear system\n");
     for (i = 0; i < numPoints; ++i)
     {
         mPlanes[i].Y() = result[i];
@@ -338,12 +338,12 @@ Real ConformalMap<Real>::ComputeRadius (const Vector2<Real>& V0,
     poly1 = poly1*qpoly2;
 
     Polynomial1<Real> final = poly1 - poly0;
-    assertion(final.GetDegree() <= 8, "Unexpected condition\n");
+    //assertion(final.GetDegree() <= 8, "Unexpected condition\n");
 
     // Bound a root near zero and apply bisection to find t.
     Real tmin = (Real)0, fmin = final(tmin);
     Real tmax = (Real)1, fmax = final(tmax);
-    assertion(fmin > (Real)0 && fmax < (Real)0, "Unexpected condition\n");
+    //assertion(fmin > (Real)0 && fmax < (Real)0, "Unexpected condition\n");
 
     // Determine the number of iterations to get 'digits' of accuracy.
     const int digits = 6;

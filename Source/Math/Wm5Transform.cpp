@@ -44,7 +44,7 @@ void Transform::MakeIdentity ()
 //----------------------------------------------------------------------------
 void Transform::MakeUnitScale ()
 {
-    assertion(mIsRSMatrix, "Matrix is not a rotation\n");
+    //assertion(mIsRSMatrix, "Matrix is not a rotation\n");
 
     mScale = APoint(1.0f, 1.0f, 1.0f);
     mIsUniformScale = true;
@@ -77,9 +77,9 @@ void Transform::SetTranslate (const APoint& translate)
 //----------------------------------------------------------------------------
 void Transform::SetScale (const APoint& scale)
 {
-    assertion(mIsRSMatrix, "Matrix is not a rotation\n");
-    assertion(scale[0] != 0.0f && scale[1] != 0.0f && scale[2] != 0.0f,
-        "Scales must be nonzero\n");
+    //assertion(mIsRSMatrix, "Matrix is not a rotation\n");
+    //assertion(scale[0] != 0.0f && scale[1] != 0.0f && scale[2] != 0.0f,
+      //  "Scales must be nonzero\n");
 
     mScale = scale;
     mIsIdentity = false;
@@ -89,8 +89,8 @@ void Transform::SetScale (const APoint& scale)
 //----------------------------------------------------------------------------
 void Transform::SetUniformScale (float scale)
 {
-    assertion(mIsRSMatrix, "Matrix is not a rotation\n");
-    assertion(scale != 0.0f, "Scale must be nonzero\n");
+    //assertion(mIsRSMatrix, "Matrix is not a rotation\n");
+    //assertion(scale != 0.0f, "Scale must be nonzero\n");
 
     mScale = APoint(scale, scale, scale);
     mIsIdentity = false;

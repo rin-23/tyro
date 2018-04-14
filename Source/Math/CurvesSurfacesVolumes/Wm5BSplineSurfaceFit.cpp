@@ -18,10 +18,10 @@ BSplineSurfaceFit<Real>::BSplineSurfaceFit (int degree0, int numControls0,
     int numSamples0, int degree1, int numControls1, int numSamples1,
     Vector3<Real>** samples)
 {
-    assertion(1 <= degree0 && degree0 + 1 < numControls0, "Invalid input\n");
-    assertion(numControls0 <= numSamples0, "Invalid input\n");
-    assertion(1 <= degree1 && degree1 + 1 < numControls1, "Invalid input\n");
-    assertion(numControls1 <= numSamples1, "Invalid input\n");
+    //assertion(1 <= degree0 && degree0 + 1 < numControls0, "Invalid input\n");
+    //assertion(numControls0 <= numSamples0, "Invalid input\n");
+    //assertion(1 <= degree1 && degree1 + 1 < numControls1, "Invalid input\n");
+    //assertion(numControls1 <= numSamples1, "Invalid input\n");
 
     mDegree[0] = degree0;
     mNumSamples[0] = numSamples0;
@@ -123,7 +123,7 @@ BSplineSurfaceFit<Real>::BSplineSurfaceFit (int degree0, int numControls0,
     for (dim = 0; dim < 2; ++dim)
     {
         bool solved = ATAMat[dim]->SolveSystem(ATMat[dim], mNumSamples[dim]);
-        assertion(solved, "Failed to solve linear system\n");
+        //assertion(solved, "Failed to solve linear system\n");
         WM5_UNUSED(solved);
     }
 

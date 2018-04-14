@@ -23,7 +23,7 @@ SeparatePoints3<Real>::SeparatePoints3 (int numPoints0,
         false, Query::QT_INT64);
 
     // Code does not currently handle point/segment/polygon hull.
-    assertion(hull0.GetDimension() == 3,
+    //assertion(hull0.GetDimension() == 3,
         "Code currently supports only noncoplanar points\n");
     if (hull0.GetDimension() < 3)
     {
@@ -38,7 +38,7 @@ SeparatePoints3<Real>::SeparatePoints3 (int numPoints0,
         false, Query::QT_INT64);
 
     // Code does not currently handle point/segment/polygon hull.
-    assertion(hull1.GetDimension() == 3,
+    //assertion(hull1.GetDimension() == 3,
         "Code currently supports only noncoplanar points\n");
     if (hull1.GetDimension() < 3)
     {

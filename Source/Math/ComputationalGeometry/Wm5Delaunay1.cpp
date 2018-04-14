@@ -69,7 +69,7 @@ const Real* Delaunay1<Real>::GetVertices () const
 template <typename Real>
 bool Delaunay1<Real>::GetHull (int hull[2])
 {
-    assertion(mDimension == 1, "The dimension must be 1\n");
+    //assertion(mDimension == 1, "The dimension must be 1\n");
     if (mDimension != 1)
     {
         return false;
@@ -83,7 +83,7 @@ bool Delaunay1<Real>::GetHull (int hull[2])
 template <typename Real>
 int Delaunay1<Real>::GetContainingSegment (const Real p) const
 {
-    assertion(mDimension == 1, "The dimension must be 1\n");
+    //assertion(mDimension == 1, "The dimension must be 1\n");
     if (mDimension != 1)
     {
         return -1;
@@ -108,14 +108,14 @@ int Delaunay1<Real>::GetContainingSegment (const Real p) const
         }
     }
 
-    assertion(i < mNumSimplices, "Input not in hull\n");
+    //assertion(i < mNumSimplices, "Input not in hull\n");
     return i;
 }
 //----------------------------------------------------------------------------
 template <typename Real>
 bool Delaunay1<Real>::GetVertexSet (int i, Real vertices[2]) const
 {
-    assertion(mDimension == 1, "The dimension must be 1\n");
+    //assertion(mDimension == 1, "The dimension must be 1\n");
     if (mDimension != 1)
     {
         return false;
@@ -133,7 +133,7 @@ bool Delaunay1<Real>::GetVertexSet (int i, Real vertices[2]) const
 template <typename Real>
 bool Delaunay1<Real>::GetIndexSet (int i, int indices[2]) const
 {
-    assertion(mDimension == 1, "The dimension must be 1\n");
+    //assertion(mDimension == 1, "The dimension must be 1\n");
     if (mDimension != 1)
     {
         return false;
@@ -151,7 +151,7 @@ bool Delaunay1<Real>::GetIndexSet (int i, int indices[2]) const
 template <typename Real>
 bool Delaunay1<Real>::GetAdjacentSet (int i, int adjacencies[2]) const
 {
-    assertion(mDimension == 1, "The dimension must be 1\n");
+    //assertion(mDimension == 1, "The dimension must be 1\n");
     if (mDimension != 1)
     {
         return false;
@@ -170,7 +170,7 @@ template <typename Real>
 bool Delaunay1<Real>::GetBarycentricSet (int i, const Real p, Real bary[2])
     const
 {
-    assertion(mDimension == 1, "The dimension must be 1\n");
+    //assertion(mDimension == 1, "The dimension must be 1\n");
     if (mDimension != 1)
     {
         return false;
@@ -203,7 +203,7 @@ Delaunay1<Real>::Delaunay1 (const char* filename, int mode)
 {
     mVertices = 0;
     bool loaded = Load(filename, mode);
-    assertion(loaded, "Cannot open file %s\n", filename);
+    //assertion(loaded, "Cannot open file %s\n", filename);
     WM5_UNUSED(loaded);
 }
 //----------------------------------------------------------------------------

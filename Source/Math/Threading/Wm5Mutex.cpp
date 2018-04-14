@@ -37,11 +37,11 @@ Mutex::Mutex ()
     mMutex = new CRITICAL_SECTION;
     BOOL success = InitializeCriticalSectionAndSpinCount(
         (CRITICAL_SECTION*)mMutex, 4096);
-    assertion(success == TRUE, "Failed to initialize critical section.\n");
+    //assertion(success == TRUE, "Failed to initialize critical section.\n");
     WM5_UNUSED(success);
 #else
     mMutex = CreateMutex(NULL, FALSE, NULL);
-    assertion(mMutex != 0, "Failed to create mutex\n");
+    //assertion(mMutex != 0, "Failed to create mutex\n");
 #endif
 }
 //----------------------------------------------------------------------------
@@ -52,7 +52,7 @@ Mutex::~Mutex ()
     delete mMutex;
 #else
     BOOL closed = CloseHandle((HANDLE)mMutex);
-    assertion(closed == TRUE, "Failed to destroy mutex\n");
+    //assertion(closed == TRUE, "Failed to destroy mutex\n");
     WM5_UNUSED(closed);
 #endif
 }

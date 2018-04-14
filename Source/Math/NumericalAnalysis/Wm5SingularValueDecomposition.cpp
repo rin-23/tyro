@@ -103,7 +103,7 @@ void SingularValueDecomposition<Real>::HouseholderQR (
     R = A;
     int numRows = R.GetNumRows();
     int numCols = R.GetNumColumns();
-    assertion(numRows >= numCols, "Too many columns (use transpose)\n");
+    //assertion(numRows >= numCols, "Too many columns (use transpose)\n");
     int row, col;
     GVector<Real> V(numRows);
     std::vector<GVector<Real> > VSave;

@@ -927,7 +927,7 @@ void Matrix3<Real>::EigenDecomposition (Matrix3& rot, Matrix3& diag) const
     rot = *this;
     bool reflection = rot.Tridiagonalize(diagonal, subdiagonal);
     bool converged = rot.QLAlgorithm(diagonal, subdiagonal);
-    assertion(converged, "QLAlgorithm failed to converge\n");
+    //assertion(converged, "QLAlgorithm failed to converge\n");
     WM5_UNUSED(converged);
 
     // Sort the eigenvalues in increasing order, d0 <= d1 <= d2.  This is an

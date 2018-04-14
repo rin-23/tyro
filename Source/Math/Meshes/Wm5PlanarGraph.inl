@@ -229,7 +229,7 @@ void PlanarGraph<Point2>::ExtractFilament (Vertex* V0, Vertex* V1,
     std::set<VertexPtr>& heap, std::vector<Primitive*>& primitives)
 {
     // (V0,V1) is the first edge of the purported filament.
-    assertion(V0->Adjacent.size() != 2, "Unexpected condition\n");
+    //assertion(V0->Adjacent.size() != 2, "Unexpected condition\n");
     if (GetCycleEdge(V0->Index, V1->Index))
     {
         // The edge is from an earlier visited minimal cycle.  Delete the
@@ -333,7 +333,7 @@ void PlanarGraph<Point2>::ExtractPrimitive (Vertex* V0,
     if (!VCurr)
     {
         // A filament has been found.  It is not necessarily rooted at V0.
-        assertion(VPrev->Adjacent.size() == 1, "Unexpected condition\n");
+        //assertion(VPrev->Adjacent.size() == 1, "Unexpected condition\n");
         ExtractFilament(VPrev, VPrev->Adjacent[0], heap, primitives);
     }
     else if (VCurr == V0)

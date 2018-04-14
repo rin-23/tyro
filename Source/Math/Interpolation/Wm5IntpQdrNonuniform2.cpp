@@ -376,7 +376,7 @@ bool IntpQdrNonuniform2<Real>::Evaluate (const Vector2<Real>& P, Real& F,
     // with it.  Probably better is to keep track of the dot products in
     // InTriangle and find the one closest to zero and use a triangle that
     // contains the edge as the one that contains the input point.
-    assertion(index <= 6, "Unexpected condition\n");
+    //assertion(index <= 6, "Unexpected condition\n");
     if (index > 6)
     {
         // Use this index because bary[] was computed last for it.

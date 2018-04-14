@@ -17,7 +17,7 @@ template <typename Real>
 Real Integrate1<Real>::RombergIntegral (int order, Real a, Real b,
     Function function, void* userData)
 {
-    assertion(order > 0, "Integration order must be positive\n");
+    //assertion(order > 0, "Integration order must be positive\n");
     Real** rom = new2<Real>(order, 2);
 
     Real h = b - a;
@@ -109,7 +109,7 @@ template <typename Real>
 Real Integrate1<Real>::TrapezoidRule (int numSamples, Real a, Real b,
     Function function, void* userData)
 {
-    assertion(numSamples >= 2, "Must have more than two samples\n");
+    //assertion(numSamples >= 2, "Must have more than two samples\n");
 
     Real h = (b - a)/(Real)(numSamples - 1);
     Real result = ((Real)0.5)*(function(a, userData) +

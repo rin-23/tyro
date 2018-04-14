@@ -21,9 +21,9 @@ IntpAkimaUniform3<Real>::IntpAkimaUniform3 (int xBound, int yBound,
 {
     // At least a 3x3x3 block of data points are needed to construct the
     // estimates of the boundary derivatives.
-    assertion(xBound >= 3 && yBound >= 3 && zBound >= 3 && F,
+    //assertion(xBound >= 3 && yBound >= 3 && zBound >= 3 && F,
         "Invalid input\n");
-    assertion(xSpacing > (Real)0 && ySpacing > (Real)0 &&
+    //assertion(xSpacing > (Real)0 && ySpacing > (Real)0 &&
         zSpacing > (Real)0, "Invalid input\n");
 
     mXBound = xBound;

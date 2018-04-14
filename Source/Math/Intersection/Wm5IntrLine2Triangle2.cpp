@@ -193,7 +193,7 @@ void IntrLine2Triangle2<Real>::GetInterval (const Vector2<Real>& origin,
     {
         if (sign[i0]*sign[i1] < 0)
         {
-            assertion(quantity < 2, "Too many intersections\n");
+            //assertion(quantity < 2, "Too many intersections\n");
             numer = dist[i0]*proj[i1] - dist[i1]*proj[i0];
             denom = dist[i0] - dist[i1];
             param[quantity++] = numer/denom;
@@ -207,14 +207,14 @@ void IntrLine2Triangle2<Real>::GetInterval (const Vector2<Real>& origin,
         {
             if (sign[i2] == 0)
             {
-                assertion(quantity < 2, "Too many intersections\n");
+                //assertion(quantity < 2, "Too many intersections\n");
                 param[quantity++] = proj[i2];
             }
         }
     }
 
     // Sort.
-    assertion(quantity >= 1, "Need at least one intersection\n");
+    //assertion(quantity >= 1, "Need at least one intersection\n");
     if (quantity == 2)
     {
         if (param[0] > param[1])

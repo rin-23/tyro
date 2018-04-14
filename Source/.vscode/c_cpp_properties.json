@@ -69,7 +69,10 @@
                 "${workspaceRoot}/Core/Scene",
                 "${workspaceRoot}/Core/Tools",
                 "${workspaceRoot}/External/libigl/include",
-                "${workspaceRoot}/External/libigl/external/eigen"                 
+                "${workspaceRoot}/External/libigl/external/eigen",
+                "/home/rinat/Workspace/poco-1.9.0/Foundation/include",
+                "/home/rinat/Workspace/poco-1.9.0/Foundation/include/Poco"
+                                 
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",

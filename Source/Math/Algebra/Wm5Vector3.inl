@@ -401,8 +401,8 @@ template <typename Real>
 void Vector3<Real>::ComputeExtremes (int numVectors, const Vector3* vectors,
     Vector3& vmin, Vector3& vmax)
 {
-    assertion(numVectors > 0 && vectors,
-        "Invalid inputs to ComputeExtremes\n");
+    //assertion(numVectors > 0 && vectors,
+      //  "Invalid inputs to ComputeExtremes\n");
 
     vmin = vectors[0];
     vmax = vmin;
@@ -525,7 +525,7 @@ bool Vector3<Real>::GetBarycentrics (const Vector3& v0, const Vector3& v1,
     }
 
 #ifdef WM5_ASSERT_ON_BARYCENTRIC3_DEGENERATE
-    assertion(false, "Input tetrahedron is degenerate.\n");
+    //assertion(false, "Input tetrahedron is degenerate.\n");
 #endif
     return false;
 }
@@ -586,8 +586,8 @@ template <typename Real>
 void Vector3<Real>::GetInformation (int numPoints, const Vector3* points,
     Real epsilon, Information& info)
 {
-    assertion(numPoints > 0 && points && epsilon >= (Real)0,
-        "Invalid inputs to GetInformation\n");
+    //assertion(numPoints > 0 && points && epsilon >= (Real)0,
+        //"Invalid inputs to GetInformation\n");
 
     info.mExtremeCCW = false;
 

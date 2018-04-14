@@ -111,7 +111,7 @@ void ContEllipsoid3MinCR<Real>::FindEdgeMax (std::vector<Vector3<Real> >& A,
         Real numer = (Real)1 - A[i][0]*D[0] - A[i][1]*D[1] - A[i][2]*D[2];
         if (numer < (Real)0)
         {
-            assertion(numer >= -Math<Real>::ZERO_TOLERANCE,
+            //assertion(numer >= -Math<Real>::ZERO_TOLERANCE,
                 "Unexpected condition\n");
 
             plane2 = i;
@@ -225,7 +225,7 @@ void ContEllipsoid3MinCR<Real>::FindFacetMax (std::vector<Vector3<Real> >& A,
         Real numer = (Real)1 - A[i][0]*D[0] - A[i][1]*D[1] - A[i][2]*D[2];
         if (numer < (Real)0)
         {
-            assertion(numer >= -Math<Real>::ZERO_TOLERANCE,
+            //assertion(numer >= -Math<Real>::ZERO_TOLERANCE,
                 "Unexpected condition\n");
 
             plane1 = i;
@@ -292,7 +292,7 @@ void ContEllipsoid3MinCR<Real>::MaxProduct (std::vector<Vector3<Real> >& A,
             plane = i;
         }
     }
-    assertion(plane != -1, "Unexpected condition\n");
+    //assertion(plane != -1, "Unexpected condition\n");
 
     // Walk along convex hull searching for maximum.
     D[0] = (Real)0;

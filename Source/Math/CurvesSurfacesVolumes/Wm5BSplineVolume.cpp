@@ -17,14 +17,14 @@ template <typename Real>
 BSplineVolume<Real>::BSplineVolume (int numUCtrlPoints, int numVCtrlPoints,
     int numWCtrlPoints, int uDegree, int vDegree, int wDegree)
 {
-    assertion(numUCtrlPoints >= 2, "Invalid input\n");
-    assertion(1 <= uDegree && uDegree <= numUCtrlPoints - 1,
+    //assertion(numUCtrlPoints >= 2, "Invalid input\n");
+    //assertion(1 <= uDegree && uDegree <= numUCtrlPoints - 1,
         "Invalid input\n");
-    assertion(numVCtrlPoints >= 2, "Invalid input\n");
-    assertion(1 <= vDegree && vDegree <= numVCtrlPoints - 1,
+    //assertion(numVCtrlPoints >= 2, "Invalid input\n");
+    //assertion(1 <= vDegree && vDegree <= numVCtrlPoints - 1,
         "Invalid input\n");
-    assertion(numWCtrlPoints >= 2, "Invalid input\n");
-    assertion(1 <= wDegree && wDegree <= numWCtrlPoints - 1,
+    //assertion(numWCtrlPoints >= 2, "Invalid input\n");
+    //assertion(1 <= wDegree && wDegree <= numWCtrlPoints - 1,
         "Invalid input\n");
 
     mCtrlPoint = new3<Vector3<Real> >(numUCtrlPoints, numVCtrlPoints,
@@ -209,7 +209,7 @@ Vector3<Real> BSplineVolume<Real>::GetDerivative (int i, Real pos[3]) const
     case 2:  return GetDerivativeW(pos[0], pos[1], pos[2]);
     }
 
-    assertion(false, "Derivatives larger than order 3 not supported\n");
+    //assertion(false, "Derivatives larger than order 3 not supported\n");
     return Vector3<Real>::ZERO;
 }
 //----------------------------------------------------------------------------

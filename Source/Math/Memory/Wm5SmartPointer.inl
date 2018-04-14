@@ -46,7 +46,7 @@ Pointer0<T>::Pointer0 (const Pointer0& pointer)
         }
         else
         {
-            assertion(false, "pointer.mData must be in the map\n");
+            //assertion(false, "pointer.mData must be in the map\n");
         }
     }
 
@@ -71,7 +71,7 @@ Pointer0<T>::~Pointer0 ()
         }
         else
         {
-            assertion(false, "mData must be in the map\n");
+            //assertion(false, "mData must be in the map\n");
         }
     }
 
@@ -131,7 +131,7 @@ Pointer0<T>& Pointer0<T>::operator= (T* data)
             }
             else
             {
-                assertion(false, "mData must be in the map\n");
+                //assertion(false, "mData must be in the map\n");
             }
         }
 
@@ -160,7 +160,7 @@ Pointer0<T>& Pointer0<T>::operator= (const Pointer0& pointer)
             }
             else
             {
-                assertion(false, "pointer.mData must be in the map\n");
+                //assertion(false, "pointer.mData must be in the map\n");
             }
         }
 
@@ -177,7 +177,7 @@ Pointer0<T>& Pointer0<T>::operator= (const Pointer0& pointer)
             }
             else
             {
-                assertion(false, "mData must be in the map\n");
+                //assertion(false, "mData must be in the map\n");
             }
         }
 
@@ -253,7 +253,7 @@ Pointer1<T>::Pointer1 (const Pointer1& pointer)
         }
         else
         {
-            assertion(false, "pointer.mData must be in the map\n");
+            //assertion(false, "pointer.mData must be in the map\n");
         }
     }
 
@@ -278,7 +278,7 @@ Pointer1<T>::~Pointer1 ()
         }
         else
         {
-            assertion(false, "mData must be in the map\n");
+            //assertion(false, "mData must be in the map\n");
         }
     }
 
@@ -338,7 +338,7 @@ Pointer1<T>& Pointer1<T>::operator= (T* data)
             }
             else
             {
-                assertion(false, "mData must be in the map\n");
+                //assertion(false, "mData must be in the map\n");
             }
         }
 
@@ -367,7 +367,7 @@ Pointer1<T>& Pointer1<T>::operator= (const Pointer1& pointer)
             }
             else
             {
-                assertion(false, "pointer.mData must be in the map\n");
+                //assertion(false, "pointer.mData must be in the map\n");
             }
         }
 
@@ -384,7 +384,7 @@ Pointer1<T>& Pointer1<T>::operator= (const Pointer1& pointer)
             }
             else
             {
-                assertion(false, "mData must be in the map\n");
+                //assertion(false, "mData must be in the map\n");
             }
         }
 
@@ -460,7 +460,7 @@ Pointer2<T>::Pointer2 (const Pointer2& pointer)
         }
         else
         {
-            assertion(false, "pointer.mData must be in the map\n");
+            //assertion(false, "pointer.mData must be in the map\n");
         }
     }
 
@@ -485,7 +485,7 @@ Pointer2<T>::~Pointer2 ()
         }
         else
         {
-            assertion(false, "mData must be in the map\n");
+            //assertion(false, "mData must be in the map\n");
         }
     }
 
@@ -539,7 +539,7 @@ Pointer2<T>& Pointer2<T>::operator= (T** data)
             }
             else
             {
-                assertion(false, "mData must be in the map\n");
+                //assertion(false, "mData must be in the map\n");
             }
         }
 
@@ -568,7 +568,7 @@ Pointer2<T>& Pointer2<T>::operator= (const Pointer2& pointer)
             }
             else
             {
-                assertion(false, "pointer.mData must be in the map\n");
+                //assertion(false, "pointer.mData must be in the map\n");
             }
         }
 
@@ -585,7 +585,7 @@ Pointer2<T>& Pointer2<T>::operator= (const Pointer2& pointer)
             }
             else
             {
-                assertion(false, "mData must be in the map\n");
+                //assertion(false, "mData must be in the map\n");
             }
         }
 
@@ -661,7 +661,7 @@ Pointer3<T>::Pointer3 (const Pointer3& pointer)
         }
         else
         {
-            assertion(false, "pointer.mData must be in the map\n");
+            //assertion(false, "pointer.mData must be in the map\n");
         }
     }
 
@@ -686,7 +686,7 @@ Pointer3<T>::~Pointer3 ()
         }
         else
         {
-            assertion(false, "mData must be in the map\n");
+            //assertion(false, "mData must be in the map\n");
         }
     }
 
@@ -740,7 +740,7 @@ Pointer3<T>& Pointer3<T>::operator= (T*** data)
             }
             else
             {
-                assertion(false, "mData must be in the map\n");
+                //assertion(false, "mData must be in the map\n");
             }
         }
 
@@ -769,7 +769,7 @@ Pointer3<T>& Pointer3<T>::operator= (const Pointer3& pointer)
             }
             else
             {
-                assertion(false, "pointer.mData must be in the map\n");
+                //assertion(false, "pointer.mData must be in the map\n");
             }
         }
 
@@ -786,7 +786,7 @@ Pointer3<T>& Pointer3<T>::operator= (const Pointer3& pointer)
             }
             else
             {
-                assertion(false, "mData must be in the map\n");
+                //assertion(false, "mData must be in the map\n");
             }
         }
 
@@ -862,7 +862,7 @@ Pointer4<T>::Pointer4 (const Pointer4& pointer)
         }
         else
         {
-            assertion(false, "pointer.mData must be in the map\n");
+            //assertion(false, "pointer.mData must be in the map\n");
         }
     }
 
@@ -887,7 +887,7 @@ Pointer4<T>::~Pointer4 ()
         }
         else
         {
-            assertion(false, "mData must be in the map\n");
+            //assertion(false, "mData must be in the map\n");
         }
     }
 
@@ -941,7 +941,7 @@ Pointer4<T>& Pointer4<T>::operator= (T**** data)
             }
             else
             {
-                assertion(false, "mData must be in the map\n");
+                //assertion(false, "mData must be in the map\n");
             }
         }
 
@@ -970,7 +970,7 @@ Pointer4<T>& Pointer4<T>::operator= (const Pointer4& pointer)
             }
             else
             {
-                assertion(false, "pointer.mData must be in the map\n");
+                //assertion(false, "pointer.mData must be in the map\n");
             }
         }
 
@@ -987,7 +987,7 @@ Pointer4<T>& Pointer4<T>::operator= (const Pointer4& pointer)
             }
             else
             {
-                assertion(false, "mData must be in the map\n");
+                //assertion(false, "mData must be in the map\n");
             }
         }
 

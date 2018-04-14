@@ -87,7 +87,7 @@ bool Object::msStreamRegistered = false;
 //----------------------------------------------------------------------------
 Object* Object::Factory (InStream&)
 {
-    assertion(false, "Abstract classes have no factory.\n");
+    //assertion(false, "Abstract classes have no factory.\n");
     return 0;
 }
 //----------------------------------------------------------------------------
@@ -119,7 +119,7 @@ void Object::TerminateFactory ()
 //----------------------------------------------------------------------------
 Object::FactoryFunction Object::Find (const std::string& name)
 {
-    assertion(msFactories != 0, "FactoryMap was not yet allocated.\n");
+    //assertion(msFactories != 0, "FactoryMap was not yet allocated.\n");
     FactoryMap::iterator iter = msFactories->find(name);
     if (iter != msFactories->end())
     {
@@ -204,7 +204,7 @@ Object* Object::Copy (const std::string& uniqueNameAppend) const
     int bufferSize = 0;
     char* buffer = 0;
     bool saved = saveStream.Save(bufferSize, buffer, BufferIO::BM_WRITE);
-    assertion(saved, "Copy function failed on save\n");
+    //assertion(saved, "Copy function failed on save\n");
     if (!saved)
     {
         return 0;
@@ -213,7 +213,7 @@ Object* Object::Copy (const std::string& uniqueNameAppend) const
     // Load the object from the memory buffer.
     Stream<Object> loadStream;
     bool loaded = loadStream.Load(bufferSize, buffer, BufferIO::BM_READ);
-    assertion(loaded, "Copy function failed on load\n");
+    //assertion(loaded, "Copy function failed on load\n");
     if (!loaded)
     {
         return 0;

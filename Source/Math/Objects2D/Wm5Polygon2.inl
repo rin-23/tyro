@@ -13,7 +13,7 @@ Polygon2<Real>::Polygon2 (int numVertices, Vector2<Real>* vertices)
     mNumVertices(numVertices)
 {
     // The polygon must be at least a triangle.
-    assertion(numVertices >= 4 && vertices,
+    //assertion(numVertices >= 4 && vertices,
         "Invalid input to Polygon2 constructor\n");
 
     mVertices = vertices;
@@ -54,14 +54,14 @@ const Vector2<Real>* Polygon2<Real>::GetVertices () const
 template <typename Real>
 const Vector2<Real>& Polygon2<Real>::GetVertex (int i) const
 {
-    assertion(0 <= i && i < mNumVertices, "Invalid index in GetVertex\n");
+    //assertion(0 <= i && i < mNumVertices, "Invalid index in GetVertex\n");
     return mVertices[i];
 }
 //----------------------------------------------------------------------------
 template <typename Real>
 void Polygon2<Real>::SetVertex (int i, const Vector2<Real>& vertex)
 {
-    assertion(0 <= i && i < mNumVertices, "Invalid index in SetVertex\n");
+    //assertion(0 <= i && i < mNumVertices, "Invalid index in SetVertex\n");
     mVertices[i] = vertex;
 }
 //----------------------------------------------------------------------------

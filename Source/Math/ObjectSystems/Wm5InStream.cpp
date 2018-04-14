@@ -68,7 +68,7 @@ void InStream::Load (int bufferSize, char* buffer, int mode)
             // WM5_REGISTER_STREAM(someclass) to the header file for each
             // 'someclass'.  This macro registers the factory function for
             // the class.
-            assertion(false, "Cannot find factory for %s.\n", name.c_str());
+            //assertion(false, "Cannot find factory for %s.\n", name.c_str());
             return;
         }
 

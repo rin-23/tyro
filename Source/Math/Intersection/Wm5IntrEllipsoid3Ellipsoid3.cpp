@@ -215,7 +215,7 @@ IntrEllipsoid3Ellipsoid3<Real>::GetClassification () const
     else
     {
         // numValid cannot be zero because we already handled case K = 0
-        assertion(false, "Unexpected condition.\n");
+        //assertion(false, "Unexpected condition.\n");
         return EC_ELLIPSOIDS_INTERSECTING;
     }
 
@@ -412,7 +412,7 @@ void IntrEllipsoid3Ellipsoid3<Real>::GetRoots (Real d0, Real d1, Real d2,
     invN1Sqr = invN1*invN1;
     invN2Sqr = invN2*invN2;
     fmin = d0c0*invN0Sqr + d1c1*invN1Sqr + d2c2*invN2Sqr - (Real)1;
-    assertion(fmin < (Real)0, "Unexpected condition.\n");
+    //assertion(fmin < (Real)0, "Unexpected condition.\n");
     smax = ((Real)1 - multiplier1*sqrtd0c0)*invD0;
     invN0 = ((Real)1)/(d0*smax - (Real)1);
     invN1 = ((Real)1)/(d1*smax - (Real)1);
@@ -421,7 +421,7 @@ void IntrEllipsoid3Ellipsoid3<Real>::GetRoots (Real d0, Real d1, Real d2,
     invN1Sqr = invN1*invN1;
     invN2Sqr = invN2*invN2;
     fmax = d0c0*invN0Sqr + d1c1*invN1Sqr + d2c2*invN2Sqr - (Real)1;
-    assertion(fmax > (Real)0, "Unexpected condition.\n");
+    //assertion(fmax > (Real)0, "Unexpected condition.\n");
     BisectF(d0, d1, d2, d0c0, d1c1, d2c2, smin, fmin, smax, fmax, s, f);
     roots[numRoots++] = s;
 
@@ -479,7 +479,7 @@ void IntrEllipsoid3Ellipsoid3<Real>::GetRoots (Real d0, Real d1, Real d2,
     invN1Sqr = invN1*invN1;
     invN2Sqr = invN2*invN2;
     fmax = d0c0*invN0Sqr + d1c1*invN1Sqr + d2c2*invN2Sqr - (Real)1;
-    assertion(fmax < (Real)0, "Unexpected condition.\n");
+    //assertion(fmax < (Real)0, "Unexpected condition.\n");
     smin = ((Real)1 + multiplier1*sqrtd2c2)*invD2;
     invN0 = ((Real)1)/(d0*smin - (Real)1);
     invN1 = ((Real)1)/(d1*smin - (Real)1);
@@ -488,7 +488,7 @@ void IntrEllipsoid3Ellipsoid3<Real>::GetRoots (Real d0, Real d1, Real d2,
     invN1Sqr = invN1*invN1;
     invN2Sqr = invN2*invN2;
     fmin = d0c0*invN0Sqr + d1c1*invN1Sqr + d2c2*invN2Sqr - (Real)1;
-    assertion(fmin > (Real)0, "Unexpected condition.\n");
+    //assertion(fmin > (Real)0, "Unexpected condition.\n");
     BisectF(d0, d1, d2, d0c0, d1c1, d2c2, smin, fmin, smax, fmax, s, f);
     roots[numRoots++] = s;
 }
@@ -634,14 +634,14 @@ void IntrEllipsoid3Ellipsoid3<Real>::GetRoots (Real d0, Real d1, Real c0,
     invN0Sqr = invN0*invN0;
     invN1Sqr = invN1*invN1;
     fmin = d0c0*invN0Sqr + d1c1*invN1Sqr - (Real)1;
-    assertion(fmin < (Real)0, "Unexpected condition.\n");
+    //assertion(fmin < (Real)0, "Unexpected condition.\n");
     smax = ((Real)1 - multiplier1*sqrtd0c0)*invD0;
     invN0 = ((Real)1)/(d0*smax - (Real)1);
     invN1 = ((Real)1)/(d1*smax - (Real)1);
     invN0Sqr = invN0*invN0;
     invN1Sqr = invN1*invN1;
     fmax = d0c0*invN0Sqr + d1c1*invN1Sqr - (Real)1;
-    assertion(fmax > (Real)0, "Unexpected condition.\n");
+    //assertion(fmax > (Real)0, "Unexpected condition.\n");
     BisectF(d0, d1, d0c0, d1c1, smin, fmin, smax, fmax, s, f);
     roots[numRoots++] = s;
 
@@ -673,14 +673,14 @@ void IntrEllipsoid3Ellipsoid3<Real>::GetRoots (Real d0, Real d1, Real c0,
     invN0Sqr = invN0*invN0;
     invN1Sqr = invN1*invN1;
     fmax = d0c0*invN0Sqr + d1c1*invN1Sqr - (Real)1;
-    assertion(fmax < (Real)0, "Unexpected condition.\n");
+    //assertion(fmax < (Real)0, "Unexpected condition.\n");
     smin = ((Real)1 + multiplier1*sqrtd1c1)*invD1;
     invN0 = ((Real)1)/(d0*smin - (Real)1);
     invN1 = ((Real)1)/(d1*smin - (Real)1);
     invN0Sqr = invN0*invN0;
     invN1Sqr = invN1*invN1;
     fmin = d0c0*invN0Sqr + d1c1*invN1Sqr - (Real)1;
-    assertion(fmin > (Real)0, "Unexpected condition.\n");
+    //assertion(fmin > (Real)0, "Unexpected condition.\n");
     BisectF(d0, d1, d0c0, d1c1, smin, fmin, smax, fmax, s, f);
     roots[numRoots++] = s;
 }

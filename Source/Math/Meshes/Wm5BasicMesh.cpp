@@ -16,7 +16,7 @@ using namespace Wm5;
 BasicMesh::BasicMesh (int numVertices, const void* points, int numTriangles,
     const int* indices)
 {
-    assertion(numVertices > 0 && numTriangles > 0 && indices,
+    //assertion(numVertices > 0 && numTriangles > 0 && indices,
         "Invalid input\n");
 
     if (numVertices <= 0 || numTriangles <= 0 || !indices)
@@ -90,7 +90,7 @@ BasicMesh::BasicMesh (int numVertices, const void* points, int numTriangles,
                 Edge& edge = mEdges[e];
 
                 // update edge
-                assertion(edge.T[1] == -1, "Mesh must be manifold\n");
+                //assertion(edge.T[1] == -1, "Mesh must be manifold\n");
                 if (edge.T[1] != -1)
                 {
                     delete1(mVertices);

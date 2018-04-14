@@ -37,9 +37,9 @@
 //#define WM5_ASSERT_ON_BARYCENTRIC3_DEGENERATE
 
 // Enable this define if you want index range checking in GVector<Real>.
-#define WM5_ASSERT_GVECTOR_OUT_OF_RANGE
+//#define WM5_ASSERT_GVECTOR_OUT_OF_RANGE
 
 // Enable this define if you want index range checking in GMatrix<Real>.
-#define WM5_ASSERT_GMATRIX_OUT_OF_RANGE
+//#define WM5_ASSERT_GMATRIX_OUT_OF_RANGE
 
 #endif

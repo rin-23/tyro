@@ -20,11 +20,11 @@ NURBSRectangle<Real>::NURBSRectangle (int numUCtrlPoints,
     :
     ParametricSurface<Real>((Real)0, (Real)1, (Real)0, (Real)1, true)
 {
-    assertion(numUCtrlPoints >= 2, "Invalid input\n");
-    assertion(1 <= uDegree && uDegree <= numUCtrlPoints - 1,
+    //assertion(numUCtrlPoints >= 2, "Invalid input\n");
+    //assertion(1 <= uDegree && uDegree <= numUCtrlPoints - 1,
         "Invalid input\n");
-    assertion(numVCtrlPoints >= 2, "Invalid input\n");
-    assertion(1 <= vDegree && vDegree <= numVCtrlPoints - 1,
+    //assertion(numVCtrlPoints >= 2, "Invalid input\n");
+    //assertion(1 <= vDegree && vDegree <= numVCtrlPoints - 1,
         "Invalid input\n");
 
     mLoop[0] = uLoop;
@@ -47,11 +47,11 @@ NURBSRectangle<Real>::NURBSRectangle (int numUCtrlPoints,
     :
     ParametricSurface<Real>((Real)0, (Real)1, (Real)0, (Real)1, true)
 {
-    assertion(numUCtrlPoints >= 2, "Invalid input\n");
-    assertion(1 <= uDegree && uDegree <= numUCtrlPoints - 1,
+    //assertion(numUCtrlPoints >= 2, "Invalid input\n");
+    //assertion(1 <= uDegree && uDegree <= numUCtrlPoints - 1,
         "Invalid input\n");
-    assertion(numVCtrlPoints >= 2, "Invalid input\n");
-    assertion(1 <= vDegree && vDegree <= numVCtrlPoints - 1,
+    //assertion(numVCtrlPoints >= 2, "Invalid input\n");
+    //assertion(1 <= vDegree && vDegree <= numVCtrlPoints - 1,
         "Invalid input\n");
 
     mLoop[0] = uLoop;
@@ -74,11 +74,11 @@ NURBSRectangle<Real>::NURBSRectangle (int numUCtrlPoints,
     :
     ParametricSurface<Real>((Real)0, (Real)1, (Real)0, (Real)1, true)
 {
-    assertion(numUCtrlPoints >= 2, "Invalid input\n");
-    assertion(1 <= uDegree && uDegree <= numUCtrlPoints - 1,
+    //assertion(numUCtrlPoints >= 2, "Invalid input\n");
+    //assertion(1 <= uDegree && uDegree <= numUCtrlPoints - 1,
         "Invalid input\n");
-    assertion(numVCtrlPoints >= 2, "Invalid input\n");
-    assertion(1 <= vDegree && vDegree <= numVCtrlPoints - 1,
+    //assertion(numVCtrlPoints >= 2, "Invalid input\n");
+    //assertion(1 <= vDegree && vDegree <= numVCtrlPoints - 1,
         "Invalid input\n");
 
     mLoop[0] = uLoop;
@@ -102,11 +102,11 @@ NURBSRectangle<Real>::NURBSRectangle (int numUCtrlPoints,
     :
     ParametricSurface<Real>((Real)0, (Real)1, (Real)0, (Real)1, true)
 {
-    assertion(numUCtrlPoints >= 2, "Invalid input\n");
-    assertion(1 <= uDegree && uDegree <= numUCtrlPoints - 1,
+    //assertion(numUCtrlPoints >= 2, "Invalid input\n");
+    //assertion(1 <= uDegree && uDegree <= numUCtrlPoints - 1,
         "Invalid input\n");
-    assertion(numVCtrlPoints >= 2, "Invalid input\n");
-    assertion(1 <= vDegree && vDegree <= numVCtrlPoints - 1,
+    //assertion(numVCtrlPoints >= 2, "Invalid input\n");
+    //assertion(1 <= vDegree && vDegree <= numVCtrlPoints - 1,
         "Invalid input\n");
 
     mLoop[0] = uLoop;

@@ -24,7 +24,7 @@ inline bool Transform::IsUniformScale () const
 //----------------------------------------------------------------------------
 inline const HMatrix& Transform::GetRotate () const
 {
-    assertion(mIsRSMatrix, "Matrix is not a rotation\n");
+    //assertion(mIsRSMatrix, "Matrix is not a rotation\n");
     return mMatrix;
 }
 //----------------------------------------------------------------------------
@@ -40,14 +40,14 @@ inline const APoint& Transform::GetTranslate () const
 //----------------------------------------------------------------------------
 inline const APoint& Transform::GetScale () const
 {
-    assertion(mIsRSMatrix, "Matrix is not a rotation-scale\n");
+    //assertion(mIsRSMatrix, "Matrix is not a rotation-scale\n");
     return mScale;
 }
 //----------------------------------------------------------------------------
 inline float Transform::GetUniformScale () const
 {
-    assertion(mIsRSMatrix, "Matrix is not a rotation-scale\n");
-    assertion(mIsUniformScale, "Matrix is not uniform scale\n");
+    //assertion(mIsRSMatrix, "Matrix is not a rotation-scale\n");
+    //assertion(mIsUniformScale, "Matrix is not uniform scale\n");
     return mScale[0];
 }
 //----------------------------------------------------------------------------

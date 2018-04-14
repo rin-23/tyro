@@ -46,7 +46,7 @@ template <typename Real>
 void Minimize1<Real>::GetMinimum (Real t0, Real t1, Real tInitial,
     Real& tMin, Real& fMin)
 {
-    assertion(t0 <= tInitial && tInitial <= t1, "Invalid initial t value\n");
+    //assertion(t0 <= tInitial && tInitial <= t1, "Invalid initial t value\n");
 
     mTMin = Math<Real>::MAX_REAL;
     mFMin = Math<Real>::MAX_REAL;
@@ -262,7 +262,7 @@ void Minimize1<Real>::GetBracketedMinimum (Real t0, Real f0, Real tm,
         }
 
         Real tv = tm + ((Real)0.5)*(dt1*tmp1 - dt0*tmp0)/denom;
-        assertion(t0 <= tv && tv <= t1, "Vertex not in interval\n");
+        //assertion(t0 <= tv && tv <= t1, "Vertex not in interval\n");
         Real fv = mFunction(tv, mUserData);
         if (fv < mFMin)
         {

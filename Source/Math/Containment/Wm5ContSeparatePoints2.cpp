@@ -21,7 +21,7 @@ SeparatePoints2<Real>::SeparatePoints2 (int numPoints0,
     // Construct convex hull of point set 0.
     ConvexHull2<Real> hull0(numPoints0, (Vector2<Real>*)points0, 0.001f,
         false, Query::QT_INT64);
-    assertion(hull0.GetDimension() == 2,
+    //assertion(hull0.GetDimension() == 2,
         "Code currently supports only noncollinear points\n");
     int numEdges0 = hull0.GetNumSimplices();
     const int* edges0 = hull0.GetIndices();
@@ -29,7 +29,7 @@ SeparatePoints2<Real>::SeparatePoints2 (int numPoints0,
     // Construct convex hull of point set 1.
     ConvexHull2<Real> hull1(numPoints1,(Vector2<Real>*)points1,0.001f,
         false,Query::QT_INT64);
-    assertion(hull1.GetDimension() == 2,
+    //assertion(hull1.GetDimension() == 2,
         "Code currently supports only noncollinear points\n");
     int numEdges1 = hull1.GetNumSimplices();
     const int* edges1 = hull1.GetIndices();

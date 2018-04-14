@@ -19,7 +19,7 @@ IntpAkimaUniform1<Real>::IntpAkimaUniform1 (int quantity, Real xMin,
     :
     IntpAkima1<Real>(quantity, F)
 {
-    assertion(xSpacing > (Real)0, "Spacing must be positive\n");
+    //assertion(xSpacing > (Real)0, "Spacing must be positive\n");
 
     mXMin = xMin;
     mXMax = xMin + xSpacing*(quantity - 1);

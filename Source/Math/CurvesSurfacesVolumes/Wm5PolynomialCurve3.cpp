@@ -18,9 +18,9 @@ PolynomialCurve3<Real>::PolynomialCurve3 (Polynomial1<Real>* xPoly,
     :
     SingleCurve3<Real>((Real)0, (Real)1)
 {
-    assertion(xPoly && yPoly && zPoly, "Invalid input\n");
-    assertion(xPoly->GetDegree() == yPoly->GetDegree(), "Invalid input\n");
-    assertion(xPoly->GetDegree() == zPoly->GetDegree(), "Invalid input\n");
+    //assertion(xPoly && yPoly && zPoly, "Invalid input\n");
+    //assertion(xPoly->GetDegree() == yPoly->GetDegree(), "Invalid input\n");
+    //assertion(xPoly->GetDegree() == zPoly->GetDegree(), "Invalid input\n");
 
     mXPoly = xPoly;
     mYPoly = yPoly;

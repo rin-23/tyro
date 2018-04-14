@@ -210,7 +210,7 @@ int IntrLine3Cylinder3<Real>::Find (const Vector3<Real>& origin,
     if (discr < (Real)0)
     {
         // Line does not intersect cylinder wall.
-        assertion(quantity == 0, "Unexpected condition\n");
+        //assertion(quantity == 0, "Unexpected condition\n");
         return 0;
     }
     else if (discr > Math<Real>::ZERO_TOLERANCE)

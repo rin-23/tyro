@@ -21,9 +21,9 @@ BSplineReduction<Real,TVector>::BSplineReduction (int numCtrlPoints,
     TVector*& outCtrlPoints)
 {
     // Check for valid input.  If invalid, return a "null" curve.
-    assertion(numCtrlPoints >= 2, "Invalid input\n");
-    assertion(ctrlPoints != 0, "Invalid input\n");
-    assertion(1 <= degree && degree < numCtrlPoints, "Invalid input\n");
+    //assertion(numCtrlPoints >= 2, "Invalid input\n");
+    //assertion(ctrlPoints != 0, "Invalid input\n");
+    //assertion(1 <= degree && degree < numCtrlPoints, "Invalid input\n");
     if (numCtrlPoints < 2 || !ctrlPoints || degree < 1
     ||  degree >= numCtrlPoints)
     {
@@ -106,7 +106,7 @@ BSplineReduction<Real,TVector>::BSplineReduction (int numCtrlPoints,
     // Construct A^{-1}.
     GMatrix<Real> invA(mQuantity[0], mQuantity[0]);
     bool solved = LinearSystem<Real>().Invert(A, invA);
-    assertion(solved, "Failed to solve linear system\n");
+    //assertion(solved, "Failed to solve linear system\n");
     WM5_UNUSED(solved);
 
     // Construct B (depends on both input and output basis functions).

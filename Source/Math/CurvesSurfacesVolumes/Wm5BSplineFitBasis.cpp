@@ -16,7 +16,7 @@ namespace Wm5
 template <typename Real>
 BSplineFitBasis<Real>::BSplineFitBasis (int quantity, int degree)
 {
-    assertion(1 <= degree && degree < quantity, "Invalid inputs.\n");
+    //assertion(1 <= degree && degree < quantity, "Invalid inputs.\n");
     mQuantity = quantity;
     mDegree = degree;
 
@@ -46,7 +46,7 @@ int BSplineFitBasis<Real>::GetDegree () const
 template <typename Real>
 void BSplineFitBasis<Real>::Compute (Real t, int& imin, int& imax) const
 {
-    assertion((Real)0 <= t && t <= (Real)1, "Invalid input.\n");
+    //assertion((Real)0 <= t && t <= (Real)1, "Invalid input.\n");
 
     // Use scaled time and scaled knots so that 1/(Q-D) does not need to
     // be explicitly stored by the class object.  Determine the extreme
@@ -123,7 +123,7 @@ void BSplineFitBasis<Real>::Compute (Real t, int& imin, int& imax) const
 template <typename Real>
 Real BSplineFitBasis<Real>::GetValue (int i) const
 {
-    assertion(0 <= i && i <= mDegree, "Invalid index\n");
+    //assertion(0 <= i && i <= mDegree, "Invalid index\n");
     return mValue[i];
 }
 //----------------------------------------------------------------------------

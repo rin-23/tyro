@@ -24,7 +24,7 @@ MinimizeN<Real>::MinimizeN (int dimensions, Function function,
     mUserData(userData),
     mMinimizer(LineFunction, maxLevel, maxBracket)
 {
-    assertion(mDimensions >= 1 && mFunction, "Invalid inputs\n");
+    //assertion(mDimensions >= 1 && mFunction, "Invalid inputs\n");
 
     mTCurr = new1<Real>(mDimensions);
     mTSave = new1<Real>(mDimensions);

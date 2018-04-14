@@ -131,7 +131,7 @@ void IntrLine3Ellipsoid3<Real>::SetNegativeThreshold (Real negThreshold)
         return;
     }
 
-    assertion(false, "Negative threshold must be nonpositive.");
+    //assertion(false, "Negative threshold must be nonpositive.");
 }
 //----------------------------------------------------------------------------
 template <typename Real>
@@ -149,7 +149,7 @@ void IntrLine3Ellipsoid3<Real>::SetPositiveThreshold (Real posThreshold)
         return;
     }
 
-    assertion(false, "Positive threshold must be nonnegative.");
+    //assertion(false, "Positive threshold must be nonnegative.");
 }
 //----------------------------------------------------------------------------
 template <typename Real>

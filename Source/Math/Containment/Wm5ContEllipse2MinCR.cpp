@@ -136,7 +136,7 @@ void ContEllipse2MinCR<Real>::MaxProduct (std::vector<Vector2<Real> >& A,
             iYMin = i;
         }
     }
-    assertion(iXMin != -1 && iYMin != -1, "Unexpected condition\n");
+    //assertion(iXMin != -1 && iYMin != -1, "Unexpected condition\n");
     WM5_UNUSED(iXMin);
 
     used[iYMin] = true;
@@ -216,14 +216,14 @@ void ContEllipse2MinCR<Real>::MaxProduct (std::vector<Vector2<Real> >& A,
 
         // The maximum is f(x1).  The function x*y is potentially larger
         // on the next line, so continue the search.
-        assertion(line != -1, "Unexpected condition\n");
+        //assertion(line != -1, "Unexpected condition\n");
         x0 = x1;
         x1 = xMax;
         used[line] = true;
         iYMin = line;
     }
 
-    assertion(j < numConstraints, "Unexpected condition\n");
+    //assertion(j < numConstraints, "Unexpected condition\n");
 
     delete1(used);
 }

@@ -58,11 +58,11 @@ bool FileIO::Open (const std::string& filename, int mode)
             return true;
         }
 
-        assertion(false, "Failed to open file %s\n", filename.c_str());
+        //assertion(false, "Failed to open file %s\n", filename.c_str());
     }
     else
     {
-        assertion(false, "File %s is already open\n", filename.c_str());
+        //assertion(false, "File %s is already open\n", filename.c_str());
     }
 
     return false;
@@ -76,7 +76,7 @@ bool FileIO::Close ()
         return true;
     }
 
-    assertion(false, "Failed to close file\n");
+    //assertion(false, "Failed to close file\n");
     return false;
 }
 //----------------------------------------------------------------------------
@@ -91,7 +91,7 @@ bool FileIO::Read (size_t itemSize, void* datum)
     if ((mMode != FM_READ && mMode != FM_READ_AND_SWAP) || !mFile || !datum
     ||  (itemSize != 1 && itemSize != 2 && itemSize != 4 && itemSize != 8))
     {
-        assertion(false, "Invalid FileIO::Read\n");
+        //assertion(false, "Invalid FileIO::Read\n");
         return false;
     }
 #endif
@@ -101,7 +101,7 @@ bool FileIO::Read (size_t itemSize, void* datum)
 #ifdef WM5_FILEIO_VALIDATE_OPERATION
     if (numRead != 1)
     {
-        assertion(false, "Invalid FileIO::Read\n");
+        //assertion(false, "Invalid FileIO::Read\n");
         return false;
     }
 #else
@@ -123,7 +123,7 @@ bool FileIO::Read (size_t itemSize, int numItems, void* data)
     ||  numItems <= 0 || !data
     ||  (itemSize != 1 && itemSize != 2 && itemSize != 4 && itemSize != 8))
     {
-        assertion(false, "Invalid FileIO::Read\n");
+        //assertion(false, "Invalid FileIO::Read\n");
         return false;
     }
 #endif
@@ -133,7 +133,7 @@ bool FileIO::Read (size_t itemSize, int numItems, void* data)
 #ifdef WM5_FILEIO_VALIDATE_OPERATION
     if (numRead != numItems)
     {
-        assertion(false, "Invalid FileIO::Read\n");
+        //assertion(false, "Invalid FileIO::Read\n");
         return false;
     }
 #else
@@ -154,7 +154,7 @@ bool FileIO::Write (size_t itemSize, const void* datum)
     if ((mMode != FM_WRITE && mMode != FM_WRITE_AND_SWAP) || !mFile || !datum
     ||  (itemSize != 1 && itemSize != 2 && itemSize != 4 && itemSize != 8))
     {
-        assertion(false, "Invalid FileIO::Write\n");
+        //assertion(false, "Invalid FileIO::Write\n");
         return false;
     }
 #endif
@@ -184,7 +184,7 @@ bool FileIO::Write (size_t itemSize, const void* datum)
         {
             numWritten = 0;
 #ifdef WM5_FILEIO_VALIDATE_OPERATION
-            assertion(false, "Invalid FileIO::Write\n");
+            //assertion(false, "Invalid FileIO::Write\n");
 #endif
         }
     }
@@ -197,7 +197,7 @@ bool FileIO::Write (size_t itemSize, const void* datum)
 #ifdef WM5_FILEIO_VALIDATE_OPERATION
     if (numWritten != 1)
     {
-        assertion(false, "Invalid FileIO::Write\n");
+        //assertion(false, "Invalid FileIO::Write\n");
         return false;
     }
 #else
@@ -214,7 +214,7 @@ bool FileIO::Write (size_t itemSize, int numItems, const void* data)
     ||  numItems <= 0 || !data
     ||  (itemSize != 1 && itemSize != 2 && itemSize != 4 && itemSize != 8))
     {
-        assertion(false, "Invalid FileIO::Write\n");
+        //assertion(false, "Invalid FileIO::Write\n");
         return false;
     }
 #endif
@@ -256,7 +256,7 @@ bool FileIO::Write (size_t itemSize, int numItems, const void* data)
         else
         {
 #ifdef WM5_FILEIO_VALIDATE_OPERATION
-            assertion(false, "Invalid FileIO::Write\n");
+            //assertion(false, "Invalid FileIO::Write\n");
 #endif
         }
     }
@@ -269,7 +269,7 @@ bool FileIO::Write (size_t itemSize, int numItems, const void* data)
 #ifdef WM5_FILEIO_VALIDATE_OPERATION
     if (numWritten != numItems)
     {
-        assertion(false, "Invalid FileIO::Write\n");
+        //assertion(false, "Invalid FileIO::Write\n");
         return false;
     }
 #else
@@ -286,7 +286,7 @@ bool FileIO::Load (const std::string& filename, bool binaryFile,
     if (stat(filename.c_str(), &statistics) != 0)
     {
         // The file does not exist.
-        assertion(false, "Failed to open file %s\n", filename.c_str());
+        //assertion(false, "Failed to open file %s\n", filename.c_str());
         buffer = 0;
         bufferSize = 0;
         return false;
@@ -304,7 +304,7 @@ bool FileIO::Load (const std::string& filename, bool binaryFile,
     if (!inFile)
     {
         // The file cannot be opened for reading. 
-        assertion(false, "Failed to open file %s\n", filename.c_str());
+        //assertion(false, "Failed to open file %s\n", filename.c_str());
         buffer = 0;
         bufferSize = 0;
         return false;
@@ -315,8 +315,8 @@ bool FileIO::Load (const std::string& filename, bool binaryFile,
     int numRead = (int)fread(buffer, sizeof(char), bufferSize, inFile);
     if (fclose(inFile) != 0 || numRead != bufferSize)
     {
-        assertion(false, "Failed to read or close file %s\n",
-            filename.c_str());
+        //assertion(false, "Failed to read or close file %s\n",
+         //   filename.c_str());
         delete1(buffer);
         buffer = 0;
         bufferSize = 0;
@@ -333,7 +333,7 @@ bool FileIO::Save (const std::string& filename, bool binaryFile,
     {
         // The input buffer must exist.  It is not possible to verify that
         // the buffer has the specified number of bytes.
-        assertion(false, "Invalid inputs, file %s\n", filename.c_str());
+        //assertion(false, "Invalid inputs, file %s\n", filename.c_str());
         return false;
     }
 
@@ -349,15 +349,15 @@ bool FileIO::Save (const std::string& filename, bool binaryFile,
     if (!outFile)
     {
         // The file cannot be opened for writing.
-        assertion(false, "Failed to open file %s\n", filename.c_str());
+        //assertion(false, "Failed to open file %s\n", filename.c_str());
         return false;
     }
 
     int numWritten = (int)fwrite(buffer, sizeof(char), bufferSize, outFile);
     if (fclose(outFile) != 0 || numWritten != bufferSize)
     {
-        assertion(false, "Failed to write or close file %s\n",
-            filename.c_str());
+        //assertion(false, "Failed to write or close file %s\n",
+           // filename.c_str());
         return false;
     }
 
@@ -371,7 +371,7 @@ bool FileIO::Append (const std::string& filename, bool binaryFile,
     {
         // The input buffer must exist.  It is not possible to verify that
         // the buffer has the specified number of bytes.
-        assertion(false, "Invalid inputs, file %s\n", filename.c_str());
+        //assertion(false, "Invalid inputs, file %s\n", filename.c_str());
         return false;
     }
 
@@ -387,15 +387,15 @@ bool FileIO::Append (const std::string& filename, bool binaryFile,
     if (!outFile)
     {
         // The file cannot be opened for appending.
-        assertion(false, "Failed to open file %s\n", filename.c_str());
+        //assertion(false, "Failed to open file %s\n", filename.c_str());
         return false;
     }
 
     int numWritten = (int)fwrite(buffer, sizeof(char), bufferSize, outFile);
     if (fclose(outFile) != 0 || numWritten != bufferSize)
     {
-        assertion(false, "Failed to write or close file %s\n",
-            filename.c_str());
+        //assertion(false, "Failed to write or close file %s\n",
+          //  filename.c_str());
         return false;
     }
 

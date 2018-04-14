@@ -142,7 +142,7 @@ inline void* operator new (size_t numBytes, const Wm5::Memory& memory)
     else
     {
 #ifdef WM5_USE_MEMORY_ASSERT_ON_PREINIT_POSTTERM_OPERATIONS
-        assertion(false, "Allocations are not tracked outside a "
+        //assertion(false, "Allocations are not tracked outside a "
             "Memory::Initialize/Memory::Terminate block.\n");
 #endif
         return malloc(numBytes);

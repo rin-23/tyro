@@ -293,8 +293,8 @@ template <typename Real>
 void Vector4<Real>::ComputeExtremes (int numVectors, const Vector4* vectors,
     Vector4& vmin, Vector4& vmax)
 {
-    assertion(numVectors > 0 && vectors,
-        "Invalid inputs to ComputeExtremes\n");
+    //assertion(numVectors > 0 && vectors,
+     //   "Invalid inputs to ComputeExtremes\n");
 
     vmin = vectors[0];
     vmax = vmin;

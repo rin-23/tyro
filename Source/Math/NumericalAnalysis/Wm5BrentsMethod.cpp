@@ -34,7 +34,7 @@ BrentsMethod<Real>::~BrentsMethod ()
 template <typename Real>
 void BrentsMethod<Real>::SetFunction (Function function)
 {
-    assertion(function != 0, "Invalid function.\n");
+    //assertion(function != 0, "Invalid function.\n");
     mFunction = function;
 }
 //----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ typename BrentsMethod<Real>::Function BrentsMethod<Real>::GetFunction () const
 template <typename Real>
 void BrentsMethod<Real>::SetMaxIterations (int maxIterations)
 {
-    assertion(maxIterations >= 1, "Invalid maxIterations.\n");
+    //assertion(maxIterations >= 1, "Invalid maxIterations.\n");
     mMaxIterations = maxIterations;
 }
 //----------------------------------------------------------------------------
@@ -60,7 +60,7 @@ int BrentsMethod<Real>::GetMaxIterations () const
 template <typename Real>
 void BrentsMethod<Real>::SetNegFTolerance (Real negFTolerance)
 {
-    assertion(negFTolerance <= (Real)0, "Invalid negFTolerance.\n");
+    //assertion(negFTolerance <= (Real)0, "Invalid negFTolerance.\n");
     mNegFTolerance = negFTolerance;
 }
 //----------------------------------------------------------------------------
@@ -73,7 +73,7 @@ Real BrentsMethod<Real>::GetNegFTolerance () const
 template <typename Real>
 void BrentsMethod<Real>::SetPosFTolerance (Real posFTolerance)
 {
-    assertion(posFTolerance >= (Real)0, "Invalid posFTolerance.\n");
+    //assertion(posFTolerance >= (Real)0, "Invalid posFTolerance.\n");
     mPosFTolerance = posFTolerance;
 }
 //----------------------------------------------------------------------------
@@ -86,7 +86,7 @@ Real BrentsMethod<Real>::GetPosFTolerance () const
 template <typename Real>
 void BrentsMethod<Real>::SetStepXTolerance (Real stepXTolerance)
 {
-    assertion(stepXTolerance >= (Real)0, "Invalid stepXTolerance.\n");
+    //assertion(stepXTolerance >= (Real)0, "Invalid stepXTolerance.\n");
     mStepXTolerance = stepXTolerance;
 }
 //----------------------------------------------------------------------------
@@ -99,7 +99,7 @@ Real BrentsMethod<Real>::GetStepXTolerance () const
 template <typename Real>
 void BrentsMethod<Real>::SetConvXTolerance (Real convXTolerance)
 {
-    assertion(convXTolerance >= (Real)0, "Invalid convXTolerance.\n");
+    //assertion(convXTolerance >= (Real)0, "Invalid convXTolerance.\n");
     mConvXTolerance = convXTolerance;
 }
 //----------------------------------------------------------------------------

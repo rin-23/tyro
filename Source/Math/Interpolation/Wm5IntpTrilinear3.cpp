@@ -20,9 +20,9 @@ IntpTrilinear3<Real>::IntpTrilinear3 (int xBound, int yBound, int zBound,
 {
     // At least a 2x2x2 block of data points are needed to construct the
     // trilinear interpolation.
-    assertion(xBound >= 2 && yBound >= 2 && zBound >= 2 && F,
+    //assertion(xBound >= 2 && yBound >= 2 && zBound >= 2 && F,
         "Invalid input\n");
-    assertion(xSpacing > (Real)0 && ySpacing > (Real)0 && zSpacing > (Real)0,
+    //assertion(xSpacing > (Real)0 && ySpacing > (Real)0 && zSpacing > (Real)0,
         "Invalid input\n");
 
     mXBound = xBound;

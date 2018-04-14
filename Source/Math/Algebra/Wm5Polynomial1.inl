@@ -77,14 +77,14 @@ inline Polynomial1<Real>::operator Real* ()
 template <typename Real>
 inline const Real& Polynomial1<Real>::operator[] (int i) const
 {
-    assertion(0 <= i && i <= mDegree, "Invalid input to operator[]\n");
+    //assertion(0 <= i && i <= mDegree, "Invalid input to operator[]\n");
     return mCoeff[i];
 }
 //----------------------------------------------------------------------------
 template <typename Real>
 inline Real& Polynomial1<Real>::operator[] (int i)
 {
-    assertion(0 <= i && i <= mDegree, "Invalid input to operator[]\n");
+    //assertion(0 <= i && i <= mDegree, "Invalid input to operator[]\n");
     return mCoeff[i];
 }
 //----------------------------------------------------------------------------
@@ -109,7 +109,7 @@ Polynomial1<Real>& Polynomial1<Real>::operator= (const Polynomial1& poly)
 template <typename Real>
 Real Polynomial1<Real>::operator() (Real t) const
 {
-    assertion(mDegree >= 0, "Degree must be nonnegative in operator()\n");
+    //assertion(mDegree >= 0, "Degree must be nonnegative in operator()\n");
 
     Real result = mCoeff[mDegree];
     for (int i = mDegree - 1; i >= 0; --i)
@@ -123,8 +123,8 @@ Real Polynomial1<Real>::operator() (Real t) const
 template <typename Real>
 Polynomial1<Real> Polynomial1<Real>::operator+ (const Polynomial1& poly) const
 {
-    assertion(mDegree >= 0 && poly.mDegree >= 0,
-        "Degrees must be nonnegative in operator+\n");
+    //assertion(mDegree >= 0 && poly.mDegree >= 0,
+     //   "Degrees must be nonnegative in operator+\n");
 
     Polynomial1 result;
     int i;
@@ -161,8 +161,8 @@ Polynomial1<Real> Polynomial1<Real>::operator+ (const Polynomial1& poly) const
 template <typename Real>
 Polynomial1<Real> Polynomial1<Real>::operator- (const Polynomial1& poly) const
 {
-    assertion(mDegree >= 0 && poly.mDegree >= 0,
-        "Degrees must be nonnegative in operator-\n");
+    //assertion(mDegree >= 0 && poly.mDegree >= 0,
+     //   "Degrees must be nonnegative in operator-\n");
 
     Polynomial1 result;
     int i;
@@ -199,8 +199,8 @@ Polynomial1<Real> Polynomial1<Real>::operator- (const Polynomial1& poly) const
 template <typename Real>
 Polynomial1<Real> Polynomial1<Real>::operator* (const Polynomial1& poly) const
 {
-    assertion(mDegree >= 0 && poly.mDegree >= 0,
-        "Degrees must be nonnegative in operator*\n");
+    //assertion(mDegree >= 0 && poly.mDegree >= 0,
+     //   "Degrees must be nonnegative in operator*\n");
 
     Polynomial1 result(mDegree + poly.mDegree);
 
@@ -220,7 +220,7 @@ Polynomial1<Real> Polynomial1<Real>::operator* (const Polynomial1& poly) const
 template <typename Real>
 Polynomial1<Real> Polynomial1<Real>::operator+ (Real scalar) const
 {
-    assertion(mDegree >= 0, "Degree must be nonnegative in operator+\n");
+    //assertion(mDegree >= 0, "Degree must be nonnegative in operator+\n");
 
     Polynomial1 result(*this);
     result.mCoeff[0] += scalar;
@@ -230,7 +230,7 @@ Polynomial1<Real> Polynomial1<Real>::operator+ (Real scalar) const
 template <typename Real>
 Polynomial1<Real> Polynomial1<Real>::operator- (Real scalar) const
 {
-    assertion(mDegree >= 0, "Degree must be nonnegative in operator-\n");
+    //assertion(mDegree >= 0, "Degree must be nonnegative in operator-\n");
 
     Polynomial1 result(*this);
     result.mCoeff[0] -= scalar;
@@ -240,7 +240,7 @@ Polynomial1<Real> Polynomial1<Real>::operator- (Real scalar) const
 template <typename Real>
 Polynomial1<Real> Polynomial1<Real>::operator* (Real scalar) const
 {
-    assertion(mDegree >= 0, "Degree must be nonnegative in operator*\n");
+    //assertion(mDegree >= 0, "Degree must be nonnegative in operator*\n");
 
     Polynomial1 result(mDegree);
     for (int i = 0; i <= mDegree; ++i)
@@ -253,7 +253,7 @@ Polynomial1<Real> Polynomial1<Real>::operator* (Real scalar) const
 template <typename Real>
 Polynomial1<Real> Polynomial1<Real>::operator/ (Real scalar) const
 {
-    assertion(mDegree >= 0, "Degree must be nonnegative in operator/\n");
+    //assertion(mDegree >= 0, "Degree must be nonnegative in operator/\n");
 
     Polynomial1 result(mDegree);
     int i;
@@ -280,7 +280,7 @@ Polynomial1<Real> Polynomial1<Real>::operator/ (Real scalar) const
 template <typename Real>
 Polynomial1<Real> Polynomial1<Real>::operator- () const
 {
-    assertion(mDegree >= 0, "Degree must be nonnegative in operator-\n");
+    //assertion(mDegree >= 0, "Degree must be nonnegative in operator-\n");
 
     Polynomial1 result(mDegree);
     for (int i = 0; i <= mDegree; ++i)
@@ -294,7 +294,7 @@ Polynomial1<Real> Polynomial1<Real>::operator- () const
 template <typename Real>
 Polynomial1<Real>& Polynomial1<Real>::operator += (const Polynomial1& poly)
 {
-    assertion(mDegree >= 0, "Degree must be nonnegative in operator+=\n");
+    //assertion(mDegree >= 0, "Degree must be nonnegative in operator+=\n");
 
     *this = *this + poly;
     return *this;
@@ -303,7 +303,7 @@ Polynomial1<Real>& Polynomial1<Real>::operator += (const Polynomial1& poly)
 template <typename Real>
 Polynomial1<Real>& Polynomial1<Real>::operator -= (const Polynomial1& poly)
 {
-    assertion(mDegree >= 0, "Degree must be nonnegative in operator-=\n");
+    //assertion(mDegree >= 0, "Degree must be nonnegative in operator-=\n");
 
     *this = *this - poly;
     return *this;
@@ -312,7 +312,7 @@ Polynomial1<Real>& Polynomial1<Real>::operator -= (const Polynomial1& poly)
 template <typename Real>
 Polynomial1<Real>& Polynomial1<Real>::operator *= (const Polynomial1& poly)
 {
-    assertion(mDegree >= 0, "Degree must be nonnegative in operator*=\n");
+    //assertion(mDegree >= 0, "Degree must be nonnegative in operator*=\n");
 
     *this = (*this)*poly;
     return *this;
@@ -321,7 +321,7 @@ Polynomial1<Real>& Polynomial1<Real>::operator *= (const Polynomial1& poly)
 template <typename Real>
 Polynomial1<Real>& Polynomial1<Real>::operator += (Real scalar)
 {
-    assertion(mDegree >= 0, "Degree must be nonnegative in operator+=\n");
+    //assertion(mDegree >= 0, "Degree must be nonnegative in operator+=\n");
 
     mCoeff[0] += scalar;
     return *this;
@@ -330,7 +330,7 @@ Polynomial1<Real>& Polynomial1<Real>::operator += (Real scalar)
 template <typename Real>
 Polynomial1<Real>& Polynomial1<Real>::operator -= (Real scalar)
 {
-    assertion(mDegree >= 0, "Degree must be nonnegative in operator-=\n");
+    //assertion(mDegree >= 0, "Degree must be nonnegative in operator-=\n");
 
     mCoeff[0] -= scalar;
     return *this;
@@ -339,7 +339,7 @@ Polynomial1<Real>& Polynomial1<Real>::operator -= (Real scalar)
 template <typename Real>
 Polynomial1<Real>& Polynomial1<Real>::operator *= (Real scalar)
 {
-    assertion(mDegree >= 0, "Degree must be nonnegative in operator*=\n");
+    //assertion(mDegree >= 0, "Degree must be nonnegative in operator*=\n");
 
     *this = (*this)*scalar;
     return *this;
@@ -348,7 +348,7 @@ Polynomial1<Real>& Polynomial1<Real>::operator *= (Real scalar)
 template <typename Real>
 Polynomial1<Real>& Polynomial1<Real>::operator /= (Real scalar)
 {
-    assertion(mDegree >= 0, "Degree must be nonnegative in operator/=\n");
+    //assertion(mDegree >= 0, "Degree must be nonnegative in operator/=\n");
 
     *this = (*this)/scalar;
     return *this;

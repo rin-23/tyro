@@ -40,14 +40,14 @@ private:
 
 }
 
-#define assertion(condition, format, ...) \
+#define //assertion(condition, format, ...) \
     Wm5::Assert(condition, __FILE__, __LINE__, format, __VA_ARGS__)
 //----------------------------------------------------------------------------
 #else
 //----------------------------------------------------------------------------
 // Use standard asserts.
 //----------------------------------------------------------------------------
-#define assertion(condition, format, ...) assert(condition)
+//#define //assertion(condition, ...) {} //assert(condition)
 //----------------------------------------------------------------------------
 #endif
 

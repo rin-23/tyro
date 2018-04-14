@@ -16,7 +16,7 @@ Polyhedron3<Real>::Polyhedron3 (int numVertices, Vector3<Real>* vertices,
     mNumIndices(3*numTriangles)
 {
     // The polyhedron must be at least a tetrahedron.
-    assertion(numVertices >= 4 && vertices && numTriangles >= 4 && indices,
+    //assertion(numVertices >= 4 && vertices && numTriangles >= 4 && indices,
         "Invalid input to Polyhedron3 constructor\n");
 
     mVertices = vertices;
@@ -63,7 +63,7 @@ const Vector3<Real>* Polyhedron3<Real>::GetVertices () const
 template <typename Real>
 const Vector3<Real>& Polyhedron3<Real>::GetVertex (int i) const
 {
-    assertion(0 <= i && i < mNumVertices, "Invalid index in GetVertex\n");
+    //assertion(0 <= i && i < mNumVertices, "Invalid index in GetVertex\n");
     return mVertices[i];
 }
 //----------------------------------------------------------------------------
@@ -88,14 +88,14 @@ const int* Polyhedron3<Real>::GetIndices () const
 template <typename Real>
 const int* Polyhedron3<Real>::GetTriangle (int i) const
 {
-    assertion(0 <= i && i < mNumTriangles, "Invalid index in GetTriangle\n");
+    //assertion(0 <= i && i < mNumTriangles, "Invalid index in GetTriangle\n");
     return &mIndices[3*i];
 }
 //----------------------------------------------------------------------------
 template <typename Real>
 void Polyhedron3<Real>::SetVertex (int i, const Vector3<Real>& vertex)
 {
-    assertion(0 <= i && i < mNumVertices, "Invalid index in SetVertex\n");
+    //assertion(0 <= i && i < mNumVertices, "Invalid index in SetVertex\n");
     mVertices[i] = vertex;
 }
 //----------------------------------------------------------------------------

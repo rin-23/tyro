@@ -151,8 +151,8 @@ bool Bound::TestIntersection (const APoint& origin, const AVector& direction,
 
     if (tmin == -Mathf::MAX_REAL)
     {
-        assertion(tmax == Mathf::MAX_REAL,
-            "tmax must be infinity for a line.\n");
+        //assertion(tmax == Mathf::MAX_REAL,
+        //    "tmax must be infinity for a line.\n");
 
         // Test for sphere-line intersection.
         diff = origin - mCenter;
@@ -164,7 +164,7 @@ bool Bound::TestIntersection (const APoint& origin, const AVector& direction,
 
     if (tmax == Mathf::MAX_REAL)
     {
-        assertion(tmin == 0.0f, "tmin must be zero for a ray.\n");
+        //assertion(tmin == 0.0f, "tmin must be zero for a ray.\n");
 
         // Test for sphere-ray intersection.
         AVector diff = origin - mCenter;
@@ -190,7 +190,7 @@ bool Bound::TestIntersection (const APoint& origin, const AVector& direction,
         return discr >= 0.0f;
     }
 
-    assertion(tmax > tmin, "tmin < tmax is required for a segment.\n");
+    //assertion(tmax > tmin, "tmin < tmax is required for a segment.\n");
 
     // Test for sphere-segment intersection.
     float segExtent = 0.5f*(tmin + tmax);

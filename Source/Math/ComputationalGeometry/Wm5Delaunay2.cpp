@@ -176,7 +176,7 @@ Delaunay2<Real>::Delaunay2 (int numVertices, Vector2<Real>* vertices,
                 mAdjacencies[i] = permute[tri->T[j]];
             }
         }
-        assertion(i == 3*mNumSimplices, "Unexpected mismatch\n");
+        //assertion(i == 3*mNumSimplices, "Unexpected mismatch\n");
 
         mPathLast = -1;
         mPath = new1<int>(mNumSimplices + 1);
@@ -223,7 +223,7 @@ const Vector2<Real>& Delaunay2<Real>::GetLineDirection () const
 template <typename Real>
 Delaunay1<Real>* Delaunay2<Real>::GetDelaunay1 () const
 {
-    assertion(mDimension == 1, "The dimension must be 1\n");
+    //assertion(mDimension == 1, "The dimension must be 1\n");
     if (mDimension != 1)
     {
         return 0;
@@ -243,7 +243,7 @@ Delaunay1<Real>* Delaunay2<Real>::GetDelaunay1 () const
 template <typename Real>
 bool Delaunay2<Real>::GetHull (int& numEdges, int*& indices)
 {
-    assertion(mDimension == 2, "The dimension must be 2\n");
+    //assertion(mDimension == 2, "The dimension must be 2\n");
     if (mDimension != 2)
     {
         return false;
@@ -261,7 +261,7 @@ bool Delaunay2<Real>::GetHull (int& numEdges, int*& indices)
             numEdges++;
         }
     }
-    assertion(numEdges > 0, "There must be at least one triangle\n");
+    //assertion(numEdges > 0, "There must be at least one triangle\n");
     if (numEdges == 0)
     {
         return false;
@@ -286,7 +286,7 @@ bool Delaunay2<Real>::GetHull (int& numEdges, int*& indices)
 template <typename Real>
 int Delaunay2<Real>::GetContainingTriangle (const Vector2<Real>& p) const
 {
-    assertion(mDimension == 2, "The dimension must be 2\n");
+    //assertion(mDimension == 2, "The dimension must be 2\n");
     if (mDimension != 2)
     {
         return -1;
@@ -386,7 +386,7 @@ int Delaunay2<Real>::GetLastEdge (int& v0, int& v1, int& v2) const
 template <typename Real>
 bool Delaunay2<Real>::GetVertexSet (int i, Vector2<Real> vertices[3]) const
 {
-    assertion(mDimension == 2, "The dimension must be 2\n");
+    //assertion(mDimension == 2, "The dimension must be 2\n");
     if (mDimension != 2)
     {
         return false;
@@ -406,7 +406,7 @@ bool Delaunay2<Real>::GetVertexSet (int i, Vector2<Real> vertices[3]) const
 template <typename Real>
 bool Delaunay2<Real>::GetIndexSet (int i, int indices[3]) const
 {
-    assertion(mDimension == 2, "The dimension must be 2\n");
+    //assertion(mDimension == 2, "The dimension must be 2\n");
     if (mDimension != 2)
     {
         return false;
@@ -426,7 +426,7 @@ bool Delaunay2<Real>::GetIndexSet (int i, int indices[3]) const
 template <typename Real>
 bool Delaunay2<Real>::GetAdjacentSet (int i, int adjacencies[3]) const
 {
-    assertion(mDimension == 2, "The dimension must be 2\n");
+    //assertion(mDimension == 2, "The dimension must be 2\n");
     if (mDimension != 2)
     {
         return false;
@@ -447,7 +447,7 @@ template <typename Real>
 bool Delaunay2<Real>::GetBarycentricSet (int i, const Vector2<Real>& p,
     Real bary[3]) const
 {
-    assertion(mDimension == 2, "The dimension must be 2\n");
+    //assertion(mDimension == 2, "The dimension must be 2\n");
     if (mDimension != 2)
     {
         return false;
@@ -475,7 +475,7 @@ Delaunay2<Real>::Delaunay2 (const char* filename, int mode)
     mPath(0)
 {
     bool loaded = Load(filename, mode);
-    assertion(loaded, "Cannot open file %s\n", filename);
+    //assertion(loaded, "Cannot open file %s\n", filename);
     WM5_UNUSED(loaded);
 }
 //----------------------------------------------------------------------------
@@ -622,7 +622,7 @@ bool Delaunay2<Real>::GetContainingTriangle (int i, Triangle*& tri) const
         }
     }
 
-    assertion(false, "Unexpected termination of GetContainingTriangle\n");
+    //assertion(false, "Unexpected termination of GetContainingTriangle\n");
     return false;
 }
 //----------------------------------------------------------------------------
@@ -741,8 +741,8 @@ void Delaunay2<Real>::Update (int i)
             {
                 ETManifoldMesh::EMapCIterator iter =
                     edgemap.find(EdgeKey(key->V[0], key->V[1]));
-                assertion(iter != edgemap.end(), "Unexpected condition\n");
-                assertion(iter->second->T[1] == 0, "Unexpected condition\n");
+                //assertion(iter != edgemap.end(), "Unexpected condition\n");
+                //assertion(iter->second->T[1] == 0, "Unexpected condition\n");
                 Triangle* adj = iter->second->T[0];
                 if (adj && candidates.find(adj) == candidates.end())
                 {

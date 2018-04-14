@@ -18,7 +18,7 @@ BezierCurve3<Real>::BezierCurve3 (int degree, Vector3<Real>* ctrlPoint)
     :
     SingleCurve3<Real>((Real)0, (Real)1)
 {
-    assertion(degree >= 2, "The degree must be three or larger\n");
+    //assertion(degree >= 2, "The degree must be three or larger\n");
 
     int i, j;
 

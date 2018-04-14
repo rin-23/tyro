@@ -74,7 +74,7 @@ void Distance<Real,TVector>::SetDifferenceStep (Real differenceStep)
     }
     else
     {
-        assertion(differenceStep > (Real)0, "Invalid difference step\n");
+        //assertion(differenceStep > (Real)0, "Invalid difference step\n");
         mDifferenceStep = (Real)1e-03;
     }
 

@@ -27,7 +27,7 @@ void Environment::Initialize ()
         return;
     }
 
-    assertion(false, "Directory list already allocated.\n");
+    //assertion(false, "Directory list already allocated.\n");
 }
 //----------------------------------------------------------------------------
 void Environment::Terminate ()
@@ -38,7 +38,7 @@ void Environment::Terminate ()
         return;
     }
 
-    assertion(false, "No directory list to deallocate.\n");
+    //assertion(false, "No directory list to deallocate.\n");
 }
 //----------------------------------------------------------------------------
 

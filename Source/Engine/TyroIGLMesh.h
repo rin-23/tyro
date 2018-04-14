@@ -1,3 +1,5 @@
+#pragma once
+
 #include "RAEnginePrerequisites.h"
 #include <Eigen/Core>
 #include "RAES2DefaultTriMesh.h"
@@ -16,13 +18,14 @@ public:
     
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
-    Eigen::MatrixXd N;    
+    Eigen::MatrixXd N;
 
 protected:
     void Init(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd N);
 private:
     
 };
+
 
 class IGLMeshWireframe : public ES2DefaultPolyline
 {
@@ -32,7 +35,7 @@ public:
     virtual ~IGLMeshWireframe() {}
     
     static IGLMeshWireframeSPtr Create(Eigen::MatrixXd& V, Eigen::MatrixXi& F);
-
+    
 protected:
     void Init(Eigen::MatrixXd& V, Eigen::MatrixXi& F);
 private:

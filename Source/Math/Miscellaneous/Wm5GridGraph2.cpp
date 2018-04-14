@@ -16,7 +16,7 @@ namespace Wm5
 template <typename Real>
 GridGraph2<Real>::GridGraph2 (int xSize, int ySize)
 {
-    assertion(xSize > 0 && ySize > 0, "Invalid input\n");
+    //assertion(xSize > 0 && ySize > 0, "Invalid input\n");
 
     mXSize = xSize;
     mYSize = ySize;
@@ -60,9 +60,9 @@ int GridGraph2<Real>::GetVertexQuantity () const
 template <typename Real>
 void GridGraph2<Real>::SetWeight (int x, int y, int dx, int dy, Real weight)
 {
-    assertion(0 <= x && x < mXSize && 0 <= y && y < mYSize,
+    //assertion(0 <= x && x < mXSize && 0 <= y && y < mYSize,
         "Invalid input\n");
-    assertion(abs(dx) <= 1 && abs(dy) <= 1, "Invalid input\n");
+    //assertion(abs(dx) <= 1 && abs(dy) <= 1, "Invalid input\n");
 
     mVertices[GetIndex(x, y)].SetWeight(dx, dy, weight);
 }
@@ -70,9 +70,9 @@ void GridGraph2<Real>::SetWeight (int x, int y, int dx, int dy, Real weight)
 template <typename Real>
 Real GridGraph2<Real>::GetWeight (int x, int y, int dx, int dy) const
 {
-    assertion(0 <= x && x < mXSize && 0 <= y && y < mYSize,
+    //assertion(0 <= x && x < mXSize && 0 <= y && y < mYSize,
         "Invalid input\n");
-    assertion(abs(dx) <= 1 && abs(dy) <= 1, "Invalid input\n");
+    //assertion(abs(dx) <= 1 && abs(dy) <= 1, "Invalid input\n");
 
     return mVertices[GetIndex(x, y)].GetWeight(dx, dy);
 }

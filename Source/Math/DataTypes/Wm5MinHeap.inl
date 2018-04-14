@@ -94,7 +94,7 @@ template <typename Generator, typename Scalar>
 inline const MinHeapRecord<Generator,Scalar>*
 MinHeap<Generator,Scalar>::GetRecord (int i) const
 {
-    assertion(0 <= i && i < mNumElements, "Invalid index\n");
+    //assertion(0 <= i && i < mNumElements, "Invalid index\n");
     return mRecordPointers[i];
 }
 //----------------------------------------------------------------------------

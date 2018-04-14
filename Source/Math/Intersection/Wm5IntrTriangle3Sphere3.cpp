@@ -178,7 +178,7 @@ bool IntrTriangle3Sphere3<Real>::Find (Real tmax,
                 else // !inside[2]
                 {
                     // We should not get here.
-                    assertion(false, "Unexpected condition\n");
+                    //assertion(false, "Unexpected condition\n");
                     return false;
                 }            
             }
@@ -336,7 +336,7 @@ bool IntrTriangle3Sphere3<Real>::Find (Real tmax,
                 else // !inside[2]
                 {
                     // We should not get here.
-                    assertion(false, "Unexpected condition\n");
+                    //assertion(false, "Unexpected condition\n");
                     return false;
                 }            
             }

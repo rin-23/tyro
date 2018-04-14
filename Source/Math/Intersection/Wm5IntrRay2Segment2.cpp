@@ -163,7 +163,7 @@ void IntrRay2Segment2<Real>::SetIntervalThreshold (Real intervalThreshold)
         return;
     }
 
-    assertion(false, "Interval threshold must be nonnegative.");
+    //assertion(false, "Interval threshold must be nonnegative.");
 }
 //----------------------------------------------------------------------------
 template <typename Real>
@@ -181,7 +181,7 @@ void IntrRay2Segment2<Real>::SetDotThreshold (Real dotThreshold)
         return;
     }
 
-    assertion(false, "Dot threshold must be nonnegative.");
+    //assertion(false, "Dot threshold must be nonnegative.");
 }
 //----------------------------------------------------------------------------
 template <typename Real>

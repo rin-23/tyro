@@ -117,7 +117,7 @@ int classname::GetStreamingSize () const \
 #define WM5_IMPLEMENT_ABSTRACT_FACTORY(classname) \
 Object* classname::Factory (InStream&) \
 { \
-    assertion(false, "Abstract classes have no factory.\n"); \
+    //assertion(false, "Abstract classes have no factory.\n"); \
     return 0; \
 }
 //----------------------------------------------------------------------------
@@ -145,7 +145,7 @@ static bool gsStreamRegistered_##classname = classname::RegisterFactory()
     int usedLoad_ = endLoad_ - beginLoad_ + \
         Stream::GetStreamingSize(GetRttiType().GetName()); \
     int usedReported_ = classname::GetStreamingSize(); \
-    assertion(usedLoad_ == usedReported_, \
+    //assertion(usedLoad_ == usedReported_, \
         "Mismatched bytes during Load: loaded = %d, required = %d\n", \
         usedLoad_, usedReported_)
 #else
@@ -164,7 +164,7 @@ static bool gsStreamRegistered_##classname = classname::RegisterFactory()
     int endSave_ = target.GetBytesWritten(); \
     int usedSave_ = endSave_ - beginSave_; \
     int usedReported_ = classname::GetStreamingSize(); \
-    assertion(usedSave_ == usedReported_, \
+    //assertion(usedSave_ == usedReported_, \
         "Mismatched bytes during Save: saved = %d, required = %d\n", \
         usedSave_, usedReported_)
 #else

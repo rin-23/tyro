@@ -38,14 +38,14 @@ inline RVector<VSIZE,ISIZE>::operator Rational<ISIZE>* ()
 template <int VSIZE, int ISIZE>
 inline const Rational<ISIZE>& RVector<VSIZE,ISIZE>::operator[] (int i) const
 {
-    assertion(0 <= i && i < VSIZE, "Invalid input.\n");
+    //assertion(0 <= i && i < VSIZE, "Invalid input.\n");
     return mTuple[i];
 }
 //----------------------------------------------------------------------------
 template <int VSIZE, int ISIZE>
 inline Rational<ISIZE>& RVector<VSIZE,ISIZE>::operator[] (int i)
 {
-    assertion(0 <= i && i < VSIZE, "Invalid input.\n");
+    //assertion(0 <= i && i < VSIZE, "Invalid input.\n");
     return mTuple[i];
 }
 //----------------------------------------------------------------------------
@@ -159,7 +159,7 @@ template <int VSIZE, int ISIZE>
 RVector<VSIZE,ISIZE> RVector<VSIZE,ISIZE>::operator/
     (const Rational<ISIZE>& scalar) const
 {
-    assertion(scalar != 0, "Division by zero\n");
+    //assertion(scalar != 0, "Division by zero\n");
 
     RVector<VSIZE,ISIZE> div;
     for (int i = 0; i < VSIZE; ++i)
@@ -228,7 +228,7 @@ template <int VSIZE, int ISIZE>
 RVector<VSIZE,ISIZE>& RVector<VSIZE,ISIZE>::operator/=
     (const Rational<ISIZE>& scalar)
 {
-    assertion(scalar != 0, "Division by zero\n");
+    //assertion(scalar != 0, "Division by zero\n");
 
     for (int i = 0; i < VSIZE; ++i)
     {

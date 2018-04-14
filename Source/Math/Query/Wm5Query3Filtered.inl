@@ -15,7 +15,7 @@ Query3Filtered<Real>::Query3Filtered (int numVertices,
     mRQuery(numVertices, vertices),
     mUncertainty(uncertainty)
 {
-    assertion((Real)0 <= mUncertainty && mUncertainty <= (Real)1,
+    //assertion((Real)0 <= mUncertainty && mUncertainty <= (Real)1,
         "Invalid uncertainty\n");
 }
 //----------------------------------------------------------------------------

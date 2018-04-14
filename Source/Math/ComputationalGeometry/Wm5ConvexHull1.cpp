@@ -20,7 +20,7 @@ ConvexHull1<Real>::ConvexHull1 (int numVertices, Real* vertices,
     ConvexHull<Real>(numVertices, epsilon, owner, queryType),
     mVertices(vertices)
 {
-    assertion(mVertices != 0, "Must provide vertices\n");
+    //assertion(mVertices != 0, "Must provide vertices\n");
 
     std::vector<SortedVertex> sortedArray(mNumVertices);
     int i;
@@ -64,7 +64,7 @@ ConvexHull1<Real>::ConvexHull1 (const char* filename, int mode)
     mVertices(0)
 {
     bool loaded = Load(filename, mode);
-    assertion(loaded, "Failed to load file\n");
+    //assertion(loaded, "Failed to load file\n");
     WM5_UNUSED(loaded);
 }
 //----------------------------------------------------------------------------

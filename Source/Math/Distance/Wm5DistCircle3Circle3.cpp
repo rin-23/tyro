@@ -177,7 +177,7 @@ Real DistCircle3Circle3<Real>::GetSquared ()
             // What should be done here?  In this case, cs1 is a root
             // to the quartic equation g0(cs1) = 0.  Is there some
             // geometric significance?
-            assertion(false, "Unexpected case\n");
+            //assertion(false, "Unexpected case\n");
         }
 
         Real m00 = a0 + a1*cs1 + a2*sn1;
@@ -220,7 +220,7 @@ Real DistCircle3Circle3<Real>::GetSquared ()
         {
             // TO DO:  Handle this case.  Is there some geometric
             // significance?
-            assertion(false, "Unexpected case\n");
+            //assertion(false, "Unexpected case\n");
         }
     }
 

@@ -1,3 +1,9 @@
 [submodule "Source/External/libigl"]
 	path = Source/External/libigl
 	url = git@github.com:rin-23/libigl.git
+[submodule "Source/External/Choreograph"]
+	path = Source/External/Choreograph
+	url = git@github.com:sansumbrella/Choreograph.git
+[submodule "Source/External/tweeny"]
+	path = Source/External/tweeny
+	url = git@github.com:mobius3/tweeny.git

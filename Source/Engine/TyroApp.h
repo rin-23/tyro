@@ -1,8 +1,13 @@
+#pragma once
+
 #include "TyroWindow.h"
 #include "RAES2Renderer.h"
 #include "RAiOSCamera.h"
 #include "Console.h"
 #include <vector>
+#include <Eigen/Core>
+#include "TyroTimeLine.h"
+#include <atomic>
 
 namespace tyro
 {
@@ -15,17 +20,17 @@ namespace tyro
         
         int Launch();
 
-        void load_hiroki();
-
+        void load_blobby();
+        void load_oldman();
         void compute_average();
-
         void compute_deformation();
         
     private:
+        Timeline* m_timeline;
         Window* m_tyro_window;
         ES2Renderer* m_gl_rend;
         iOSCamera* m_camera;
-
+        
         void mouse_down(Window& window, int button, int modifier);
         void mouse_up(Window& window, int button, int modifier);
         void mouse_move(Window& window, int mouse_x, int mouse_y);
@@ -41,12 +46,14 @@ namespace tyro
         int m_modifier;
 
         Console m_console;
-        //VisibleSet* vis_set;
 
         IGLMeshSPtr igl_mesh;
         IGLMeshWireframeSPtr igl_mesh_wire;
 
         std::vector<SpatialSPtr> object_list;
+        std::vector<SpatialSPtr> ball_list;
+        std::atomic<int> m_frame;
+        std::atomic<int> m_old_frame;
 
         typedef struct MAnimation 
         {   
@@ -67,7 +74,7 @@ namespace tyro
         void register_console_function(const std::string& name,
                                    const std::function<void(App*, const std::vector<std::string>&)>& con_fun,
                                    const std::string& help_txt);
-
-
+        void load_mesh_sequence(const std::string& obj_list_file); 
+        void update_camera(const Spatial& spatial);
     };
 }

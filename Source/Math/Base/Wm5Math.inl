@@ -107,7 +107,7 @@ Real Math<Real>::FMod (Real x, Real y)
     }
     else
     {
-        assertion(false, "Zero input to FMod\n");
+        ////assertion(false, "Zero input to FMod\n");
         return (Real)0;
     }
 }
@@ -121,7 +121,7 @@ Real Math<Real>::InvSqrt (Real value)
     }
     else
     {
-        assertion(false, "Division by zero in InvSqr\n");
+        ////assertion(false, "Division by zero in InvSqr\n");
         return (Real)0;
     }
 }
@@ -135,7 +135,7 @@ Real Math<Real>::Log (Real value)
     }
     else
     {
-        assertion(false, "Nonpositive input to Log\n");
+        //assertion(false, "Nonpositive input to Log\n");
         return (Real)0;
     }
 }
@@ -149,7 +149,7 @@ Real Math<Real>::Log2 (Real value)
     }
     else
     {
-        assertion(false, "Nonpositive input to Log2\n");
+        //assertion(false, "Nonpositive input to Log2\n");
         return (Real)0;
     }
 }
@@ -163,7 +163,7 @@ Real Math<Real>::Log10 (Real value)
     }
     else
     {
-        assertion(false, "Nonpositive input to Log10\n");
+        //assertion(false, "Nonpositive input to Log10\n");
         return (Real)0;
     }
 }
@@ -177,7 +177,7 @@ Real Math<Real>::Pow (Real base, Real exponent)
     }
     else
     {
-        assertion(false, "Negative base not allowed in Pow\n");
+        //assertion(false, "Negative base not allowed in Pow\n");
         return Math<Real>::MAX_REAL;
     }
 }
@@ -203,7 +203,7 @@ Real Math<Real>::Sqrt (Real value)
     }
     else
     {
-        assertion(false, "Negative input to Sqrt\n");
+        //assertion(false, "Negative input to Sqrt\n");
         return (Real)0;
     }
 }

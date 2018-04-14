@@ -17,7 +17,7 @@ EigenDecomposition<Real>::EigenDecomposition (int size)
     :
     mMatrix(size, size)
 {
-    assertion(size >= 2, "Invalid size in Eigendecomposition constructor\n");
+    //assertion(size >= 2, "Invalid size in Eigendecomposition constructor\n");
 
     mSize = size;
     mDiagonal = new1<Real>(mSize);
@@ -53,8 +53,8 @@ EigenDecomposition<Real>::EigenDecomposition (const GMatrix<Real>& mat)
     mMatrix(mat)
 {
     mSize = mat.GetNumRows();
-    assertion(mSize >= 2 && (mat.GetNumColumns() == mSize),
-        "Square matrix required in EigenDecomposition constructor\n");
+    //assertion(mSize >= 2 && (mat.GetNumColumns() == mSize),
+     //   "Square matrix required in EigenDecomposition constructor\n");
 
     mDiagonal = new1<Real>(mSize);
     mSubdiagonal = new1<Real>(mSize);
@@ -141,7 +141,7 @@ void EigenDecomposition<Real>::Solve (bool increasingSort)
 template <typename Real>
 Real EigenDecomposition<Real>::GetEigenvalue (int i) const
 {
-    assertion(0 <= i && i < mSize, "Invalid index in GetEigenvalue\n");
+    //assertion(0 <= i && i < mSize, "Invalid index in GetEigenvalue\n");
     return mDiagonal[i];
 }
 //----------------------------------------------------------------------------
@@ -154,7 +154,7 @@ const Real* EigenDecomposition<Real>::GetEigenvalues () const
 template <typename Real>
 Vector2<Real> EigenDecomposition<Real>::GetEigenvector2 (int i) const
 {
-    assertion(mSize == 2, "Mismatched dimension in GetEigenvector2\n");
+    //assertion(mSize == 2, "Mismatched dimension in GetEigenvector2\n");
 
     if (mSize == 2)
     {
@@ -171,7 +171,7 @@ Vector2<Real> EigenDecomposition<Real>::GetEigenvector2 (int i) const
 template <typename Real>
 Matrix2<Real> EigenDecomposition<Real>::GetEigenvectors2 () const
 {
-    assertion(mSize == 2, "Mismatched dimension in GetEigenvectors2\n");
+    //assertion(mSize == 2, "Mismatched dimension in GetEigenvectors2\n");
 
     Matrix2<Real> eigenvectors;
     for (int row = 0; row < 2; ++row)
@@ -187,7 +187,7 @@ Matrix2<Real> EigenDecomposition<Real>::GetEigenvectors2 () const
 template <typename Real>
 Vector3<Real> EigenDecomposition<Real>::GetEigenvector3 (int i) const
 {
-    assertion(mSize == 3, "Mismatched dimension in GetEigenvector3\n");
+    //assertion(mSize == 3, "Mismatched dimension in GetEigenvector3\n");
 
     if (mSize == 3)
     {
@@ -204,7 +204,7 @@ Vector3<Real> EigenDecomposition<Real>::GetEigenvector3 (int i) const
 template <typename Real>
 Matrix3<Real> EigenDecomposition<Real>::GetEigenvectors3 () const
 {
-    assertion(mSize == 3, "Mismatched dimension in GetEigenvectors2\n");
+    //assertion(mSize == 3, "Mismatched dimension in GetEigenvectors2\n");
 
     Matrix3<Real> eigenvectors;
     for (int row = 0; row < 3; ++row)

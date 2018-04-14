@@ -19,10 +19,10 @@ CubicPolynomialCurve3<Real>::CubicPolynomialCurve3
     :
     PolynomialCurve3<Real>(xPoly, yPoly, zPoly)
 {
-    assertion(xPoly && yPoly && zPoly, "Invalid input\n");
-    assertion(xPoly->GetDegree() == 3, "Invalid input\n");
-    assertion(yPoly->GetDegree() == 3, "Invalid input\n");
-    assertion(xPoly->GetDegree() == 3, "Invalid input\n");
+    //assertion(xPoly && yPoly && zPoly, "Invalid input\n");
+    //assertion(xPoly->GetDegree() == 3, "Invalid input\n");
+    //assertion(yPoly->GetDegree() == 3, "Invalid input\n");
+    //assertion(xPoly->GetDegree() == 3, "Invalid input\n");
 
     mNumVertices = 0;
     mVertices = 0;

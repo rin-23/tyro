@@ -59,7 +59,7 @@ template <typename Real>
 const typename ConvexPolygon2<Real>::NCLine&
 ConvexPolygon2<Real>::GetLine (int i) const
 {
-    assertion(0 <= i && i < mNumVertices, "Invalid index in GetLine\n");
+    //assertion(0 <= i && i < mNumVertices, "Invalid index in GetLine\n");
     return mLines[i];
 }
 //----------------------------------------------------------------------------
@@ -149,7 +149,7 @@ void ConvexPolygon2<Real>::UpdateLine (int i, const Vector2<Real>& average)
     {
         normal /= length;
         Real dot = normal.Dot(diff);
-        assertion(dot >= (Real)0, "Dot product must be nonnegative\n");
+        //assertion(dot >= (Real)0, "Dot product must be nonnegative\n");
         if (dot < (Real)0)
         {
             normal = -normal;

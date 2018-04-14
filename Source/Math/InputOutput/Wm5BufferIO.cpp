@@ -53,11 +53,11 @@ bool BufferIO::Open (int numBytesTotal, char* buffer, int mode)
             return true;
         }
 
-        assertion(false, "Failed to open buffer\n");
+        //assertion(false, "Failed to open buffer\n");
     }
     else
     {
-        assertion(false, "Buffer %s is already open\n");
+        //assertion(false, "Buffer %s is already open\n");
     }
 
     return false;
@@ -77,7 +77,7 @@ bool BufferIO::IncrementNumBytesProcessed (int numBytes)
 #ifdef WM5_BUFFERIO_VALIDATE_OPERATION
     if (numBytes <= 0)
     {
-        assertion(false, "Increment must be positive\n");
+        //assertion(false, "Increment must be positive\n");
         return false;
     }
 #endif
@@ -90,7 +90,7 @@ bool BufferIO::IncrementNumBytesProcessed (int numBytes)
     }
 
 #ifdef WM5_BUFFERIO_VALIDATE_OPERATION
-    assertion(false, "Increment exceeds buffer size\n");
+    //assertion(false, "Increment exceeds buffer size\n");
 #endif
 
     mNumBytesProcessed = mNumBytesTotal;
@@ -103,7 +103,7 @@ bool BufferIO::Read (size_t itemSize, void* datum)
     if ((mMode != BM_READ && mMode != BM_READ_AND_SWAP) || !datum
     ||  (itemSize != 1 && itemSize != 2 && itemSize != 4 && itemSize != 8))
     {
-        assertion(false, "Invalid BufferIO::Read\n");
+        //assertion(false, "Invalid BufferIO::Read\n");
         return false;
     }
 #endif
@@ -122,7 +122,7 @@ bool BufferIO::Read (size_t itemSize, void* datum)
     }
 
 #ifdef WM5_BUFFERIO_VALIDATE_OPERATION
-    assertion(false, "Invalid BufferIO::Read\n");
+    //assertion(false, "Invalid BufferIO::Read\n");
 #endif
 
     mNumBytesProcessed = mNumBytesTotal;
@@ -136,7 +136,7 @@ bool BufferIO::Read (size_t itemSize, int numItems, void* data)
     ||  !data
     ||  (itemSize != 1 && itemSize != 2 && itemSize != 4 && itemSize != 8))
     {
-        assertion(false, "Invalid BufferIO::Read\n");
+        //assertion(false, "Invalid BufferIO::Read\n");
         return false;
     }
 #endif
@@ -156,7 +156,7 @@ bool BufferIO::Read (size_t itemSize, int numItems, void* data)
     }
 
 #ifdef WM5_BUFFERIO_VALIDATE_OPERATION
-    assertion(false, "Invalid BufferIO::Read\n");
+    //assertion(false, "Invalid BufferIO::Read\n");
 #endif
 
     mNumBytesProcessed = mNumBytesTotal;
@@ -169,7 +169,7 @@ bool BufferIO::Write (size_t itemSize, const void* datum)
     if ((mMode != BM_WRITE && mMode != BM_WRITE_AND_SWAP) || !datum
     ||  (itemSize != 1 && itemSize != 2 && itemSize != 4 && itemSize != 8))
     {
-        assertion(false, "Invalid BufferIO::Write\n");
+        //assertion(false, "Invalid BufferIO::Write\n");
         return false;
     }
 #endif
@@ -188,7 +188,7 @@ bool BufferIO::Write (size_t itemSize, const void* datum)
     }
 
 #ifdef WM5_BUFFERIO_VALIDATE_OPERATION
-    assertion(false, "Invalid BufferIO::Write\n");
+    //assertion(false, "Invalid BufferIO::Write\n");
 #endif
 
     mNumBytesProcessed = mNumBytesTotal;
@@ -202,7 +202,7 @@ bool BufferIO::Write (size_t itemSize, int numItems, const void* data)
     ||  !data
     ||  (itemSize != 1 && itemSize != 2 && itemSize != 4 && itemSize != 8))
     {
-        assertion(false, "Invalid BufferIO::Write\n");
+        //assertion(false, "Invalid BufferIO::Write\n");
         return false;
     }
 #endif
@@ -222,7 +222,7 @@ bool BufferIO::Write (size_t itemSize, int numItems, const void* data)
     }
 
 #ifdef WM5_BUFFERIO_VALIDATE_OPERATION
-    assertion(false, "Invalid BufferIO::Write\n");
+    //assertion(false, "Invalid BufferIO::Write\n");
 #endif
 
     mNumBytesProcessed = mNumBytesTotal;

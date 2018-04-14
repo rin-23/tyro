@@ -18,7 +18,7 @@ void ApproximateEllipseByArcs (Real a, Real b, int numArcs,
     Vector2<Real>*& points, Vector2<Real>*& centers, Real*& radii)
 {
     // Allocate arrays.
-    assertion(numArcs >= 2, "Must specify at least two arcs\n");
+    //assertion(numArcs >= 2, "Must specify at least two arcs\n");
     if (numArcs < 2)
     {
         points = 0;

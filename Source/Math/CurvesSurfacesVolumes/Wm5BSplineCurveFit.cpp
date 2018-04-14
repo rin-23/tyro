@@ -19,9 +19,9 @@ BSplineCurveFit<Real>::BSplineCurveFit (int dimension, int numSamples,
     :
     mBasis(numControls, degree)
 {
-    assertion(dimension >= 1, "Invalid input\n");
-    assertion(1 <= degree && degree < numControls, "Invalid input\n");
-    assertion(numControls <= numSamples, "Invalid input\n");
+    //assertion(dimension >= 1, "Invalid input\n");
+    //assertion(1 <= degree && degree < numControls, "Invalid input\n");
+    //assertion(numControls <= numSamples, "Invalid input\n");
 
     mDimension = dimension;
     mNumSamples = numSamples;
@@ -97,7 +97,7 @@ BSplineCurveFit<Real>::BSplineCurveFit (int dimension, int numSamples,
     // Compute X0 = (A^T*A)^{-1}*A^T by solving the linear system
     // A^T*A*X = A^T.
     bool solved = ATAMat->SolveSystem(ATMat,mNumSamples);
-    assertion(solved, "Failed to solve linear system\n");
+    //assertion(solved, "Failed to solve linear system\n");
     WM5_UNUSED(solved);
 
     // The control points for the fitted curve are stored in the vector

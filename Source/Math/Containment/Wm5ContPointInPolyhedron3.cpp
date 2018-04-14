@@ -255,7 +255,7 @@ bool PointInPolyhedron3<Real>::ContainsS0 (const Vector3<Real>& p) const
 
             // The triangulation must exist to use it.
             const int numTriangles = (int)face->Triangles.size()/3;
-            assertion(numTriangles > 0, "Triangulation must exist\n");
+            //assertion(numTriangles > 0, "Triangulation must exist\n");
 
             // Process the triangles in a triangulation of the face.
             const int* currIndex = &face->Triangles[0];
@@ -317,7 +317,7 @@ bool PointInPolyhedron3<Real>::ContainsC1C2 (const Vector3<Real>& p,
             // If you trigger this assertion, numerical round-off errors have
             // led to a discrepancy between FastNoIntersect and the Find()
             // result.
-            assertion(intersects, "Unexpected condition\n");
+            //assertion(intersects, "Unexpected condition\n");
             WM5_UNUSED(intersects);
 
             Vector3<Real> intr = ray.Origin +
@@ -412,7 +412,7 @@ bool PointInPolyhedron3<Real>::ContainsS1 (const Vector3<Real>& p) const
             // If you trigger this assertion, numerical round-off errors have
             // led to a discrepancy between FastNoIntersect and the Find()
             // result.
-            assertion(intersects, "Unexpected condition\n");
+            //assertion(intersects, "Unexpected condition\n");
             WM5_UNUSED(intersects);
 
             Vector3<Real> intr = ray.Origin +

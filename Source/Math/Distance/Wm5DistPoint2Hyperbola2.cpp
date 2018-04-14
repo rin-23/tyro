@@ -24,7 +24,7 @@ template <typename Real>
 Real ComputeDistancePointToHyperbola (const Vector2<Real>& point,
     const Vector2<Real>& extent, Vector2<Real>& closest)
 {
-    assertion(extent[0] > (Real)0 && extent[1] > (Real)0, "Invalid inputs");
+    //assertion(extent[0] > (Real)0 && extent[1] > (Real)0, "Invalid inputs");
 
     Vector2<Real> esqr(extent[0]*extent[0], extent[1]*extent[1]);
     Vector2<Real> resqr(((Real)1)/esqr[0], ((Real)1)/esqr[1]);

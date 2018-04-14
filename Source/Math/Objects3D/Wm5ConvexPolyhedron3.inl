@@ -61,7 +61,7 @@ template <typename Real>
 const typename ConvexPolyhedron3<Real>::NCPlane&
 ConvexPolyhedron3<Real>::GetPlane (int i) const
 {
-    assertion(0 <= i && i < mNumTriangles, "Invalid index in GetPlane\n");
+    //assertion(0 <= i && i < mNumTriangles, "Invalid index in GetPlane\n");
     return mPlanes[i];
 }
 //----------------------------------------------------------------------------
@@ -166,7 +166,7 @@ void ConvexPolyhedron3<Real>::UpdatePlane (int i,
     {
         normal /= length;
         Real dot = normal.Dot(diff);
-        assertion(dot >= (Real)0, "Dot product must be nonnegative\n");
+        //assertion(dot >= (Real)0, "Dot product must be nonnegative\n");
         if (dot < (Real)0)
         {
             normal = -normal;

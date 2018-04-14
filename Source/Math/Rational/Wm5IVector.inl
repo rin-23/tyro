@@ -38,14 +38,14 @@ inline IVector<VSIZE>::operator int64_t* ()
 template <int VSIZE>
 inline const int64_t& IVector<VSIZE>::operator[] (int i) const
 {
-    assertion(0 <= i && i < VSIZE, "Invalid index\n");
+    //assertion(0 <= i && i < VSIZE, "Invalid index\n");
     return mTuple[i];
 }
 //----------------------------------------------------------------------------
 template <int VSIZE>
 inline int64_t& IVector<VSIZE>::operator[] (int i)
 {
-    assertion(0 <= i && i < VSIZE, "Invalid index\n");
+    //assertion(0 <= i && i < VSIZE, "Invalid index\n");
     return mTuple[i];
 }
 //----------------------------------------------------------------------------
@@ -155,7 +155,7 @@ IVector<VSIZE> IVector<VSIZE>::operator* (const int64_t& scalar) const
 template <int VSIZE>
 IVector<VSIZE> IVector<VSIZE>::operator/ (const int64_t& scalar) const
 {
-    assertion(scalar != 0, "Division by zero\n");
+    //assertion(scalar != 0, "Division by zero\n");
 
     IVector<VSIZE> div;
     for (int i = 0; i < VSIZE; ++i)
@@ -221,7 +221,7 @@ IVector<VSIZE>& IVector<VSIZE>::operator*= (const int64_t& scalar)
 template <int VSIZE>
 IVector<VSIZE>& IVector<VSIZE>::operator/= (const int64_t& scalar)
 {
-    assertion(scalar != 0, "Division by zero\n");
+    //assertion(scalar != 0, "Division by zero\n");
 
     for (int i = 0; i < VSIZE; ++i)
     {

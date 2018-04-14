@@ -10,8 +10,8 @@
 template <typename Real>
 BandedMatrix<Real>::BandedMatrix (int size, int lBands, int uBands)
 {
-    assertion(size > 0 && lBands >= 0 && uBands >= 0 && lBands < size
-        && uBands < size, "Invalid argument to BandedMatrix constructor\n");
+    //assertion(size > 0 && lBands >= 0 && uBands >= 0 && lBands < size
+       // && uBands < size, "Invalid argument to BandedMatrix constructor\ n");
 
     mSize = size;
     mNumLBands = lBands;
@@ -95,7 +95,7 @@ const Real* BandedMatrix<Real>::GetDBand () const
 template <typename Real>
 int BandedMatrix<Real>::GetLBandMax (int i) const
 {
-    assertion(0 <= i && i < mNumLBands, "Invalid index in GetLBandMax\n");
+    //assertion(0 <= i && i < mNumLBands, "Invalid index in GetLBandMax\n");
     return mSize - 1 - i;
 }
 //----------------------------------------------------------------------------
@@ -104,7 +104,7 @@ Real* BandedMatrix<Real>::GetLBand (int i)
 {
     if (mLBand)
     {
-        assertion(0 <= i && i < mNumLBands, "Invalid index in GetLBand\n");
+        //assertion(0 <= i && i < mNumLBands, "Invalid index in GetLBand\n");
         return mLBand[i];
     }
     return 0;
@@ -115,7 +115,7 @@ const Real* BandedMatrix<Real>::GetLBand (int i) const
 {
     if (mLBand)
     {
-        assertion(0 <= i && i < mNumLBands, "Invalid index in GetLBand\n");
+        //assertion(0 <= i && i < mNumLBands, "Invalid index in GetLBand\n");
         return mLBand[i];
     }
     return 0;
@@ -124,7 +124,7 @@ const Real* BandedMatrix<Real>::GetLBand (int i) const
 template <typename Real>
 int BandedMatrix<Real>::GetUBandMax (int i) const
 {
-    assertion(0 <= i && i < mNumUBands, "Invalid index in GetUBandMax\n");
+    //assertion(0 <= i && i < mNumUBands, "Invalid index in GetUBandMax\n");
     return mSize - 1 - i;
 }
 //----------------------------------------------------------------------------
@@ -133,7 +133,7 @@ Real* BandedMatrix<Real>::GetUBand (int i)
 {
     if (mUBand)
     {
-        assertion(0 <= i && i < mNumUBands, "Invalid index in GetUBand\n");
+        //assertion(0 <= i && i < mNumUBands, "Invalid index in GetUBand\n");
         return mUBand[i];
     }
     return 0;
@@ -144,7 +144,7 @@ const Real* BandedMatrix<Real>::GetUBand (int i) const
 {
     if (mUBand)
     {
-        assertion(0 <= i && i < mNumUBands, "Invalid index in GetUBand\n");
+        //assertion(0 <= i && i < mNumUBands, "Invalid index in GetUBand\n");
         return mUBand[i];
     }
     return 0;
@@ -153,8 +153,8 @@ const Real* BandedMatrix<Real>::GetUBand (int i) const
 template <typename Real>
 Real& BandedMatrix<Real>::operator() (int row, int column)
 {
-    assertion(0 <= row && row < mSize && 0 <= column && column < mSize,
-        "Invalid row or column in BandedMatrix::operator\n");
+    //assertion(0 <= row && row < mSize && 0 <= column && column < mSize,
+       // "Invalid row or column in BandedMatrix::operator\n");
 
     int band = column - row;
     if (band > 0)
@@ -184,8 +184,8 @@ Real& BandedMatrix<Real>::operator() (int row, int column)
 template <typename Real>
 Real BandedMatrix<Real>::operator() (int row, int column) const
 {
-    assertion(0 <= row && row < mSize && 0 <= column && column < mSize,
-        "Invalid row or column in operator()\n");
+    //assertion(0 <= row && row < mSize && 0 <= column && column < mSize,
+     //   "Invalid row or column in operator()\n");
 
     int band = column - row;
     if (band > 0)
@@ -214,7 +214,7 @@ Real BandedMatrix<Real>::operator() (int row, int column) const
 template <typename Real>
 void BandedMatrix<Real>::SetZero ()
 {
-    assertion(mSize > 0, "Matrix size must be positive in SetZero\n");
+    //assertion(mSize > 0, "Matrix size must be positive in SetZero\n");
 
     size_t numBytes = mSize*sizeof(Real);
     memset(mDBand, 0, numBytes);
@@ -236,7 +236,7 @@ void BandedMatrix<Real>::SetZero ()
 template <typename Real>
 void BandedMatrix<Real>::SetIdentity ()
 {
-    assertion(mSize > 0, "Matrix size must be positive in SetIdentity\n");
+    //assertion(mSize > 0, "Matrix size must be positive in SetIdentity\n");
 
     int i;
     for (i = 0; i < mSize; ++i)
@@ -261,8 +261,8 @@ void BandedMatrix<Real>::SetIdentity ()
 template <typename Real>
 bool BandedMatrix<Real>::CholeskyFactor ()
 {
-    assertion(mNumLBands == mNumUBands,
-        "Bands must be equal in CholeskyFactor\n");
+    //assertion(mNumLBands == mNumUBands,
+     //   "Bands must be equal in CholeskyFactor\n");
 
     if (mNumLBands != mNumUBands)
     {

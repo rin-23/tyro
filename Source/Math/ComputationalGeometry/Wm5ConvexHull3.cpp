@@ -209,7 +209,7 @@ const Vector3<Real>& ConvexHull3<Real>::GetPlaneDirection (int i) const
 template <typename Real>
 ConvexHull1<Real>* ConvexHull3<Real>::GetConvexHull1 () const
 {
-    assertion(mDimension == 1, "The dimension must be 1\n");
+    //assertion(mDimension == 1, "The dimension must be 1\n");
     if (mDimension != 1)
     {
         return 0;
@@ -229,7 +229,7 @@ ConvexHull1<Real>* ConvexHull3<Real>::GetConvexHull1 () const
 template <typename Real>
 ConvexHull2<Real>* ConvexHull3<Real>::GetConvexHull2 () const
 {
-    assertion(mDimension == 2, "The dimension must be 2\n");
+    //assertion(mDimension == 2, "The dimension must be 2\n");
     if (mDimension != 2)
     {
         return 0;
@@ -256,7 +256,7 @@ ConvexHull3<Real>::ConvexHull3 (const char* filename, int mode)
     mQuery(0)
 {
     bool loaded = Load(filename, mode);
-    assertion(loaded, "Cannot open file %s\n", filename);
+    //assertion(loaded, "Cannot open file %s\n", filename);
     WM5_UNUSED(loaded);
 }
 //----------------------------------------------------------------------------
@@ -414,7 +414,7 @@ bool ConvexHull3<Real>::Update (int i)
     // Insert the new edges formed by the input point and the terminator
     // between visible and invisible triangles.
     int size = (int)terminator.size();
-    assertion(size >= 3, "Terminator must be at least a triangle\n");
+    //assertion(size >= 3, "Terminator must be at least a triangle\n");
     typename std::map<int,TerminatorData>::iterator edge = terminator.begin();
     v0 = edge->second.V[0];
     v1 = edge->second.V[1];
@@ -431,7 +431,7 @@ bool ConvexHull3<Real>::Update (int i)
     for (j = 1; j < size; ++j)
     {
         edge = terminator.find(v1);
-        assertion(edge != terminator.end(), "Unexpected condition\n");
+        //assertion(edge != terminator.end(), "Unexpected condition\n");
         v0 = v1;
         v1 = edge->second.V[1];
         Triangle* next = new0 Triangle(i, v0, v1);
@@ -447,7 +447,7 @@ bool ConvexHull3<Real>::Update (int i)
 
         tri = next;
     }
-    assertion(v1 == saveV0, "Expecting initial vertex\n");
+    //assertion(v1 == saveV0, "Expecting initial vertex\n");
     WM5_UNUSED(saveV0);
 
     // Establish adjacency links between first/last triangles.
@@ -533,7 +533,7 @@ void ConvexHull3<Real>::Triangle::AttachTo (Triangle* adj0, Triangle* adj1,
 template <typename Real>
 int ConvexHull3<Real>::Triangle::DetachFrom (int adjIndex, Triangle* adj)
 {
-    assertion(0 <= adjIndex && adjIndex < 3 && Adj[adjIndex] == adj,
+    //assertion(0 <= adjIndex && adjIndex < 3 && Adj[adjIndex] == adj,
         "Invalid inputs\n");
 
     Adj[adjIndex] = 0;

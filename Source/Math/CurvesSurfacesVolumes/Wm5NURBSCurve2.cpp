@@ -21,8 +21,8 @@ NURBSCurve2<Real>::NURBSCurve2 (int numCtrlPoints,
     SingleCurve2<Real>((Real)0, (Real)1),
     mLoop(loop)
 {
-    assertion(numCtrlPoints >= 2, "Invalid input\n");
-    assertion(1 <= degree && degree <= numCtrlPoints-1, "Invalid input\n");
+    //assertion(numCtrlPoints >= 2, "Invalid input\n");
+    //assertion(1 <= degree && degree <= numCtrlPoints-1, "Invalid input\n");
 
     mNumCtrlPoints = numCtrlPoints;
     mReplicate = (loop ? (open ? 1 : degree) : 0);
@@ -38,8 +38,8 @@ NURBSCurve2<Real>::NURBSCurve2 (int numCtrlPoints,
     SingleCurve2<Real>((Real)0, (Real)1),
     mLoop(loop)
 {
-    assertion(numCtrlPoints >= 2, "Invalid input\n");
-    assertion(1 <= degree && degree <= numCtrlPoints-1, "Invalid input\n");
+    //assertion(numCtrlPoints >= 2, "Invalid input\n");
+    //assertion(1 <= degree && degree <= numCtrlPoints-1, "Invalid input\n");
 
     mNumCtrlPoints = numCtrlPoints;
     mReplicate = (loop ? 1 : 0);

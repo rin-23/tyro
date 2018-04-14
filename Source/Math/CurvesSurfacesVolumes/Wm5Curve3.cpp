@@ -40,7 +40,7 @@ Real Curve3<Real>::GetMaxTime () const
 template <typename Real>
 void Curve3<Real>::SetTimeInterval (Real tmin, Real tmax)
 {
-    assertion(tmin < tmax, "Invalid time interval\n");
+    //assertion(tmin < tmax, "Invalid time interval\n");
     mTMin = tmin;
     mTMax = tmax;
 }
@@ -156,7 +156,7 @@ template <typename Real>
 void Curve3<Real>::SubdivideByTime (int numPoints,
     Vector3<Real>*& points) const
 {
-    assertion(numPoints >= 2, "Subdivision requires at least two points\n");
+    //assertion(numPoints >= 2, "Subdivision requires at least two points\n");
     points = new1<Vector3<Real> >(numPoints);
 
     Real delta = (mTMax - mTMin)/(numPoints - 1);
@@ -172,7 +172,7 @@ template <typename Real>
 void Curve3<Real>::SubdivideByLength (int numPoints,
     Vector3<Real>*& points) const
 {
-    assertion(numPoints >= 2, "Subdivision requires at least two points\n");
+    //assertion(numPoints >= 2, "Subdivision requires at least two points\n");
     points = new1<Vector3<Real> >(numPoints);
 
     Real delta = GetTotalLength()/(numPoints - 1);

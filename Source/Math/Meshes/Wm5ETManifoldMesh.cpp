@@ -81,19 +81,19 @@ ETManifoldMesh::TPtr ETManifoldMesh::InsertTriangle (int v0, int v1, int v2)
         {
             // Second time edge encountered.
             edge = eiter->second;
-            assertion(edge != 0, "Unexpected condition\n");
+            //assertion(edge != 0, "Unexpected condition\n");
 
             // Update edge.
             if (edge->T[1])
             {
-                assertion(false, "Mesh must be manifold\n");
+                //assertion(false, "Mesh must be manifold\n");
                 return 0;
             }
             edge->T[1] = tri;
 
             // Update adjacent triangles.
             TPtr adjacent = edge->T[0];
-            assertion(adjacent != 0, "Unexpected condition\n");
+            //assertion(adjacent != 0, "Unexpected condition\n");
             for (int i = 0; i < 3; i++)
             {
                 if (adjacent->E[i] == edge)
@@ -127,7 +127,7 @@ bool ETManifoldMesh::RemoveTriangle (int v0, int v1, int v2)
     {
         // Inform edges you are going away.
         Edge* edge = tri->E[i];
-        assertion(edge != 0, "Unexpected condition\n");
+        //assertion(edge != 0, "Unexpected condition\n");
         if (edge->T[0] == tri)
         {
             // One-triangle edges always have pointer in slot zero.
@@ -140,7 +140,7 @@ bool ETManifoldMesh::RemoveTriangle (int v0, int v1, int v2)
         }
         else
         {
-            assertion(false, "Unexpected condition\n");
+            //assertion(false, "Unexpected condition\n");
             return false;
         }
 

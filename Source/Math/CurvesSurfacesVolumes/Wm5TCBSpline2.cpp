@@ -21,7 +21,7 @@ TCBSpline2<Real>::TCBSpline2 (int numSegments, Real* times,
     MultipleCurve2<Real>(numSegments,times)
 {
     // TO DO.  Add 'boundary type' just as in natural splines.
-    assertion(mNumSegments >= 3, "Not enough segments\n");
+    //assertion(mNumSegments >= 3, "Not enough segments\n");
 
     // All four of these arrays have mNumSegments+1 elements.
     mPoints = points;

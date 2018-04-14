@@ -13,7 +13,7 @@ Query2<Real>::Query2 (int numVertices, const Vector2<Real>* vertices)
     mNumVertices(numVertices),
     mVertices(vertices)
 {
-    assertion(mNumVertices > 0 && mVertices, "Invalid inputs\n");
+    //assertion(mNumVertices > 0 && mVertices, "Invalid inputs\n");
 }
 //----------------------------------------------------------------------------
 template <typename Real>

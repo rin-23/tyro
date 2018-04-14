@@ -657,10 +657,10 @@ void IntrTriangle2Triangle2<Real>::GetIntersection (
             emin = edge.Dot(diff)*invEdE;
             diff = V1[cfg1.Index[0]] - *origin;
             emax = edge.Dot(diff)*invEdE;
-            assertion(emin <= emax, "Unexpected condition\n");
+            //assertion(emin <= emax, "Unexpected condition\n");
             Intersector1<Real> intr((Real)0, (Real)1, emin, emax);
             quantity = intr.GetNumIntersections();
-            assertion(quantity > 0, "Unexpected condition\n");
+            //assertion(quantity > 0, "Unexpected condition\n");
             for (i = 0; i < quantity; ++i)
             {
                 vertex[i] = *origin + intr.GetIntersection(i)*edge;
@@ -688,10 +688,10 @@ void IntrTriangle2Triangle2<Real>::GetIntersection (
             emin = edge.Dot(diff)*invEdE;
             diff = V0[cfg0.Index[0]] - *origin;
             emax = edge.Dot(diff)*invEdE;
-            assertion(emin <= emax, "Unexpected condition\n");
+            //assertion(emin <= emax, "Unexpected condition\n");
             Intersector1<Real> intr((Real)0, (Real)1, emin, emax);
             quantity = intr.GetNumIntersections();
-            assertion(quantity > 0, "Unexpected condition\n");
+            //assertion(quantity > 0, "Unexpected condition\n");
             for (i = 0; i < quantity; ++i)
             {
                 vertex[i] = *origin + intr.GetIntersection(i)*edge;

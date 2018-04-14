@@ -56,7 +56,11 @@
         "numericaldiff": "cpp",
         "openglsupport": "cpp",
         "splines": "cpp",
-        "hash_map": "cpp"
+        "hash_map": "cpp",
+        "cfenv": "cpp",
+        "iomanip": "cpp",
+        "mutex": "cpp",
+        "thread": "cpp"
     },
     "python.linting.enabled": false
 }

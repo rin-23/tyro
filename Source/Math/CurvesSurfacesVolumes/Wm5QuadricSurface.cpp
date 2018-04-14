@@ -217,9 +217,9 @@ void QuadricSurface<Real>::GetRootSigns (RReps& reps,
         }
 
         positiveRoots = signChange0 - signChangePI;
-        assertion(positiveRoots >= 0, "Unexpected condition\n");
+        //assertion(positiveRoots >= 0, "Unexpected condition\n");
         negativeRoots = signChangeMI - signChange0;
-        assertion(negativeRoots >= 0, "Unexpected condition\n");
+        //assertion(negativeRoots >= 0, "Unexpected condition\n");
         zeroRoots = 0;
 
         distinctNonzeroRoots = positiveRoots + negativeRoots;
@@ -285,9 +285,9 @@ void QuadricSurface<Real>::GetRootSigns (RReps& reps,
         signChangePI = GetSignChanges(2,value);
 
         positiveRoots = signChange0 - signChangePI;
-        assertion(positiveRoots >= 0, "Unexpected condition\n");
+        //assertion(positiveRoots >= 0, "Unexpected condition\n");
         negativeRoots = signChangeMI - signChange0;
-        assertion(negativeRoots >= 0, "Unexpected condition\n");
+        //assertion(negativeRoots >= 0, "Unexpected condition\n");
         zeroRoots = 1;
 
         distinctNonzeroRoots = positiveRoots + negativeRoots;

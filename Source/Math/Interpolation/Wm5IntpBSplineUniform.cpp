@@ -18,11 +18,11 @@ IntpBSplineUniform<Real>::IntpBSplineUniform (int dims, int degree,
     const int* dim, Real* data)
 {
     // Get input data.
-    assertion(dims > 0 && degree > 0 && dim && data, "Invalid input\n");
+    //assertion(dims > 0 && degree > 0 && dim && data, "Invalid input\n");
     int i;
     for (i = 0; i < dims; ++i)
     {
-        assertion(dim[i] > degree+1,  "Invalid input\n");
+        //assertion(dim[i] > degree+1,  "Invalid input\n");
     }
 
     mDims = dims;

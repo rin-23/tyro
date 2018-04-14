@@ -19,7 +19,7 @@ RiemannianGeodesic<Real>::RiemannianGeodesic (int dimension)
     mMetric(dimension, dimension),
     mMetricInverse(dimension, dimension)
 {
-    assertion(dimension >= 2, "Dimension must be at least 2\n");
+    //assertion(dimension >= 2, "Dimension must be at least 2\n");
     mDimension = 2;
 
     mChristoffel1 = new1<GMatrix<Real> >(mDimension);
@@ -76,13 +76,13 @@ Real RiemannianGeodesic<Real>::ComputeSegmentLength (
     // Evaluate the integrand at point0.
     ComputeMetric(point0);
     Real qForm = mMetric.QForm(diff, diff);
-    assertion(qForm > (Real)0, "Unexpected condition\n");
+    //assertion(qForm > (Real)0, "Unexpected condition\n");
     Real length = Math<Real>::Sqrt(qForm);
 
     // Evaluate the integrand at point1.
     ComputeMetric(point1);
     qForm = mMetric.QForm(diff, diff);
-    assertion(qForm > (Real)0, "Unexpected condition\n");
+    //assertion(qForm > (Real)0, "Unexpected condition\n");
     length += Math<Real>::Sqrt(qForm);
     length *= (Real)0.5;
 
@@ -94,7 +94,7 @@ Real RiemannianGeodesic<Real>::ComputeSegmentLength (
         temp = point0 + t*diff;
         ComputeMetric(temp);
         qForm = mMetric.QForm(diff,diff);
-        assertion(qForm > (Real)0, "Unexpected condition\n");
+        //assertion(qForm > (Real)0, "Unexpected condition\n");
         length += Math<Real>::Sqrt(qForm);
     }
     length *= mIntegralStep;
@@ -106,7 +106,7 @@ template <typename Real>
 Real RiemannianGeodesic<Real>::ComputeTotalLength (int quantity,
     const GVector<Real>* path)
 {
-    assertion(quantity >= 2, "Path must have at least two points\n");
+    //assertion(quantity >= 2, "Path must have at least two points\n");
 
     Real length = ComputeSegmentLength(path[0], path[1]);
     for (int i = 1; i <= quantity - 2; ++i)
@@ -120,7 +120,7 @@ template <typename Real>
 void RiemannianGeodesic<Real>::ComputeGeodesic (const GVector<Real>& point0,
     const GVector<Real>& point1, int& quantity, GVector<Real>*& path)
 {
-    assertion(Subdivisions < 32, "Exceeds maximum iterations\n");
+    //assertion(Subdivisions < 32, "Exceeds maximum iterations\n");
     quantity = (1 << Subdivisions) + 1;
 
     path = new1<GVector<Real> >(quantity);
@@ -138,7 +138,7 @@ void RiemannianGeodesic<Real>::ComputeGeodesic (const GVector<Real>& point0,
     {
         // A subdivision essentially doubles the number of points.
         int newQuantity = 2*mCurrentQuantity - 1;
-        assertion(newQuantity <= quantity, "Unexpected condition.\n");
+        //assertion(newQuantity <= quantity, "Unexpected condition.\n");
 
         // Copy the old points so that there are slots for the midpoints
         // during the subdivision, the slots interleaved between the old
@@ -166,7 +166,7 @@ void RiemannianGeodesic<Real>::ComputeGeodesic (const GVector<Real>& point0,
         }
     }
 
-    assertion(mCurrentQuantity == quantity, "Unexpected condition\n");
+    //assertion(mCurrentQuantity == quantity, "Unexpected condition\n");
     mSubdivide = 0;
     mRefine = 0;
     mCurrentQuantity = 0;
@@ -293,7 +293,7 @@ template <typename Real>
 Real RiemannianGeodesic<Real>::ComputeTotalCurvature (int quantity,
     const GVector<Real>* path)
 {
-    assertion(quantity >= 2, "Path must have at least two points\n");
+    //assertion(quantity >= 2, "Path must have at least two points\n");
 
     Real curvature = ComputeSegmentCurvature(path[0], path[1]);
     for (int i = 1; i <= quantity - 2; ++i)
@@ -314,7 +314,7 @@ Real RiemannianGeodesic<Real>::ComputeIntegrand (const GVector<Real>& pos,
 
     // g_{ij}*der_{i}*der_{j}
     Real qForm0 = mMetric.QForm(der, der);
-    assertion(qForm0 > (Real)0, "Unexpected condition\n");
+    //assertion(qForm0 > (Real)0, "Unexpected condition\n");
 
     // gamma_{kij}*der_{k}*der_{i}*der_{j}
     GMatrix<Real> mat(mDimension, mDimension);

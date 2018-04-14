@@ -20,7 +20,7 @@ PolynomialRoots<Real>::PolynomialRoots (Real epsilon)
     mCount(0),
     mMaxRoot(4)  // default support for degree <= 4
 {
-    assertion(Epsilon >= (Real)0, "Epsilon must be nonnegative\n");
+    //assertion(Epsilon >= (Real)0, "Epsilon must be nonnegative\n");
     mRoot = new1<Real>(mMaxRoot);
 }
 //----------------------------------------------------------------------------
@@ -45,7 +45,7 @@ const Real* PolynomialRoots<Real>::GetRoots () const
 template <typename Real>
 Real PolynomialRoots<Real>::GetRoot (int i) const
 {
-    assertion(0 <= i && i < mCount, "Invalid index\n");
+    //assertion(0 <= i && i < mCount, "Invalid index\n");
     return mRoot[i];
 }
 //----------------------------------------------------------------------------
@@ -395,7 +395,7 @@ void PolynomialRoots<Real>::Balance3 (GMatrix<Real>& mat)
             break;
         }
     }
-    assertion(i < imax, "Exceeded max iterations\n");
+    //assertion(i < imax, "Exceeded max iterations\n");
 }
 //----------------------------------------------------------------------------
 template <typename Real>
@@ -481,7 +481,7 @@ void PolynomialRoots<Real>::BalanceCompanion3 (GMatrix<Real>& mat)
             break;
         }
     }
-    assertion(i < imax, "Exceeded max iterations\n");
+    //assertion(i < imax, "Exceeded max iterations\n");
 
     mat[1][0] = (mat[1][0] >= (Real)0 ? a10 : -a10);
     mat[2][1] = (mat[2][1] >= (Real)0 ? a21 : -a21);
@@ -535,7 +535,7 @@ bool PolynomialRoots<Real>::QRIteration3 (GMatrix<Real>& mat)
     // If you want to trap exceeding the maximum iterations, uncomment the
     // next 'assertion' line of code.
     //
-    // assertion(false, "Exceeded max iterations\n");
+    // //assertion(false, "Exceeded max iterations\n");
 
     // For now, zero out the smallest subdiagonal entry to decouple the
     // matrix.
@@ -843,7 +843,7 @@ void PolynomialRoots<Real>::BalanceCompanion4 (GMatrix<Real>& mat)
             break;
         }
     }
-    assertion(i < imax, "Exceeded max iterations\n");
+    //assertion(i < imax, "Exceeded max iterations\n");
 
     mat[1][0] = (mat[1][0] >= (Real)0 ? a10 : -a10);
     mat[2][1] = (mat[2][1] >= (Real)0 ? a21 : -a21);
@@ -942,7 +942,7 @@ bool PolynomialRoots<Real>::QRIteration4 (GMatrix<Real>& mat)
     // If you want to trap exceeding the maximum iterations, uncomment the
     // next 'assertion' line of code.
     //
-    // assertion(false, "Exceeded max iterations\n");
+    // //assertion(false, "Exceeded max iterations\n");
 
     // For now, decouple the matrix using the smallest subdiagonal entry.
     i = 0;
@@ -1035,7 +1035,7 @@ template <typename Real>
 bool PolynomialRoots<Real>::FindN (const Polynomial1<Real>&, int)
 {
     // TO DO:  Implement this.
-    assertion(false, "Not yet implemented\n");
+    //assertion(false, "Not yet implemented\n");
     return false;
 }
 //----------------------------------------------------------------------------
@@ -1043,7 +1043,7 @@ template <typename Real>
 bool PolynomialRoots<Real>::FindE (const Polynomial1<Real>&, bool)
 {
     // TO DO:  Implement this.
-    assertion(false, "Not yet implemented\n");
+    //assertion(false, "Not yet implemented\n");
     return false;
 }
 //----------------------------------------------------------------------------
@@ -1165,7 +1165,7 @@ bool PolynomialRoots<Real>::FindN (const Polynomial1<Real>&, Real, Real,
     int)
 {
     // TO DO:  Implement this.
-    assertion(false, "Not yet implemented\n");
+    //assertion(false, "Not yet implemented\n");
     return false;
 }
 //----------------------------------------------------------------------------
@@ -1463,7 +1463,7 @@ int PolynomialRoots<Real>::GetRootCount (const Polynomial1<Real>& poly,
     }
 
     // Theoretically we should not get here.
-    assertion(false, "Unexpected condition\n");
+    //assertion(false, "Unexpected condition\n");
     return 0;
 }
 //----------------------------------------------------------------------------

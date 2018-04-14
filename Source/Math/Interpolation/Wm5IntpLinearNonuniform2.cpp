@@ -45,7 +45,7 @@ bool IntpLinearNonuniform2<Real>::Evaluate (const Vector2<Real>& P, Real& F)
     // P = b0*V0 + b1*V1 + b2*V2, where b0+b1+b2 = 1.
     Real bary[3];
     bool valid = mDT->GetBarycentricSet(i, P, bary);
-    assertion(valid, "Unexpected condition\n");
+    //assertion(valid, "Unexpected condition\n");
     if (!valid)
     {
         return false;
@@ -54,7 +54,7 @@ bool IntpLinearNonuniform2<Real>::Evaluate (const Vector2<Real>& P, Real& F)
     // Get the vertex indices for look up into the function-value array.
     int index[3];
     valid = mDT->GetIndexSet(i, index);
-    assertion(valid, "Unexpected condition\n");
+    //assertion(valid, "Unexpected condition\n");
     if (!valid)
     {
         return false;

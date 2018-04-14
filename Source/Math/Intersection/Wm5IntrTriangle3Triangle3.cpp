@@ -247,7 +247,7 @@ bool IntrTriangle3Triangle3<Real>::Find ()
         }
     }
 
-    assertion(false, "Should not get here\n");
+    //assertion(false, "Should not get here\n");
     return false;
 }
 //----------------------------------------------------------------------------
@@ -544,7 +544,7 @@ void IntrTriangle3Triangle3<Real>::GetInterval (
     {
         if (sign[i0]*sign[i1] < 0)
         {
-            assertion(quantity < 2, "Unexpected condition\n");
+            //assertion(quantity < 2, "Unexpected condition\n");
             numer = distance[i0]*proj[i1] - distance[i1]*proj[i0];
             denom = distance[i0] - distance[i1];
             param[quantity++] = numer/denom;
@@ -558,14 +558,14 @@ void IntrTriangle3Triangle3<Real>::GetInterval (
         {
             if (sign[i2] == 0)
             {
-                assertion(quantity < 2, "Unexpected condition\n");
+                //assertion(quantity < 2, "Unexpected condition\n");
                 param[quantity++] = proj[i2];
             }
         }
     }
 
     // Sort.
-    assertion(quantity == 1 || quantity == 2, "Unexpected condition\n");
+    //assertion(quantity == 1 || quantity == 2, "Unexpected condition\n");
     if (quantity == 2)
     {
         if (param[0] > param[1])
@@ -713,7 +713,7 @@ bool IntrTriangle3Triangle3<Real>::IntersectsSegment (
     }
     else
     {
-        assertion(calc.GetIntersectionType() == IT_POINT,
+        //assertion(calc.GetIntersectionType() == IT_POINT,
             "Intersection must be a point\n");
         mIntersectionType = IT_POINT;
         mQuantity = 1;
@@ -1389,7 +1389,7 @@ void IntrTriangle3Triangle3<Real>::FindContactSet (
         // Triangles are already intersecting tranversely.
         IntrTriangle3Triangle3<Real> calc(tri0, tri1);
         bool result = calc.Find();
-        assertion(result, "Intersection must exist\n");
+        //assertion(result, "Intersection must exist\n");
         WM5_UNUSED(result);
         mQuantity = calc.GetQuantity();
         mIntersectionType = calc.GetIntersectionType();
@@ -1418,13 +1418,13 @@ void IntrTriangle3Triangle3<Real>::GetEdgeEdgeIntersection (
     Real s = normal.Dot(delta.Cross(edge1))/normal.SquaredLength();
     if (s < (Real)0)
     {
-        assertion(s >= -Math<Real>::ZERO_TOLERANCE,
+        //assertion(s >= -Math<Real>::ZERO_TOLERANCE,
             "Unexpected s value.\n");
         s = (Real)0;
     }
     else if (s > (Real)1)
     {
-        assertion(s <= (Real)1 + Math<Real>::ZERO_TOLERANCE,
+        //assertion(s <= (Real)1 + Math<Real>::ZERO_TOLERANCE,
             "Unexpected s value.\n");
         s = (Real)1;
     }

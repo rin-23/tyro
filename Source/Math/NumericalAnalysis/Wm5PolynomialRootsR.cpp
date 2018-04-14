@@ -33,14 +33,14 @@ int PolynomialRootsR<Real>::GetQuantity () const
 template <typename Real>
 Real PolynomialRootsR<Real>::GetRoot (int i) const
 {
-    assertion(0 <= i && i < mQuantity, "Invalid index\n");
+    //assertion(0 <= i && i < mQuantity, "Invalid index\n");
     return mRoot[i];
 }
 //----------------------------------------------------------------------------
 template <typename Real>
 int PolynomialRootsR<Real>::GetMultiplicity (int i) const
 {
-    assertion(0 <= i && i < mQuantity, "Invalid index\n");
+    //assertion(0 <= i && i < mQuantity, "Invalid index\n");
     return mMultiplicity[i];
 }
 //----------------------------------------------------------------------------
@@ -154,7 +154,7 @@ bool PolynomialRootsR<Real>::Quadratic (const PRational& a0,
         // Estimate the discriminant.
         double discr;
         ratDiscr.ConvertTo(discr);
-        assertion(discr > 0.0, "Unexpected condition\n");
+        //assertion(discr > 0.0, "Unexpected condition\n");
         discr = Mathd::Sqrt(discr);
 
         ratDiscr = PRational(discr);
@@ -245,7 +245,7 @@ bool PolynomialRootsR<Real>::Cubic (const PRational& a0,
         // Estimate the discriminant.
         double discr;
         ratDiscr.ConvertTo(discr);
-        assertion(discr > 0.0, "Unexpected condition\n");
+        //assertion(discr > 0.0, "Unexpected condition\n");
         discr = Mathd::Sqrt(discr);
 
         const double third = 1.0/3.0;
@@ -293,7 +293,7 @@ bool PolynomialRootsR<Real>::Cubic (const PRational& a0,
         double negQ;
         ratQ.ConvertTo(negQ);
         negQ = -negQ;
-        assertion(negQ > 0.0, "Unexpected condition\n");
+        //assertion(negQ > 0.0, "Unexpected condition\n");
 
         double negR;
         ratR.ConvertTo(negR);

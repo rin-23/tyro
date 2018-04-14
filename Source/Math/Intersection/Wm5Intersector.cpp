@@ -40,7 +40,7 @@ template <typename Real, typename TVector>
 bool Intersector<Real,TVector>::Test ()
 {
     // Stub for derived class.
-    assertion(false, "Function not yet implemented\n");
+    //assertion(false, "Function not yet implemented\n");
     return false;
 }
 //----------------------------------------------------------------------------
@@ -48,7 +48,7 @@ template <typename Real, typename TVector>
 bool Intersector<Real,TVector>::Find ()
 {
     // Stub for derived class.
-    assertion(false, "Function not yet implemented\n");
+    //assertion(false, "Function not yet implemented\n");
     return false;
 }
 //----------------------------------------------------------------------------
@@ -56,7 +56,7 @@ template <typename Real, typename TVector>
 bool Intersector<Real,TVector>::Test (Real, const TVector&, const TVector&)
 {
     // Stub for derived class.
-    assertion(false, "Function not yet implemented\n");
+    //assertion(false, "Function not yet implemented\n");
     return false;
 }
 //----------------------------------------------------------------------------
@@ -64,7 +64,7 @@ template <typename Real, typename TVector>
 bool Intersector<Real,TVector>::Find (Real, const TVector&, const TVector&)
 {
     // Stub for derived class.
-    assertion(false, "Function not yet implemented\n");
+    //assertion(false, "Function not yet implemented\n");
     return false;
 }
 //----------------------------------------------------------------------------
