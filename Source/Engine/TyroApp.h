@@ -16,7 +16,8 @@ namespace tyro
     public:
 
         enum State {None, Launched, LoadedModel, PlayingAnimation};
-        State m_state;
+        enum SelectionMode {Vertex, Faces, Edges};
+
         App();
         
         ~App();
@@ -29,6 +30,8 @@ namespace tyro
         void compute_average();
         void compute_deformation();
         
+        State m_state;
+        SelectionMode m_sel_mode;
     private:
         Timeline* m_timeline;
         Window* m_tyro_window;
@@ -48,6 +51,7 @@ namespace tyro
         int current_mouse_y;
         bool show_console;        
         int m_modifier;
+        int m_mouse_btn_clicked;
         bool m_computed_deformation;
         bool m_computed_avg;
         Console m_console;
@@ -80,6 +84,7 @@ namespace tyro
             std::vector<Eigen::MatrixXd> v_data; // Vertex data. 3*num_vert by num_frames. 
             std::vector<Eigen::MatrixXd> n_data; // Normal data. 3*num_vert by num_frames. 
             Eigen::MatrixXi f_data; // Face data.   num_faces by 3
+            Eigen::MatrixXd c_data;
             Eigen::MatrixXd avg_v_data;
         } MAnimation;
 
@@ -87,12 +92,13 @@ namespace tyro
         MAnimation m_frame_deformed_data;
 
         std::vector<int> vid_list;
+        std::vector<int> fid_list;
 
         void register_console_function(const std::string& name,
                                    const std::function<void(App*, const std::vector<std::string>&)>& con_fun,
                                    const std::string& help_txt);
         void load_mesh_sequence(const std::string& obj_list_file, bool use_igl_loader = true); 
-        void update_camera(const Spatial& spatial);
+        void update_camera(const AxisAlignedBBox& WorldBoundBox);
         void render();
         std::atomic<bool> m_need_rendering;
     };

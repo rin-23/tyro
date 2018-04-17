@@ -32,12 +32,12 @@ namespace tyro
         void Reset();
 
         void HandleOneFingerPanGesture(int state, Wm5::Vector2i glTouch);
-        //void HandleTwoFingerPanGesture(UIPanGestureRecognizer* sender);
+        void HandleTwoFingerPanGesture(int state, Wm5::Vector2i glTouch);
         //void HandleRotationGesture(UIRotationGestureRecognizer* sender);
-        //void HandlePinchGesture(UIPinchGestureRecognizer* sender);
+        void HandlePinchGesture(int state, double offset);
         
-//        int WorldToScreen(UIGestureRecognizer* sender, float depth, Wm5::Vector3f& win);
-//        int CameraToScreen(UIGestureRecognizer* sender, float depth, Wm5::Vector3f& win);
+        //int WorldToScreen(UIGestureRecognizer* sender, float depth, Wm5::Vector3f& win);
+        //int CameraToScreen(UIGestureRecognizer* sender, float depth, Wm5::Vector3f& win);
         //Wm5::Vector3f ScreenGestureToWorld(UIGestureRecognizer* sender, float depth) const;
         //Wm5::Vector3f ScreenGestureToCamera(UIGestureRecognizer* sender, float depth) const;
         

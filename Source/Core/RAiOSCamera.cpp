@@ -113,39 +113,40 @@ namespace tyro
             mLastLoc = glTouch;
         } 
     }
-    /*
-    void iOSCamera::HandleTwoFingerPanGesture(UIPanGestureRecognizer* sender)
+    
+    void iOSCamera::HandleTwoFingerPanGesture(int state, Wm5::Vector2i translation)
     {
-        if (sender.numberOfTouches != 2) {
-            mAccumulatedTranslation = mTranslationMatrix;
-            return;
-        }
+        //if (sender.numberOfTouches != 2) {
+        //    mAccumulatedTranslation = mTranslationMatrix;
+        //    return;
+        //}
         
-        GestureState state = GestureStateForRecognizer(sender);
-        Vector2i translation = TouchPointForGesture(sender);
+        //GestureState state = GestureStateForRecognizer(sender);
+        //Vector2i translation = TouchPointForGesture(sender);
         
         Vector3f screen(translation.X(), translation.Y(), 0.0f);
         Vector3f world = Camera::ScreenToCamera(screen);
         world.Z() = 0;
         
-        if (state == GestureState::Began)
+        if (state == 0)
         {
             mStartPoint = world;
         }
-        else if (state == GestureState::Changed || state == GestureState::Ended)
+        else if (state == 1 || state == 2)
         {
             AVector diff(world - mStartPoint);
             HMatrix temp(diff);
             mTranslationMatrix = temp * mAccumulatedTranslation;
             UpdateViewMatrix();
             
-            if (state == GestureState::Ended)
+            if (state == 2)
             {
                 mAccumulatedTranslation = mTranslationMatrix;
             }
         }
     }
 
+    /*
     void iOSCamera::HandleRotationGesture(UIRotationGestureRecognizer* sender)
     {
         if (sender.numberOfTouches != 2) {
@@ -168,35 +169,36 @@ namespace tyro
             mLastRot = rotation;
         }
     }
-    
-    void iOSCamera::HandlePinchGesture(UIPinchGestureRecognizer* sender)
+    */
+
+    void iOSCamera::HandlePinchGesture(int state, Wm5::Vector2i glTouch, double offset)
     {
-        if (sender.numberOfTouches != 2) {
-            mAccumulatedTranslation = mTranslationMatrix;
-            return;
-        }
+        //if (sender.numberOfTouches != 2) {
+        //    mAccumulatedTranslation = mTranslationMatrix;
+        //    return;
+        //}
         
-        GestureState state = GestureStateForRecognizer(sender);
-        CGPoint touchPoint1 = ScaleTouchPoint([sender locationOfTouch:0 inView:sender.view],
-                                              sender.view);
-        CGPoint touchPoint2 = ScaleTouchPoint([sender locationOfTouch:1 inView:sender.view],
-                                              sender.view);
+        //GestureState state = GestureStateForRecognizer(sender);
+        //CGPoint touchPoint1 = ScaleTouchPoint([sender locationOfTouch:0 inView:sender.view],
+        //                                      sender.view);
+        //CGPoint touchPoint2 = ScaleTouchPoint([sender locationOfTouch:1 inView:sender.view],
+        //                                      sender.view);
         
-        Vector2f touch1(touchPoint1.x, touchPoint1.y);
-        Vector2f touch2(touchPoint2.x, touchPoint2.y);
+        //Vector2f touch1(touchPoint1.x, touchPoint1.y);
+        //Vector2f touch2(touchPoint2.x, touchPoint2.y);
         
         float ascale = sender.scale;
         
-        if (state == GestureState::Began)
+        if (state == 0)
         {
-            mInitialTouch = (touch1 + touch1)/2.0f;
+            mInitialTouch =  glTouch;//(touch1 + touch1)/2.0f;
             Vector3f screen(mInitialTouch.X(), mInitialTouch.Y(), 0.0f);
             mCentroid = Camera::ScreenToCamera(screen);
             mCentroid.Z() = 0;
             
             mCurScale = mScale;
         }
-        else if (state == GestureState::Changed || state == GestureState::Ended)
+        else if (state == 1 || state == 2)
         {
             mScale = mCurScale * ascale;
             UpdateProjectionMatrix();
@@ -216,7 +218,7 @@ namespace tyro
             }
         }
     }
-	*/
+	
     void iOSCamera::UpdateProjectionMatrix()
     {
         if (mIsOrtho)

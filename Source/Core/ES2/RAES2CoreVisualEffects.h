@@ -18,6 +18,10 @@ namespace tyro
         static ES2VisualEffectSPtr ColorPicking();
         
         static ES2VisualEffectSPtr GourandDirectional();
+        
+        static ES2VisualEffectSPtr GourandDirectionalWithVColor();
+
+        static ES2VisualEffectSPtr WireframeColor();
 
         static ES2VisualEffectSPtr NormalBuffer();
         

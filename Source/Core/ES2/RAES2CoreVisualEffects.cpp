@@ -51,6 +51,46 @@ ES2VisualEffectSPtr ES2CoreVisualEffects::GourandDirectional()
     return effect;
 }
 
+ES2VisualEffectSPtr ES2CoreVisualEffects::GourandDirectionalWithVColor()
+{
+    ES2ShaderProgram* shader = new ES2ShaderProgram();
+    shader->LoadProgram(GetFilePath("GourandDirectionalWithVColor", "vsh"), GetFilePath("GourandDirectionalWithVColor", "fsh"));
+    
+    ES2VertexFormat* vertexFormat = new ES2VertexFormat(3);
+    vertexFormat->SetAttribute(0, shader->GetAttributeLocation("aPosition"), 0, ES2VertexFormat::AT_FLOAT3, ES2VertexFormat::AU_POSITION);
+    vertexFormat->SetAttribute(1, shader->GetAttributeLocation("aNormal"), vertexFormat->GetOffsetForNextAttrib(0), ES2VertexFormat::AT_FLOAT3, ES2VertexFormat::AU_NORMAL);
+    vertexFormat->SetAttribute(2, shader->GetAttributeLocation("aColor"), vertexFormat->GetOffsetForNextAttrib(1), ES2VertexFormat::AT_FLOAT3, ES2VertexFormat::AU_COLOR);
+    
+    ES2ShaderUniforms* uniforms = new ES2ShaderUniforms(2);
+    uniforms->SetUniform(0, shader->GetUniformLocation("uMVPMatrix"), 1, "uMVPMatrix", ES2ShaderUniforms::UniformMatrix4fv);
+    uniforms->SetUniform(1, shader->GetUniformLocation("uNMatrix"), 1, "uNMatrix", ES2ShaderUniforms::UniformMatrix3fv);
+    //uniforms->SetUniform(2, shader->GetUniformLocation("uColor"), 1, "uColor", ES2ShaderUniforms::Uniform4fv);
+    
+    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms, new ES2AlphaState(), new ES2CullState(), new ES2DepthState()));
+
+    return effect;
+}
+
+ES2VisualEffectSPtr ES2CoreVisualEffects::WireframeColor() 
+{
+    ES2ShaderProgram* shader = new ES2ShaderProgram();
+    shader->LoadProgram(GetFilePath("WireframeColor", "vsh"), GetFilePath("WireframeColor", "fsh"));
+    
+    ES2VertexFormat* vertexFormat = new ES2VertexFormat(2);
+    vertexFormat->SetAttribute(0, shader->GetAttributeLocation("aPosition"), 0, ES2VertexFormat::AT_FLOAT3, ES2VertexFormat::AU_POSITION);
+    vertexFormat->SetAttribute(1, shader->GetAttributeLocation("aColor"), vertexFormat->GetOffsetForNextAttrib(0), ES2VertexFormat::AT_FLOAT3, ES2VertexFormat::AU_COLOR);
+    
+    ES2ShaderUniforms* uniforms = new ES2ShaderUniforms(1);
+    uniforms->SetUniform(0, shader->GetUniformLocation("uMVPMatrix"), 1, "uMVPMatrix", ES2ShaderUniforms::UniformMatrix4fv);
+    //uniforms->SetUniform(1, shader->GetUniformLocation("uNMatrix"), 1, "uNMatrix", ES2ShaderUniforms::UniformMatrix3fv);
+    //uniforms->SetUniform(2, shader->GetUniformLocation("uColor"), 1, "uColor", ES2ShaderUniforms::Uniform4fv);
+    
+    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms, new ES2AlphaState(), new ES2CullState(), new ES2DepthState()));
+
+    return effect;
+}
+
+
 ES2VisualEffectSPtr ES2CoreVisualEffects::NormalBuffer()
 {
     ES2ShaderProgram* shader = new ES2ShaderProgram();

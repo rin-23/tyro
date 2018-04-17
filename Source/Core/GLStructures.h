@@ -43,6 +43,19 @@ struct VertexNorm
     Wm5::Vector3f normal;
 };
 
+struct VertexGeneral
+{
+    Wm5::Vector3f position;
+    Wm5::Vector3f normal;
+    Wm5::Vector3f color;
+};
+
+struct WireframeGeneral
+{
+    Wm5::Vector3f position;
+    Wm5::Vector3f color;
+};
+
 struct VertexTexture
 {
     VertexTexture() {}

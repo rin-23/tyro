@@ -68,7 +68,8 @@
         "*.traits": "cpp",
         "threadpool": "cpp",
         "eulerangles": "cpp",
-        "specialfunctions": "cpp"
+        "specialfunctions": "cpp",
+        "*.expression": "cpp"
     },
     "python.linting.enabled": false
 }

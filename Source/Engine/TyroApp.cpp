@@ -89,7 +89,8 @@ namespace tyro
     m_state(App::State::None),
     m_need_rendering(false),
     m_computed_deformation(false),
-    m_computed_avg(false)
+    m_computed_avg(false),
+    m_sel_mode(App::SelectionMode::Faces)
     {}
 
     App::~App() 
@@ -203,30 +204,38 @@ namespace tyro
                     if (!m_computed_deformation) 
                     {
                         //ORIGNAL MODEL
+                        //Eigen::Vector3d cr(0.5,0.5,0.5);
                         render_data.org_mesh = IGLMesh::Create(m_frame_data.v_data[m_frame], 
-                                                            m_frame_data.f_data, 
-                                                            m_frame_data.n_data[m_frame]);
+                                                               m_frame_data.f_data, 
+                                                               m_frame_data.n_data[m_frame],
+                                                               m_frame_data.c_data);
                         render_data.org_mesh->Update(true);
                         vis_set.Insert(render_data.org_mesh.get());
 
                         //create renderable for mesh wireframe
+                        Eigen::Vector3d cr2(0,0,0);
                         render_data.org_mesh_wire = IGLMeshWireframe::Create(m_frame_data.v_data[m_frame], 
-                                                                            m_frame_data.f_data);
+                                                                             m_frame_data.f_data,
+                                                                             cr2);
                         render_data.org_mesh_wire->Update(true);
                         vis_set.Insert(render_data.org_mesh_wire.get());
                     }
                     //DEFORMED MODEL
                     if (m_computed_deformation)
                     {
+                        Eigen::Vector3d cr(0.5,0.5,0.5);
                         render_data.dfm_mesh = IGLMesh::Create(m_frame_deformed_data.v_data[m_frame], 
                                                                m_frame_deformed_data.f_data, 
-                                                               m_frame_data.n_data[m_frame]);
+                                                               m_frame_data.n_data[m_frame],
+                                                               cr);
                         render_data.dfm_mesh->Update(true);
                         vis_set.Insert(render_data.dfm_mesh.get());
 
                         //create renderable for mesh wireframe
+                        Eigen::Vector3d cr2(0,0,0);
                         render_data.dfm_mesh_wire = IGLMeshWireframe::Create(m_frame_deformed_data.v_data[m_frame], 
-                                                                             m_frame_deformed_data.f_data);
+                                                                             m_frame_deformed_data.f_data,
+                                                                             cr2);
                         render_data.dfm_mesh_wire->Update(true);
                         vis_set.Insert(render_data.dfm_mesh_wire.get());
                     }
@@ -353,10 +362,11 @@ namespace tyro
         }
         m_frame_data.avg_v_data = (1.0/m_frame_data.v_data.size()) * m_frame_data.avg_v_data;
         
+        Eigen::Vector3d cr(0.5,0,0);
         render_data.avg_mesh = IGLMesh::Create(m_frame_data.avg_v_data, 
                                                m_frame_data.f_data, 
-                                               m_frame_data.n_data[0]);
-        render_data.avg_mesh->SetColor(Wm5::Vector4f(0.5,0,0,1));
+                                               m_frame_data.n_data[0],
+                                               cr);
         render_data.avg_mesh->Update(true);
 
         Wm5::Transform tr;
@@ -364,8 +374,8 @@ namespace tyro
         render_data.avg_mesh->LocalTransform = tr * render_data.avg_mesh->LocalTransform;
         render_data.avg_mesh->Update(true);
 
-        render_data.avg_mesh_wire = IGLMeshWireframe::Create(m_frame_data.avg_v_data, m_frame_data.f_data);
-        render_data.avg_mesh_wire->SetColor(Wm5::Vector4f(0,0,0,1));
+        Eigen::Vector3d cr2(0,0,0);
+        render_data.avg_mesh_wire = IGLMeshWireframe::Create(m_frame_data.avg_v_data, m_frame_data.f_data, cr2);
         render_data.avg_mesh_wire->Update(true);
 
         render_data.avg_mesh_wire->LocalTransform = tr * render_data.avg_mesh_wire->LocalTransform;
@@ -374,11 +384,11 @@ namespace tyro
         m_computed_avg = true;
     }
 
-    void App::update_camera(const Spatial& spatial) 
+    void App::update_camera(const AxisAlignedBBox& WorldBoundBox) 
     {
         //setup camera
-        APoint world_center = spatial.WorldBoundBox.GetCenter();
-        float radius = std::abs(spatial.WorldBoundBox.GetRadius()*2);
+        APoint world_center = WorldBoundBox.GetCenter();
+        float radius = std::abs(WorldBoundBox.GetRadius()*2);
         float aspect = 1.0;
         int v_width, v_height;
         m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
@@ -400,12 +410,24 @@ namespace tyro
                                  use_igl_loader);
         
         //@TODO need this to update camera
+        Eigen::Vector3d cr(0.5,0.5,0.5);
+
+        
+        m_frame_data.c_data.resize(m_frame_data.v_data[0].rows(), 
+                                   m_frame_data.v_data[0].cols());
+        
+        for (int i =0 ; i <  m_frame_data.v_data[0].rows(); ++i) 
+        {
+            m_frame_data.c_data.row(i) = cr;
+        }
+
         IGLMeshSPtr tmp = IGLMesh::Create(m_frame_data.v_data[0], 
                                                m_frame_data.f_data, 
-                                               m_frame_data.n_data[0]);
+                                               m_frame_data.n_data[0], 
+                                               cr);
         tmp->Update(true);        
-        update_camera(*(tmp.get()));
-        
+        update_camera(tmp->WorldBoundBox);
+       
         m_timeline->SetFrameRange(m_frame_data.v_data.size()-1);
     }
 
@@ -440,14 +462,15 @@ namespace tyro
 
     void App::mouse_down(Window& window, int button, int modifier) 
     {   
+        RA_LOG_INFO("mouse down %i", button);
+
         if (m_state != App::State::LoadedModel) return;
 
         mouse_is_down = true;
         m_modifier = modifier;
-
+        m_mouse_btn_clicked = button;
         if (m_modifier == TYRO_MOD_CONTROL) return; //rotating
-
-        RA_LOG_INFO("MOUSE DOWN");
+        if (m_mouse_btn_clicked == 2) return; //translating
 
         int fid;
         Eigen::Vector3f bc;
@@ -468,37 +491,66 @@ namespace tyro
                                      e1.transpose(),
                                      e2.transpose(),
                                      e3,
-                                     render_data.org_mesh->V,
-                                     render_data.org_mesh->F,
+                                     m_frame_data.v_data[m_frame],
+                                     m_frame_data.f_data,
                                      fid,
                                      bc))
         {
-            
-            long c;
-            bc.maxCoeff(&c);
-            int vid = render_data.org_mesh->F(fid, c);
-            auto it = std::find(vid_list.begin(), vid_list.end(), vid);
-            if (it == vid_list.end()) 
+            if (m_sel_mode == App::SelectionMode::Vertex) 
             {
-                Eigen::RowVector3d new_c = render_data.org_mesh->V.row(vid);
-                RA_LOG_INFO("Picked face_id %i vertex_id %i", fid, vid);
-                ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.1);
-                Wm5::Transform tr;
-                tr.SetTranslate(APoint(new_c(0), new_c(1), new_c(2)));
-                object->LocalTransform = tr * object->LocalTransform;
-                object->Update(true);
-                ball_list.push_back(object);
-                vid_list.push_back(vid);
-            }  
-            else
-            {   
-                RA_LOG_INFO("remove vertex %i %i", fid, vid);
+                long c;
+                bc.maxCoeff(&c);
+                int vid = m_frame_data.f_data(fid, c);
+                auto it = std::find(vid_list.begin(), vid_list.end(), vid);
+                if (it == vid_list.end()) 
+                {
+                    Eigen::RowVector3d new_c = m_frame_data.v_data[m_frame].row(vid);
+                    RA_LOG_INFO("Picked face_id %i vertex_id %i", fid, vid);
+                    ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.1);
+                    Wm5::Transform tr;
+                    tr.SetTranslate(APoint(new_c(0), new_c(1), new_c(2)));
+                    object->LocalTransform = tr * object->LocalTransform;
+                    object->Update(true);
+                    ball_list.push_back(object);
+                    vid_list.push_back(vid);
+                }  
+                else
+                {   
+                    RA_LOG_INFO("remove vertex %i %i", fid, vid);
 
-                auto index = std::distance(vid_list.begin(), it);
-                ball_list.erase(ball_list.begin() + index);
-                vid_list.erase(vid_list.begin() + index);
-            }
-            render();                    
+                    auto index = std::distance(vid_list.begin(), it);
+                    ball_list.erase(ball_list.begin() + index);
+                    vid_list.erase(vid_list.begin() + index);
+                }
+                render();
+            } 
+            else if (m_sel_mode == App::SelectionMode::Faces) 
+            {
+                auto it = std::find(fid_list.begin(), fid_list.end(), fid);
+                if (it == fid_list.end()) 
+                {
+                    RA_LOG_INFO("Picked face_id %i", fid);
+                    fid_list.push_back(fid);
+
+                    Eigen::Vector3d clr(0,0,0.5);
+                    Eigen::Vector3i vtx_idx = m_frame_data.f_data.row(fid);
+                    m_frame_data.c_data.row(vtx_idx(0)) = clr;
+                    m_frame_data.c_data.row(vtx_idx(1)) = clr;
+                    m_frame_data.c_data.row(vtx_idx(2)) = clr;
+                }  
+                else
+                {   
+                    RA_LOG_INFO("remove face %i", fid);
+                    auto index = std::distance(fid_list.begin(), it);
+                    fid_list.erase(fid_list.begin() + index);
+                    Eigen::Vector3d clr(0.5,0.5,0.5);
+                    Eigen::Vector3i vtx_idx = m_frame_data.f_data.row(fid);
+                    m_frame_data.c_data.row(vtx_idx(0)) = clr;
+                    m_frame_data.c_data.row(vtx_idx(1)) = clr;
+                    m_frame_data.c_data.row(vtx_idx(2)) = clr;
+                }
+                render();
+            }                  
         };        
     }
 
@@ -506,14 +558,20 @@ namespace tyro
     {   
         if (m_state != App::State::LoadedModel) return;
         RA_LOG_INFO("MOUSE_UP");
-        if (mouse_is_down) 
+        if (mouse_is_down&& m_modifier == TYRO_MOD_CONTROL) 
         {   
             gesture_state = 2;
-            //m_camera->HandleOneFingerPanGesture(gesture_state, Vector2i(mouse_x, mouse_y));
+            m_camera->HandleOneFingerPanGesture(gesture_state, Vector2i(current_mouse_x, current_mouse_y));
+            render();
+        }
+        else if (mouse_is_down && m_mouse_btn_clicked == 2) 
+        {
+            gesture_state = 2;
+            m_camera->HandleTwoFingerPanGesture(gesture_state, Vector2i(current_mouse_x, -current_mouse_y));
+            render();
         }
         mouse_is_down = false;
         gesture_state = 0;
-        
     }
     
     void App::mouse_move(Window& window, int mouse_x, int mouse_y) 
@@ -524,10 +582,16 @@ namespace tyro
         RA_LOG_INFO("mouse move");
         current_mouse_x = mouse_x;
         current_mouse_y = mouse_y;
+
         if (mouse_is_down && m_modifier == TYRO_MOD_CONTROL) 
         {   
-            RA_LOG_INFO("MOUSE_MOVE")
             m_camera->HandleOneFingerPanGesture(gesture_state, Vector2i(mouse_x, mouse_y));
+            gesture_state = 1;
+            render();
+        } 
+        else if (mouse_is_down && m_mouse_btn_clicked == 2) 
+        {
+            m_camera->HandleTwoFingerPanGesture(gesture_state, Vector2i(mouse_x, -mouse_y));
             gesture_state = 1;
             render();
         }
@@ -544,7 +608,7 @@ namespace tyro
 
     void App::key_pressed(Window& window, unsigned int key, int modifiers) 
     {   
-        //RA_LOG_INFO("Key pressed %c", key);
+        RA_LOG_INFO("Key pressed %c", key);
         
         if (key == '`') 
         {   
