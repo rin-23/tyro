@@ -23,6 +23,7 @@ namespace tyro
             this->fps = fps;
             this->timer = nullptr;
             state = Stoped;
+            cur_frame = 0;
         }
         
         ~Timeline(){}
@@ -47,9 +48,9 @@ namespace tyro
                     delete timer;
                 }
                 
-                if (state == Stoped) cur_frame = 0;
+                //if (state == Stoped) cur_frame = 0;
                 
-                double periodic_interval = 1000.0/fps;
+                double periodic_interval = 1000.0/fps; //in ms
                 timer = new Poco::Timer(0, periodic_interval);
                 timer->start(Poco::TimerCallback<Timeline>(*this, &Timeline::frameChangedTimeline));
             }
@@ -62,6 +63,7 @@ namespace tyro
 
             state = Running;
         }
+        
 
         inline void Stop() 
         {   
@@ -75,18 +77,37 @@ namespace tyro
             state = Paused;
         }
 
+        inline void NextFrame() 
+        {
+            if (state != Running) 
+            {
+                IncrementFrame();
+                this->frameChanged(*this, cur_frame);
+            }
+        }
+
+        inline void PrevFrame() 
+        {
+            if (state != Running) 
+            {
+                DecrementFrame();
+                this->frameChanged(*this, cur_frame);
+            }
+
+        }
+
         void frameChangedTimeline(Poco::Timer& timer) 
         {   
             //assert(false);
             if (cur_frame > num_frames)
             {
-                this->Stop();
+                this->Pause();
             }
 
             if (this->frameChanged) 
             {   
                 this->frameChanged(*this, cur_frame);
-                cur_frame++;
+                IncrementFrame();
             }
         }
 
@@ -101,7 +122,19 @@ namespace tyro
     private:
         //QTimeLine* timeline;
         Poco::Timer* timer;
-       
-
+        
+        inline void DecrementFrame() 
+        {
+            cur_frame--;
+            if (cur_frame < 0) 
+            {
+                cur_frame = num_frames;     
+            }            
+        }
+        inline void IncrementFrame()
+        {
+            cur_frame++;
+            cur_frame = cur_frame % num_frames;
+        }
     };
 }

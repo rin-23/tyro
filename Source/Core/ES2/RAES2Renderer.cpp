@@ -51,6 +51,14 @@ namespace tyro
 		// DeleteFramebuffer();
 	}
 
+	void ES2Renderer::ClearScreen() 
+	{
+		mContext->setCurrent();
+		GL_CHECK_ERROR;
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		GL_CHECK_ERROR;
+	}
+
 	void ES2Renderer::RenderVisibleSet(const VisibleSet* visualSet, const Camera* camera)
 	{
 		assert(visualSet);

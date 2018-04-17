@@ -7,3 +7,6 @@
 [submodule "Source/External/tweeny"]
 	path = Source/External/tweeny
 	url = git@github.com:mobius3/tweeny.git
+[submodule "Source/External/tinyobjloader"]
+	path = Source/External/tinyobjloader
+	url = git@github.com:syoyo/tinyobjloader.git

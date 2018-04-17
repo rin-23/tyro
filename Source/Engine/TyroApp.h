@@ -14,6 +14,9 @@ namespace tyro
     class App 
     {
     public:
+
+        enum State {None, Launched, LoadedModel, PlayingAnimation};
+        State m_state;
         App();
         
         ~App();
@@ -22,6 +25,7 @@ namespace tyro
 
         void load_blobby();
         void load_oldman();
+        void load_bunny();
         void compute_average();
         void compute_deformation();
         
@@ -44,16 +48,32 @@ namespace tyro
         int current_mouse_y;
         bool show_console;        
         int m_modifier;
-
+        bool m_computed_deformation;
+        bool m_computed_avg;
         Console m_console;
 
-        IGLMeshSPtr igl_mesh;
-        IGLMeshWireframeSPtr igl_mesh_wire;
+        //IGLMeshSPtr igl_mesh;
+        //IGLMeshWireframeSPtr igl_mesh_wire;
 
-        std::vector<SpatialSPtr> object_list;
+        //std::vector<SpatialSPtr> object_list;
         std::vector<SpatialSPtr> ball_list;
         std::atomic<int> m_frame;
-        std::atomic<int> m_old_frame;
+
+        typedef struct MRenderData 
+        {
+            IGLMeshSPtr org_mesh;
+            IGLMeshWireframeSPtr org_mesh_wire;
+            bool org_visible = true;
+
+            IGLMeshSPtr avg_mesh;
+            IGLMeshWireframeSPtr avg_mesh_wire;
+            bool avg_visible = true;
+
+            IGLMeshSPtr dfm_mesh;
+            IGLMeshWireframeSPtr dfm_mesh_wire;            
+            bool dfm_visible;
+        } MRenderData;
+        MRenderData render_data;
 
         typedef struct MAnimation 
         {   
@@ -61,20 +81,19 @@ namespace tyro
             std::vector<Eigen::MatrixXd> n_data; // Normal data. 3*num_vert by num_frames. 
             Eigen::MatrixXi f_data; // Face data.   num_faces by 3
             Eigen::MatrixXd avg_v_data;
-
-            //Eigen::MatrixXd v_data;
-            //Eigen::MatrixXd n_data;
-
         } MAnimation;
 
         MAnimation m_frame_data;
+        MAnimation m_frame_deformed_data;
 
         std::vector<int> vid_list;
 
         void register_console_function(const std::string& name,
                                    const std::function<void(App*, const std::vector<std::string>&)>& con_fun,
                                    const std::string& help_txt);
-        void load_mesh_sequence(const std::string& obj_list_file); 
+        void load_mesh_sequence(const std::string& obj_list_file, bool use_igl_loader = true); 
         void update_camera(const Spatial& spatial);
+        void render();
+        std::atomic<bool> m_need_rendering;
     };
 }

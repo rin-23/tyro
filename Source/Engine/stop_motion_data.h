@@ -8,11 +8,14 @@ namespace stop
     bool load_mesh_sequence(const std::string& obj_list_file,
                             std::vector<Eigen::MatrixXd>& v_data, 
                             std::vector<Eigen::MatrixXd>& n_data,  
-                            Eigen::MatrixXi& f_data);
+                            Eigen::MatrixXi& f_data, 
+                            bool use_igl_loader = true);
 
+/*
     bool load_mesh_sequence(const std::string& obj_list_file,
                             Eigen::MatrixXd& v_data, 
                             Eigen::MatrixXd& n_data,  
                             Eigen::MatrixXi& f_data);
+*/
 }
 

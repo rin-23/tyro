@@ -28,6 +28,8 @@ namespace tyro
         void RenderVisibleSet(const VisibleSet* visibleSet, const Camera* camera);
     
 		void SetClearColor(const Wm5::Vector4f& clearColor);
+
+		void ClearScreen();
     
 	private:
  

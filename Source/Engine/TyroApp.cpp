@@ -31,8 +31,18 @@ namespace tyro
                 return;
             }
         }
-
         
+        void console_load_bunny(App* app, const std::vector<std::string> & args) 
+        {
+            RA_LOG_INFO("Loading bunny obj sequence");
+
+            if (args.size() == 0)
+            {   
+                app->load_bunny();
+                return;
+            }
+        }
+
         void console_load_blobby(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("Loading blobby obj sequence");
@@ -56,7 +66,7 @@ namespace tyro
         }
 
         void console_compute_deformation(App* app, const std::vector<std::string> & args)
-         {
+        {
             RA_LOG_INFO("deform");
 
             if (args.size() == 0)
@@ -76,7 +86,10 @@ namespace tyro
     gesture_state(0),
     show_console(false),
     m_frame(0),
-    m_old_frame(0)
+    m_state(App::State::None),
+    m_need_rendering(false),
+    m_computed_deformation(false),
+    m_computed_avg(false)
     {}
 
     App::~App() 
@@ -98,7 +111,7 @@ namespace tyro
     {   
         RA_LOG_INFO("Launching the app");
 
-        //setup window
+        //setup windowshapes
         m_tyro_window = new Window();
         m_tyro_window->Init();
                 
@@ -116,6 +129,8 @@ namespace tyro
         {   
             RA_LOG_INFO("Frame Change BEGIN");
             m_frame = frame;
+            m_need_rendering = true;
+            glfwPostEmptyEvent();
             RA_LOG_INFO("Frame Change END");
         };
 
@@ -153,127 +168,174 @@ namespace tyro
 
         register_console_function("load_blobby", console_load_blobby, "");
         register_console_function("load_oldman", console_load_oldman, "");
+        register_console_function("load_bunny", console_load_bunny, "");
         register_console_function("compute_average", console_compute_average, "");
         register_console_function("compute_deformation", console_compute_deformation, "");
-       
+
+        m_state = App::State::Launched;
         // Loop until the user closes the window
+        m_tyro_window->GetGLContext()->swapBuffers();
+        
+        m_need_rendering = true;
+        //render(); //do initial render
+
+        //while (!m_tyro_window->ShouldClose()) 
+       // {
+            //RA_LOG_INFO("Looping GLFW");
+        //    m_tyro_window->Wait();
+        //}
+        
         while (!m_tyro_window->ShouldClose())
         {   
-            if (m_frame > m_old_frame) 
-            {
+            if (m_need_rendering) 
+           {
                 RA_LOG_INFO("RENDER BEGIN");
-                // Render here 
+
+                if (m_state == App::State::Launched) 
+                {
+                    m_gl_rend->ClearScreen();
+                }
+                else if (m_state == App::State::LoadedModel) 
+                {  
+                    //create renderable for mesh
+                    VisibleSet vis_set;
+
+                    if (!m_computed_deformation) 
+                    {
+                        //ORIGNAL MODEL
+                        render_data.org_mesh = IGLMesh::Create(m_frame_data.v_data[m_frame], 
+                                                            m_frame_data.f_data, 
+                                                            m_frame_data.n_data[m_frame]);
+                        render_data.org_mesh->Update(true);
+                        vis_set.Insert(render_data.org_mesh.get());
+
+                        //create renderable for mesh wireframe
+                        render_data.org_mesh_wire = IGLMeshWireframe::Create(m_frame_data.v_data[m_frame], 
+                                                                            m_frame_data.f_data);
+                        render_data.org_mesh_wire->Update(true);
+                        vis_set.Insert(render_data.org_mesh_wire.get());
+                    }
+                    //DEFORMED MODEL
+                    if (m_computed_deformation)
+                    {
+                        render_data.dfm_mesh = IGLMesh::Create(m_frame_deformed_data.v_data[m_frame], 
+                                                               m_frame_deformed_data.f_data, 
+                                                               m_frame_data.n_data[m_frame]);
+                        render_data.dfm_mesh->Update(true);
+                        vis_set.Insert(render_data.dfm_mesh.get());
+
+                        //create renderable for mesh wireframe
+                        render_data.dfm_mesh_wire = IGLMeshWireframe::Create(m_frame_deformed_data.v_data[m_frame], 
+                                                                             m_frame_deformed_data.f_data);
+                        render_data.dfm_mesh_wire->Update(true);
+                        vis_set.Insert(render_data.dfm_mesh_wire.get());
+                    }
+
+                    if (m_computed_avg) 
+                    {
+                        vis_set.Insert(render_data.avg_mesh.get());
+                        vis_set.Insert(render_data.avg_mesh_wire.get());
+                    }
+
+                    for (auto object_sptr : ball_list) 
+                    {
+                        vis_set.Insert(object_sptr.get());
+                    }
+
+                    m_gl_rend->RenderVisibleSet(&vis_set, m_camera);         
+                }
                 
-                //create renderable for mesh
-                object_list.clear(); //remove all previous data
-
-                //create renderable for mesh
-                igl_mesh = IGLMesh::Create(m_frame_data.v_data[m_frame], 
-                                        m_frame_data.f_data, 
-                                        m_frame_data.n_data[m_frame]);
-                igl_mesh->Update(true);
-                object_list.push_back(igl_mesh);
-
-                //create renderable for mesh wireframe
-                igl_mesh_wire = IGLMeshWireframe::Create(m_frame_data.v_data[m_frame], m_frame_data.f_data);
-                igl_mesh_wire->Update(true);
-                object_list.push_back(igl_mesh_wire);
-
-                VisibleSet vis_set;
-                for (auto object_sptr : object_list) {
-                    vis_set.Insert(object_sptr.get());
+                // Draw console
+                if (show_console) 
+                {
+                    glUseProgram(0);
+                    m_console.display(1);
                 }
-
-                for (auto object_sptr : ball_list) {
-                    vis_set.Insert(object_sptr.get());
-                }
+                // Poll for and process events
+                m_tyro_window->GetGLContext()->swapBuffers();
+                m_need_rendering = false;
+             
+            }
             
-                m_gl_rend->RenderVisibleSet(&vis_set, m_camera);
-               
-                
-                RA_LOG_INFO("RENDER END");
-                int tmp = m_frame;
-                m_old_frame = tmp;
-            }
-            // Draw console
-            if (show_console) 
-            {
-                glUseProgram(0);
-                m_console.display(2);
-            }
+            m_tyro_window->Wait();
+            //m_tyro_window->ProcessUserEvents();
 
-            // Poll for and process events
-            m_tyro_window->GetGLContext()->swapBuffers();
-            m_tyro_window->ProcessUserEvents();
         }
 
 	    return 0;
     }
 
+    void App::render() 
+    {   
+        RA_LOG_INFO("NEED RENDERING");
+        m_need_rendering = true;
+    }
+
     void App::compute_deformation()
     {
         assert(vid_list.size() > 0);
-
-        Eigen::MatrixXd V = m_frame_data.v_data[0];
-        Eigen::MatrixXi F = m_frame_data.f_data;
-        Eigen::VectorXi b;
-        b.resize(vid_list.size());
-        int b_index = 0;
-        for (int vid : vid_list){
-            b(b_index++) = vid;
-            RA_LOG_INFO("vide %i", vid)
-        }
-        //do biharmonic stuff here.
-        igl::min_quad_with_fixed_data<double> data;
-        Eigen::SparseMatrix<double> L;
         
-        igl::cotmatrix(V, F, L);
+        m_frame_deformed_data.v_data.reserve(m_frame_data.v_data.size());
+        m_frame_deformed_data.f_data = m_frame_data.f_data;
 
-        Eigen::SparseMatrix<double> M;	
-        igl::massmatrix(V, F, igl::MASSMATRIX_TYPE_DEFAULT, M);
+        int num_frames = m_frame_data.v_data.size();
+        for (int i =0; i < num_frames; ++i) 
+        {   
+            RA_LOG_INFO("Compute deformation for mesh %i out of %i", i, num_frames)
+            Eigen::MatrixXd V = m_frame_data.v_data[i];
+            Eigen::MatrixXi F = m_frame_data.f_data;
+            Eigen::VectorXi b;
+            b.resize(vid_list.size());
+            int b_index = 0;
+            
+            for (int vid : vid_list)
+            {
+                b(b_index++) = vid;
+                //RA_LOG_INFO("vide %i", vid)
+            }
+           
+            //do biharmonic stuff here.
+            igl::min_quad_with_fixed_data<double> data;
+            Eigen::SparseMatrix<double> L;
+            
+            igl::cotmatrix(V, F, L);
 
-        //Computer M inverse
-        Eigen::SimplicialLDLT <Eigen::SparseMatrix<double> > solver;
-        solver.compute(M);
-        Eigen::SparseMatrix<double> I(M.rows(), M.cols());
-        I.setIdentity();
-        Eigen::SparseMatrix<double> M_inv = solver.solve(I);
+            Eigen::SparseMatrix<double> M;	
+            igl::massmatrix(V, F, igl::MASSMATRIX_TYPE_DEFAULT, M);
 
-        Eigen::SparseMatrix<double> Q = L.transpose() * M_inv * L;
+            //Computer M inverse
+            Eigen::SimplicialLDLT <Eigen::SparseMatrix<double> > solver;
+            solver.compute(M);
+            Eigen::SparseMatrix<double> I(M.rows(), M.cols());
+            I.setIdentity();
+            Eigen::SparseMatrix<double> M_inv = solver.solve(I);
+            Eigen::SparseMatrix<double> Q = L.transpose() * M_inv * L;
+            Eigen::SparseMatrix<double> Aeq;
+            Q = 2 * Q;
+            bool result = igl::min_quad_with_fixed_precompute(Q, b, Aeq, false, data);
+            assert(result);
 
-        Eigen::SparseMatrix<double> Aeq;
-        Q = 2 * Q;
-        bool result = igl::min_quad_with_fixed_precompute(Q, b, Aeq, false, data);
-        assert(result);
+            Eigen::MatrixXd D;
+            Eigen::MatrixXd bc;
+            bc.resize(vid_list.size(), 3);
+            b_index = 0;
+            for (int vid : vid_list)
+            {
+                bc.row(b_index++) = m_frame_data.avg_v_data.row(vid) - m_frame_data.v_data[i].row(vid);
+            }
 
-        //
-        Eigen::MatrixXd D;
-        Eigen::MatrixXd bc;
-        bc.resize(vid_list.size(), 3);
-        b_index = 0;
-        for (int vid : vid_list)
-        {
-            bc.row(b_index++) = m_frame_data.avg_v_data.row(vid) - m_frame_data.v_data[0].row(vid);
+            Eigen::MatrixXd B = Eigen::MatrixXd::Zero(data.n, bc.cols());
+            Eigen::VectorXd Beq;
+            //Beq.resize(bc.)
+            result = igl::min_quad_with_fixed_solve(data, B, bc, Beq, D);
+            assert(result);
+
+            Eigen::MatrixXd V_prime = V + D;
+            m_frame_deformed_data.v_data.push_back(V_prime);
+            
         }
-
-        Eigen::MatrixXd B = Eigen::MatrixXd::Zero(data.n, bc.cols());
-	    Eigen::VectorXd Beq;
-        //Beq.resize(bc.)
-	    result = igl::min_quad_with_fixed_solve(data, B, bc, Beq, D);
-        assert(result);
-
-        Eigen::MatrixXd V_prime = V + D;
-        IGLMeshSPtr prime_igl_mesh = IGLMesh::Create(V_prime, 
-                                                     m_frame_data.f_data, 
-                                                     m_frame_data.n_data[0]);
-        prime_igl_mesh->Update(true);
-        //object_list.push_back(prime_igl_mesh);
-
-        //create renderable for mesh wireframe
-        IGLMeshWireframeSPtr prime_igl_mesh_wire = IGLMeshWireframe::Create(V_prime, m_frame_data.f_data);
-        prime_igl_mesh_wire->SetColor(Wm5::Vector4f(0,1,0,1));
-        prime_igl_mesh_wire->Update(true);
-        object_list.push_back(prime_igl_mesh_wire);
+        m_computed_deformation = true;
+        
     }
 
     void App::compute_average()
@@ -291,23 +353,30 @@ namespace tyro
         }
         m_frame_data.avg_v_data = (1.0/m_frame_data.v_data.size()) * m_frame_data.avg_v_data;
         
+        render_data.avg_mesh = IGLMesh::Create(m_frame_data.avg_v_data, 
+                                               m_frame_data.f_data, 
+                                               m_frame_data.n_data[0]);
+        render_data.avg_mesh->SetColor(Wm5::Vector4f(0.5,0,0,1));
+        render_data.avg_mesh->Update(true);
 
-        IGLMeshSPtr avg_igl_mesh = IGLMesh::Create(m_frame_data.avg_v_data, 
-                                                   m_frame_data.f_data, 
-                                                   m_frame_data.n_data[0]);
-        avg_igl_mesh->SetColor(Wm5::Vector4f(1,0,0,1));
-        avg_igl_mesh->Update(true);
-        //object_list.push_back(avg_igl_mesh);
+        Wm5::Transform tr;
+        tr.SetTranslate(APoint(render_data.avg_mesh->WorldBoundBox.GetRadius(), 0, 0));
+        render_data.avg_mesh->LocalTransform = tr * render_data.avg_mesh->LocalTransform;
+        render_data.avg_mesh->Update(true);
 
-        IGLMeshWireframeSPtr avg_igl_mesh_wire = IGLMeshWireframe::Create(m_frame_data.avg_v_data, m_frame_data.f_data);
-        avg_igl_mesh_wire->SetColor(Wm5::Vector4f(1,0,0,1));
-        avg_igl_mesh_wire->Update(true);
-        object_list.push_back(avg_igl_mesh_wire);
+        render_data.avg_mesh_wire = IGLMeshWireframe::Create(m_frame_data.avg_v_data, m_frame_data.f_data);
+        render_data.avg_mesh_wire->SetColor(Wm5::Vector4f(0,0,0,1));
+        render_data.avg_mesh_wire->Update(true);
+
+        render_data.avg_mesh_wire->LocalTransform = tr * render_data.avg_mesh_wire->LocalTransform;
+        render_data.avg_mesh_wire->Update(true);
+
+        m_computed_avg = true;
     }
 
     void App::update_camera(const Spatial& spatial) 
     {
-                //setup camera
+        //setup camera
         APoint world_center = spatial.WorldBoundBox.GetCenter();
         float radius = std::abs(spatial.WorldBoundBox.GetRadius()*2);
         float aspect = 1.0;
@@ -321,53 +390,64 @@ namespace tyro
         m_camera = new iOSCamera(world_center, radius, aspect, 2, viewport, true);
     }
 
-    void App::load_mesh_sequence(const std::string& obj_list_file) 
+    void App::load_mesh_sequence(const std::string& obj_list_file, bool use_igl_loader) 
     {   
-        object_list.clear(); //remove all previous data
-        
+        RA_LOG_INFO("LOAD MESH SEQUENCE")
         stop::load_mesh_sequence(obj_list_file, 
                                  m_frame_data.v_data, 
                                  m_frame_data.n_data, 
-                                 m_frame_data.f_data);
-        //create renderable for mesh
-        igl_mesh = IGLMesh::Create(m_frame_data.v_data[0], 
-                                   m_frame_data.f_data, 
-                                   m_frame_data.n_data[0]);
-        igl_mesh->Update(true);
-        object_list.push_back(igl_mesh);
+                                 m_frame_data.f_data,
+                                 use_igl_loader);
+        
+        //@TODO need this to update camera
+        IGLMeshSPtr tmp = IGLMesh::Create(m_frame_data.v_data[0], 
+                                               m_frame_data.f_data, 
+                                               m_frame_data.n_data[0]);
+        tmp->Update(true);        
+        update_camera(*(tmp.get()));
+        
+        m_timeline->SetFrameRange(m_frame_data.v_data.size()-1);
+    }
 
-        //create renderable for mesh wireframe
-        igl_mesh_wire = IGLMeshWireframe::Create(m_frame_data.v_data[0], m_frame_data.f_data);
-        igl_mesh_wire->Update(true);
-        object_list.push_back(igl_mesh_wire);
-
-        update_camera(*(igl_mesh.get()));
-        m_timeline->SetFrameRange(m_frame_data.v_data.size());
+    void App::load_bunny()
+    {
+        RA_LOG_INFO("Load Bunny");
+        auto obj_list_file = std::string("/home/rinat/Google Drive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/objlist2.txt");
+        load_mesh_sequence(obj_list_file, false); //use tiny obj loader
+        m_state = App::State::LoadedModel;
+        render();
     }
 
     //load mexican blobby guy
     void App::load_blobby() 
     {   
-        auto obj_list_file = std::string("/home/rinat/Google Drive/StopMotionProject/Claymation/data/hello/FramesOBJ/objlist.txt");
+        RA_LOG_INFO("LOAD_BLOBBY");
+        auto obj_list_file = std::string("/home/rinat/Google Drive/StopMotionProject/Claymation/data/hello/FramesOBJ/objlist2.txt");
         load_mesh_sequence(obj_list_file);
+        m_state = App::State::LoadedModel;
+        render();
     }
 
     //load oldman (will you go to lunch)
     void App::load_oldman() 
     {   
-        auto obj_list_file = std::string("/home/rinat/Google Drive/StopMotionProject/Claymation/data/oldman/gotolunch/FramesOBJ/FullFace/objlist.txt");
+        RA_LOG_INFO("LOAD OLDMAN");
+        auto obj_list_file = std::string("/home/rinat/Google Drive/StopMotionProject/Claymation/data/oldman/gotolunch/FramesOBJ/FullFace/objlist2.txt");
         load_mesh_sequence(obj_list_file);
+        m_state = App::State::LoadedModel;
+        render();
     }
 
     void App::mouse_down(Window& window, int button, int modifier) 
     {   
-        if (object_list.size() == 0) return;
+        if (m_state != App::State::LoadedModel) return;
 
-        //RA_LOG_INFO("mouse down");
         mouse_is_down = true;
         m_modifier = modifier;
 
         if (m_modifier == TYRO_MOD_CONTROL) return; //rotating
+
+        RA_LOG_INFO("MOUSE DOWN");
 
         int fid;
         Eigen::Vector3f bc;
@@ -375,7 +455,7 @@ namespace tyro
         double x = current_mouse_x;
         double y = m_camera->GetViewport()[3] - current_mouse_y;
         Eigen::Vector2f mouse_pos(x,y);
-        Wm5::HMatrix modelViewMatrix = m_camera->GetViewMatrix() * igl_mesh->WorldTransform.Matrix();
+        Wm5::HMatrix modelViewMatrix = m_camera->GetViewMatrix() * render_data.org_mesh->WorldTransform.Matrix();
         Wm5::HMatrix projectMatrix = m_camera->GetProjectionMatrix();
         Eigen::Matrix4f e1 = Eigen::Map<Eigen::Matrix4f>(modelViewMatrix.mEntry);
         Eigen::Matrix4f e2 = Eigen::Map<Eigen::Matrix4f>(projectMatrix.mEntry);
@@ -388,19 +468,19 @@ namespace tyro
                                      e1.transpose(),
                                      e2.transpose(),
                                      e3,
-                                     igl_mesh->V,
-                                     igl_mesh->F,
+                                     render_data.org_mesh->V,
+                                     render_data.org_mesh->F,
                                      fid,
                                      bc))
         {
             
             long c;
             bc.maxCoeff(&c);
-            int vid = igl_mesh->F(fid, c);
+            int vid = render_data.org_mesh->F(fid, c);
             auto it = std::find(vid_list.begin(), vid_list.end(), vid);
             if (it == vid_list.end()) 
             {
-                Eigen::RowVector3d new_c = igl_mesh->V.row(vid);
+                Eigen::RowVector3d new_c = render_data.org_mesh->V.row(vid);
                 RA_LOG_INFO("Picked face_id %i vertex_id %i", fid, vid);
                 ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.1);
                 Wm5::Transform tr;
@@ -411,18 +491,21 @@ namespace tyro
                 vid_list.push_back(vid);
             }  
             else
-            {
+            {   
+                RA_LOG_INFO("remove vertex %i %i", fid, vid);
+
                 auto index = std::distance(vid_list.begin(), it);
                 ball_list.erase(ball_list.begin() + index);
                 vid_list.erase(vid_list.begin() + index);
-            }                    
-        };
+            }
+            render();                    
+        };        
     }
 
     void App::mouse_up(Window& window, int button, int modifier) 
     {   
-        if (object_list.size() == 0) return;
-        RA_LOG_INFO("modifier %i", modifier);
+        if (m_state != App::State::LoadedModel) return;
+        RA_LOG_INFO("MOUSE_UP");
         if (mouse_is_down) 
         {   
             gesture_state = 2;
@@ -430,20 +513,23 @@ namespace tyro
         }
         mouse_is_down = false;
         gesture_state = 0;
+        
     }
     
     void App::mouse_move(Window& window, int mouse_x, int mouse_y) 
     {   
-        if (object_list.size() == 0) return;
-
+        RA_LOG_INFO("mouse move state %i", m_state);
+        if (m_state != App::State::LoadedModel) return;
         
-       // RA_LOG_INFO("mouse move");
+        RA_LOG_INFO("mouse move");
         current_mouse_x = mouse_x;
         current_mouse_y = mouse_y;
         if (mouse_is_down && m_modifier == TYRO_MOD_CONTROL) 
         {   
+            RA_LOG_INFO("MOUSE_MOVE")
             m_camera->HandleOneFingerPanGesture(gesture_state, Vector2i(mouse_x, mouse_y));
             gesture_state = 1;
+            render();
         }
     }
     
@@ -461,14 +547,17 @@ namespace tyro
         //RA_LOG_INFO("Key pressed %c", key);
         
         if (key == '`') 
-        {
+        {   
+            RA_LOG_INFO("Pressed %c", key);
             show_console = !show_console;
+            render();
             return;
         }
 
         if (show_console) 
-        {
+        {  
            m_console.keyboard(key);
+           render();
            return;
         }
         else 
@@ -481,31 +570,44 @@ namespace tyro
                     m_timeline->Start();
             }
             else if (key == ']') //next frame
-            {}
+            {
+                m_timeline->NextFrame();
+                render();
+            }
             else if (key == '[')
-            {}
+            {
+                m_timeline->PrevFrame();
+                render();
+            }
+            
         }
     }
     
     void App::key_down(Window& window, unsigned int key, int modifiers) 
    {   
-        //RA_LOG_INFO("Key down %i", key)
+        RA_LOG_INFO("Key down %i", key)
         // handle not text keys   
 
-        if (key == TYRO_KEY_LEFT) 
+        if (key == TYRO_KEY_LEFT){ 
             m_console.key_left();
-        else if (key == TYRO_KEY_RIGHT) 
+            render();}
+        else if (key == TYRO_KEY_RIGHT){ 
             m_console.key_right();
-         else if (key == TYRO_KEY_ENTER)
+            render();}
+        else if (key == TYRO_KEY_ENTER){
             m_console.key_enter();
-        else if (key == TYRO_KEY_BACKSPACE)
-            m_console.key_backspace();
-        else if (key == TYRO_KEY_UP)
-            m_console.key_up();
-        else if (key == TYRO_KEY_DOWN)
-            m_console.key_down();
-        else if (key == TYRO_KEY_TAB)
-            m_console.key_tab();
+            render();
+            }
+        else if (key == TYRO_KEY_BACKSPACE){
+            m_console.key_backspace();render();}
+        else if (key == TYRO_KEY_UP){
+            m_console.key_up();render();}
+        else if (key == TYRO_KEY_DOWN){
+            m_console.key_down();render();}
+        else if (key == TYRO_KEY_TAB){
+            m_console.key_tab();render();}
+        
+        
             
     }
 

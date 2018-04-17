@@ -60,7 +60,15 @@
         "cfenv": "cpp",
         "iomanip": "cpp",
         "mutex": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "atomic": "cpp",
+        "condition_variable": "cpp",
+        "numeric": "cpp",
+        "*.evaluator": "cpp",
+        "*.traits": "cpp",
+        "threadpool": "cpp",
+        "eulerangles": "cpp",
+        "specialfunctions": "cpp"
     },
     "python.linting.enabled": false
 }
