@@ -29,6 +29,9 @@ namespace tyro
         void load_bunny();
         void compute_average();
         void compute_deformation();
+        void save_selected_faces(const std::string& filename);
+        void load_selected_faces(const std::string& filename);
+        void save_mesh_sequence_with_selected_faces(const std::string& folder, const std::string& filename);
         
         State m_state;
         SelectionMode m_sel_mode;
@@ -44,7 +47,8 @@ namespace tyro
         void window_resize(Window& window, unsigned int w, unsigned int h);    
         void key_pressed(Window& window, unsigned int key, int modifiers); 
         void key_down(Window& window, unsigned int key, int modifiers); 
-
+        void mouse_scroll(Window& window, float ydelta); 
+        
         bool mouse_is_down;
         int gesture_state; 
         int current_mouse_x;

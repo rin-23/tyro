@@ -8,7 +8,62 @@
 #include "RACamera.h"
 
 namespace tyro 
-{
+{   
+
+     void IGLMesh::Init(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& N, Eigen::MatrixXd& C)
+    {
+        ES2TriMesh::Init();
+
+        ES2TriMesh::Init();
+        SetVisualEffect(ES2CoreVisualEffects::GourandDirectionalWithVColor());
+        
+        this->V = V;
+        this->F = F;
+        this->N = N;
+        this->C = C;
+
+        int numVertices = V.rows();
+        int numTriangles = F.rows();
+        int numIndices = 3*numTriangles;
+        int numNormals = N.rows();
+        int stride = sizeof(VertexGeneral);
+
+        if (numNormals != numVertices)
+            RA_LOG_ERROR_ASSERT("Number of verticies and normals doesnt match");
+        
+        //vertex buffer data
+        auto vbuffer = std::make_shared<tyro::ES2VertexHardwareBuffer>(stride, numIndices, nullptr, HardwareBuffer::BU_DYNAMIC);
+        VertexBufferAccessor vba(GetVisualEffect()->GetVertexFormat(), vbuffer.get());
+        vba.MapWrite();
+        int vIndex = 0;
+        for (int fid = 0; fid < numTriangles; ++fid) 
+        {   
+            //RA_LOG_INFO("V: %f %f %f", V(i, 0), V(i, 1), V(i, 2));
+            //RA_LOG_INFO("N: %f %f %f", N(i, 0), N(i, 1), N(i, 2));
+            for (int j = 0; j < 3; ++j) 
+            {   
+                int vid = F(fid,j);
+                vba.Position<Wm5::Float3>(vIndex) = Wm5::Float3(V(vid,0), V(vid,1), V(vid,2));
+                vba.Normal<Wm5::Float3>(vIndex) = Wm5::Float3(N(vid, 0), N(vid, 1), N(vid, 2));
+                vba.Color<Wm5::Float3>(vIndex++) = Wm5::Float3(C(fid, 0), C(fid, 1), C(fid, 2));
+            }                
+        }
+        vba.Unmap();
+
+        
+        //compute bounding box
+        LocalBoundBox.ComputeExtremes(vbuffer->GetNumOfVerticies(), vbuffer->GetVertexSize(), vbuffer->MapRead());
+        vbuffer->Unmap();
+
+        SetVertexBuffer(vbuffer);
+	    ES2VertexArraySPtr varray = std::make_shared<ES2VertexArray>(this->GetVisualEffect(), vbuffer);
+	    SetVertexArray(varray);        
+        GetVisualEffect()->GetCullState()->Enabled = false;
+        GetVisualEffect()->GetPolygonOffset()->Enabled = true;
+        GetVisualEffect()->GetPolygonOffset()->Offset = 1.0;
+    }
+
+    /*
     void IGLMesh::Init(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& N, Eigen::MatrixXd& C)
     {
         ES2TriMesh::Init();
@@ -68,6 +123,7 @@ namespace tyro
 
         GetVisualEffect()->GetCullState()->Enabled = false;
     }
+    */
 
     IGLMeshSPtr IGLMesh::Create(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& N, Eigen::MatrixXd& C)
     {
@@ -79,10 +135,10 @@ namespace tyro
     IGLMeshSPtr IGLMesh::Create(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& N, Eigen::Vector3d& color) 
     {
         Eigen::MatrixXd C;
-        C.resize(V.rows(), V.cols());
-        for (int i =0 ; i <  V.rows(); ++i) 
+        C.resize(F.rows(), 3);
+        for (int fid =0 ; fid <  F.rows(); ++fid) 
         {
-            C.row(i) = color;
+            C.row(fid) = color;
         }
         
         IGLMeshSPtr sptr = std::make_shared<IGLMesh>();

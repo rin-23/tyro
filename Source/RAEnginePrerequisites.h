@@ -73,6 +73,7 @@ namespace tyro
     class DepthProxy;
     class IGLMesh;
     class IGLMeshWireframe;
+    class ES2PolygonOffset;
 
     using DepthProxySPtr = std::shared_ptr<DepthProxy>;
     using DepthProxyWPtr = std::weak_ptr<DepthProxy>;
@@ -190,6 +191,11 @@ namespace tyro
     using IGLMeshWireframeSPtr = std::shared_ptr<IGLMeshWireframe>;
     using IGLMeshWireframeUPtr = std::unique_ptr<IGLMeshWireframe>;
     using IGLMeshWireframeWPtr = std::weak_ptr<IGLMeshWireframe>;
+
+    using ES2PolygonOffsetSPtr = std::shared_ptr<ES2PolygonOffset>;
+    using ES2PolygonOffsetUPtr = std::unique_ptr<ES2PolygonOffset>;
+    using ES2PolygonOffsetWPtr = std::weak_ptr<ES2PolygonOffset>;
+
 }
 
 namespace Wm5

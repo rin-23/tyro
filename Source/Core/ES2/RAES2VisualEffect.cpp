@@ -19,11 +19,18 @@ mUniforms(nullptr),
 mAlphaState(nullptr),
 mCullState(nullptr),
 mDepthState(nullptr),
-mTexture(nullptr)
+mTexture(nullptr),
+mPolygonOffset(nullptr)
 {
 }
 
-ES2VisualEffect::ES2VisualEffect(ES2ShaderProgram* shaderProgram, ES2VertexFormat* vertexFormat, ES2ShaderUniforms* uniforms, ES2AlphaState* alphaState, ES2CullState* cullState, ES2DepthState* depthState)
+ES2VisualEffect::ES2VisualEffect(ES2ShaderProgram* shaderProgram, 
+                                 ES2VertexFormat* vertexFormat, 
+                                 ES2ShaderUniforms* uniforms, 
+                                 ES2AlphaState* alphaState, 
+                                 ES2CullState* cullState, 
+                                 ES2DepthState* depthState,
+                                 ES2PolygonOffset* poly_offset)
 :
 mShaderProgram(shaderProgram),
 mVertexFormat(vertexFormat),
@@ -31,7 +38,8 @@ mUniforms(uniforms),
 mAlphaState(alphaState),
 mCullState(cullState),
 mDepthState(depthState),
-mTexture(nullptr)
+mTexture(nullptr),
+mPolygonOffset(poly_offset)
 {
 }
 
@@ -66,5 +74,11 @@ ES2VisualEffect::~ES2VisualEffect()
     {
         delete mDepthState;
     }
+
+    if (mPolygonOffset != nullptr)
+    {
+        delete mPolygonOffset;
+    }
 }
+
 }

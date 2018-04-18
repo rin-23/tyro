@@ -22,7 +22,13 @@ namespace tyro
 
         ES2VisualEffect();
         
-        ES2VisualEffect(ES2ShaderProgram* shaderProgram, ES2VertexFormat* vertexFormat, ES2ShaderUniforms* uniforms, ES2AlphaState* alphaState, ES2CullState* cullState, ES2DepthState* depthState);
+        ES2VisualEffect(ES2ShaderProgram* shaderProgram, 
+                        ES2VertexFormat* vertexFormat, 
+                        ES2ShaderUniforms* uniforms, 
+                        ES2AlphaState* alphaState, 
+                        ES2CullState* cullState, 
+                        ES2DepthState* depthState,
+                        ES2PolygonOffset* poly_offset);
         
         ~ES2VisualEffect();
         
@@ -50,6 +56,9 @@ namespace tyro
         
         inline void SetTexture2D(ES2Texture2DSPtr texture);
         inline ES2Texture2DSPtr GetTexture2D();
+
+        inline void SetPolygonOffset(ES2PolygonOffset* offset);
+        inline ES2PolygonOffset* GetPolygonOffset();
         
     private:
         ES2ShaderProgram* mShaderProgram;
@@ -59,6 +68,7 @@ namespace tyro
         ES2CullState* mCullState;
         ES2DepthState* mDepthState;
         ES2Texture2DSPtr mTexture;
+        ES2PolygonOffset* mPolygonOffset;
     };
     
     /****INLINE FUNCTIONS****/
@@ -170,6 +180,16 @@ namespace tyro
     inline ES2Texture2DSPtr ES2VisualEffect::GetTexture2D()
     {
         return mTexture;
+    }
+
+    inline void ES2VisualEffect::SetPolygonOffset(ES2PolygonOffset* offset) 
+    {
+        mPolygonOffset = offset;
+    }
+    
+    inline ES2PolygonOffset* ES2VisualEffect::GetPolygonOffset()
+    {
+        return mPolygonOffset;
     }
     
     using ES2VisualEffectSPtr = std::shared_ptr<ES2VisualEffect>;

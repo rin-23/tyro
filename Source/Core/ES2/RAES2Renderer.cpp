@@ -155,6 +155,7 @@ namespace tyro
 		SetAlphaState(effect->GetAlphaState());
 		SetCullState(effect->GetCullState());
 		SetDepthState(effect->GetDepthState());
+		SetPolygonOffset(effect->GetPolygonOffset());
 		DrawPrimitive(renderable);
 		//DisableAttributes(effect->GetVertexFormat(), renderable->GetVertexBuffer());
 	}
@@ -230,6 +231,22 @@ namespace tyro
 		{
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, texture->GetTextureID());
+			GL_CHECK_ERROR;
+		}
+	}
+
+	void ES2Renderer::SetPolygonOffset(const ES2PolygonOffset* offset) const 
+	{
+		if (offset != nullptr && offset->Enabled) 
+		{
+			glEnable(GL_POLYGON_OFFSET_FILL);
+			GL_CHECK_ERROR;
+    		glPolygonOffset(offset->Offset, 1.0);
+			GL_CHECK_ERROR;
+		}
+		else 
+		{
+			glDisable(GL_POLYGON_OFFSET_FILL);
 			GL_CHECK_ERROR;
 		}
 	}

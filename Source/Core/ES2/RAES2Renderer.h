@@ -51,6 +51,8 @@ namespace tyro
 
 		void SetTexture(const ES2Texture2DSPtr texture) const;
 
+		void SetPolygonOffset(const ES2PolygonOffset* offset) const;
+
 		void UpdateUniforms(const ES2ShaderUniforms* uniforms) const;
 
 		void PrepareVertexBuffers(const ES2VertexFormat* vertexFormat, const ES2VertexHardwareBufferSPtr vertexBufffer) const;

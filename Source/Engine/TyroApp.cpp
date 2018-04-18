@@ -13,6 +13,12 @@
 #include <igl/cotmatrix.h>
 #include <igl/massmatrix.h>
 #include "stop_motion_data.h"
+#include <igl/writeSTL.h>
+#include <igl/readSTL.h>
+#include <igl/writeOBJ.h>
+#include <igl/remove_duplicate_vertices.h>
+#include "TyroFileUtils.h"
+#include <igl/slice.h>
 
 using namespace Wm5;
 using namespace std;
@@ -21,6 +27,39 @@ namespace tyro
 {   
     namespace
     {   
+        void console_save_mesh_sequence_with_selected_faces(App* app, const std::vector<std::string> & args) 
+        {
+            RA_LOG_INFO("Saving mesh sequence with selected faces");
+
+            if (args.size() == 2)
+            {   
+                app->save_mesh_sequence_with_selected_faces(args[0], args[1]);
+                return;
+            }
+        }
+
+        void console_load_selected_faces(App* app, const std::vector<std::string> & args) 
+        {
+            RA_LOG_INFO("Loading selected faces from tmp folder");
+
+            if (args.size() == 1)
+            {   
+                app->load_selected_faces(args[0]);
+                return;
+            }
+        }
+
+        void console_save_selected_faces(App* app, const std::vector<std::string> & args) 
+        {
+            RA_LOG_INFO("Saving selected faces to tmp folder");
+
+            if (args.size() == 1)
+            {   
+                app->save_selected_faces(args[0]);
+                return;
+            }
+        }
+
         void console_load_oldman(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("Loading oldman obj sequence");
@@ -166,12 +205,21 @@ namespace tyro
         {
             this->key_down(window, key, modifiers);
         };
+        
+        m_tyro_window->callback_mouse_scroll = [&](Window& window, float ydelta)->bool 
+        {
+            this->mouse_scroll(window, ydelta);
+        };
+
 
         register_console_function("load_blobby", console_load_blobby, "");
         register_console_function("load_oldman", console_load_oldman, "");
         register_console_function("load_bunny", console_load_bunny, "");
         register_console_function("compute_average", console_compute_average, "");
         register_console_function("compute_deformation", console_compute_deformation, "");
+        register_console_function("save_selected_faces", console_save_selected_faces, "");
+        register_console_function("load_selected_faces", console_load_selected_faces, "");
+        register_console_function("save_mesh_sequence_with_selected_faces", console_save_mesh_sequence_with_selected_faces, "");
 
         m_state = App::State::Launched;
         // Loop until the user closes the window
@@ -388,7 +436,7 @@ namespace tyro
     {
         //setup camera
         APoint world_center = WorldBoundBox.GetCenter();
-        float radius = std::abs(WorldBoundBox.GetRadius()*2);
+        float radius = std::abs(WorldBoundBox.GetRadius()*2.5);
         float aspect = 1.0;
         int v_width, v_height;
         m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
@@ -413,10 +461,10 @@ namespace tyro
         Eigen::Vector3d cr(0.5,0.5,0.5);
 
         
-        m_frame_data.c_data.resize(m_frame_data.v_data[0].rows(), 
-                                   m_frame_data.v_data[0].cols());
-        
-        for (int i =0 ; i <  m_frame_data.v_data[0].rows(); ++i) 
+        //m_frame_data.c_data.resize(m_frame_data.v_data[0].rows(), 
+        //                           m_frame_data.v_data[0].cols());
+        m_frame_data.c_data.resize(m_frame_data.f_data.rows(), 3);
+        for (int i =0 ; i <  m_frame_data.f_data.rows(); ++i) 
         {
             m_frame_data.c_data.row(i) = cr;
         }
@@ -434,8 +482,12 @@ namespace tyro
     void App::load_bunny()
     {
         RA_LOG_INFO("Load Bunny");
-        auto obj_list_file = std::string("/home/rinat/Google Drive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/objlist2.txt");
-        load_mesh_sequence(obj_list_file, false); //use tiny obj loader
+        //auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/objlist.txt");
+        //load_mesh_sequence(obj_list_file, false); //use tiny obj loader
+        
+        auto obj_list_file = std::string("/home/rinat/Workspace/Tyro/Source/tmp/bunny_face/objlist.txt");
+        load_mesh_sequence(obj_list_file, true);
+
         m_state = App::State::LoadedModel;
         render();
     }
@@ -444,7 +496,7 @@ namespace tyro
     void App::load_blobby() 
     {   
         RA_LOG_INFO("LOAD_BLOBBY");
-        auto obj_list_file = std::string("/home/rinat/Google Drive/StopMotionProject/Claymation/data/hello/FramesOBJ/objlist2.txt");
+        auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/Claymation/data/hello/FramesOBJ/objlist2.txt");
         load_mesh_sequence(obj_list_file);
         m_state = App::State::LoadedModel;
         render();
@@ -454,10 +506,85 @@ namespace tyro
     void App::load_oldman() 
     {   
         RA_LOG_INFO("LOAD OLDMAN");
-        auto obj_list_file = std::string("/home/rinat/Google Drive/StopMotionProject/Claymation/data/oldman/gotolunch/FramesOBJ/FullFace/objlist2.txt");
+        auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/Claymation/data/oldman/gotolunch/FramesOBJ/FullFace/objlist2.txt");
         load_mesh_sequence(obj_list_file);
         m_state = App::State::LoadedModel;
         render();
+    }
+
+    void App::save_selected_faces(const std::string& filename) 
+    {
+        RA_LOG_INFO("save selected faces");
+        auto path = std::string("/home/rinat/Workspace/Tyro/Source/tmp/") + filename;
+
+        std::ofstream outFile(path);
+        for (const auto &e : fid_list)
+        { 
+            outFile << e << "\n";
+        }
+    }
+    
+    void App::load_selected_faces(const std::string& filename) 
+    {
+        RA_LOG_INFO("Load selected faces");
+        auto path = std::string("/home/rinat/Workspace/Tyro/Source/tmp/") + filename;
+
+        std::fstream myfile(path, std::ios_base::in);
+        int fid;
+        while (myfile >> fid)
+        {
+            printf("%i ", fid);
+            fid_list.push_back(fid);
+
+            Eigen::Vector3d clr(0,0,0.5);
+            m_frame_data.c_data.row(fid) = clr;
+        }
+        render();
+        glfwPostEmptyEvent();        
+        //getchar();
+    }
+    
+    void App::save_mesh_sequence_with_selected_faces(const std::string& folder, const std::string& filename) 
+    {   
+        if (fid_list.size() > 0) 
+        {   
+            auto path = std::string("/home/rinat/Workspace/Tyro/Source/tmp/") + folder + std::string("/") + filename;
+            auto tmp_path = std::string("/home/rinat/Workspace/Tyro/Source/tmp/") + folder + std::string("/") + "tmp";
+            auto objlist_path = std::string("/home/rinat/Workspace/Tyro/Source/tmp/") + folder + std::string("/") + std::string("objlist.txt");
+            ofstream objlist_file;
+            objlist_file.open (objlist_path);
+            
+            Eigen::MatrixXi SVI, SVJ, nodp_F;
+            Eigen::MatrixXi newF;
+            newF.resize(fid_list.size(), 3);
+            int fidIdx = 0;
+            for (auto fid : fid_list) newF.row(fidIdx++) = m_frame_data.f_data.row(fid);
+            
+            for (int frame = 0; frame < m_frame_data.v_data.size();++frame) 
+            {   
+                bool success = igl::writeSTL(tmp_path, m_frame_data.v_data[frame], newF, false);
+                assert(success);
+                Eigen::MatrixXd temp_V, temp_N;
+                Eigen::MatrixXi temp_F;
+                success = igl::readSTL(tmp_path, temp_V, temp_F, temp_N);
+                assert(success);
+                Eigen::MatrixXd nodp_V;
+                
+                if (frame == 0) 
+                {
+                    igl::remove_duplicate_vertices(temp_V, temp_F, 0, nodp_V, SVI, SVJ, nodp_F);
+                }
+                else 
+                {
+                    igl::slice(temp_V, SVI, 1, nodp_V); 
+                }
+                auto frame_path = path + tyro::pad_zeros(frame) + std::string(".obj"); 
+                igl::writeOBJ(frame_path, nodp_V, nodp_F);
+                objlist_file << frame_path << "\n";
+
+            }
+            objlist_file.close();             
+        }
     }
 
     void App::mouse_down(Window& window, int button, int modifier) 
@@ -469,9 +596,10 @@ namespace tyro
         mouse_is_down = true;
         m_modifier = modifier;
         m_mouse_btn_clicked = button;
+
         if (m_modifier == TYRO_MOD_CONTROL) return; //rotating
         if (m_mouse_btn_clicked == 2) return; //translating
-
+        
         int fid;
         Eigen::Vector3f bc;
         // Cast a ray in the view direction starting from the mouse position
@@ -533,10 +661,7 @@ namespace tyro
                     fid_list.push_back(fid);
 
                     Eigen::Vector3d clr(0,0,0.5);
-                    Eigen::Vector3i vtx_idx = m_frame_data.f_data.row(fid);
-                    m_frame_data.c_data.row(vtx_idx(0)) = clr;
-                    m_frame_data.c_data.row(vtx_idx(1)) = clr;
-                    m_frame_data.c_data.row(vtx_idx(2)) = clr;
+                    m_frame_data.c_data.row(fid) = clr;
                 }  
                 else
                 {   
@@ -544,10 +669,11 @@ namespace tyro
                     auto index = std::distance(fid_list.begin(), it);
                     fid_list.erase(fid_list.begin() + index);
                     Eigen::Vector3d clr(0.5,0.5,0.5);
-                    Eigen::Vector3i vtx_idx = m_frame_data.f_data.row(fid);
-                    m_frame_data.c_data.row(vtx_idx(0)) = clr;
-                    m_frame_data.c_data.row(vtx_idx(1)) = clr;
-                    m_frame_data.c_data.row(vtx_idx(2)) = clr;
+                    //Eigen::Vector3i vtx_idx = m_frame_data.f_data.row(fid);
+                    //m_frame_data.c_data.row(vtx_idx(0)) = clr;
+                    //m_frame_data.c_data.row(vtx_idx(1)) = clr;
+                    //m_frame_data.c_data.row(vtx_idx(2)) = clr;
+                    m_frame_data.c_data.row(fid) = clr;
                 }
                 render();
             }                  
@@ -579,9 +705,90 @@ namespace tyro
         RA_LOG_INFO("mouse move state %i", m_state);
         if (m_state != App::State::LoadedModel) return;
         
-        RA_LOG_INFO("mouse move");
         current_mouse_x = mouse_x;
         current_mouse_y = mouse_y;
+
+        if (mouse_is_down) 
+        {
+        int fid;
+        Eigen::Vector3f bc;
+        // Cast a ray in the view direction starting from the mouse position
+        double x = current_mouse_x;
+        double y = m_camera->GetViewport()[3] - current_mouse_y;
+        Eigen::Vector2f mouse_pos(x,y);
+        Wm5::HMatrix modelViewMatrix = m_camera->GetViewMatrix() * render_data.org_mesh->WorldTransform.Matrix();
+        Wm5::HMatrix projectMatrix = m_camera->GetProjectionMatrix();
+        Eigen::Matrix4f e1 = Eigen::Map<Eigen::Matrix4f>(modelViewMatrix.mEntry);
+        Eigen::Matrix4f e2 = Eigen::Map<Eigen::Matrix4f>(projectMatrix.mEntry);
+        Eigen::Vector4f e3 = Eigen::Vector4f(m_camera->GetViewport()[0],
+                                             m_camera->GetViewport()[1],
+                                             m_camera->GetViewport()[2],
+                                             m_camera->GetViewport()[3]);
+        
+        if (igl::unproject_onto_mesh(mouse_pos, 
+                                     e1.transpose(),
+                                     e2.transpose(),
+                                     e3,
+                                     m_frame_data.v_data[m_frame],
+                                     m_frame_data.f_data,
+                                     fid,
+                                     bc))
+        {
+            if (m_sel_mode == App::SelectionMode::Vertex) 
+            {
+                long c;
+                bc.maxCoeff(&c);
+                int vid = m_frame_data.f_data(fid, c);
+                auto it = std::find(vid_list.begin(), vid_list.end(), vid);
+                if (it == vid_list.end()) 
+                {
+                    Eigen::RowVector3d new_c = m_frame_data.v_data[m_frame].row(vid);
+                    RA_LOG_INFO("Picked face_id %i vertex_id %i", fid, vid);
+                    ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.1);
+                    Wm5::Transform tr;
+                    tr.SetTranslate(APoint(new_c(0), new_c(1), new_c(2)));
+                    object->LocalTransform = tr * object->LocalTransform;
+                    object->Update(true);
+                    ball_list.push_back(object);
+                    vid_list.push_back(vid);
+                }  
+                else
+                {   
+                    RA_LOG_INFO("remove vertex %i %i", fid, vid);
+
+                    auto index = std::distance(vid_list.begin(), it);
+                    ball_list.erase(ball_list.begin() + index);
+                    vid_list.erase(vid_list.begin() + index);
+                }
+                render();
+            } 
+            else if (m_sel_mode == App::SelectionMode::Faces) 
+            {
+                auto it = std::find(fid_list.begin(), fid_list.end(), fid);
+                if (it == fid_list.end()) 
+                {
+                    RA_LOG_INFO("Picked face_id %i", fid);
+                    fid_list.push_back(fid);
+
+                    Eigen::Vector3d clr(0,0,0.5);
+                    m_frame_data.c_data.row(fid) = clr;
+                }  
+                else
+                {   
+                    RA_LOG_INFO("remove face %i", fid);
+                    //auto index = std::distance(fid_list.begin(), it);
+                    //fid_list.erase(fid_list.begin() + index);
+                    //Eigen::Vector3d clr(0.5,0.5,0.5);
+                    //Eigen::Vector3i vtx_idx = m_frame_data.f_data.row(fid);
+                    //m_frame_data.c_data.row(vtx_idx(0)) = clr;
+                    //m_frame_data.c_data.row(vtx_idx(1)) = clr;
+                    //m_frame_data.c_data.row(vtx_idx(2)) = clr;
+                    //m_frame_data.c_data.row(fid) = clr;
+                }
+                render();
+            }                  
+        };        
+        }
 
         if (mouse_is_down && m_modifier == TYRO_MOD_CONTROL) 
         {   
@@ -596,7 +803,16 @@ namespace tyro
             render();
         }
     }
-    
+
+    void App::mouse_scroll(Window& window, float ydelta) 
+    {
+        RA_LOG_INFO("mouse scroll delta %f", ydelta);
+        if (m_state != App::State::LoadedModel) return;
+        
+        m_camera->HandlePinchGesture(gesture_state, Vector2i(current_mouse_x, current_mouse_y), ydelta);
+        render();
+    } 
+
     void App::window_resize(Window& window, unsigned int w, unsigned int h)
     {
         //RA_LOG_INFO("window resized")

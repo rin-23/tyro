@@ -187,36 +187,40 @@ namespace tyro
         //Vector2f touch1(touchPoint1.x, touchPoint1.y);
         //Vector2f touch2(touchPoint2.x, touchPoint2.y);
         
-        float ascale = sender.scale;
+        //float ascale =  offset; //sender.scale;
         
-        if (state == 0)
-        {
-            mInitialTouch =  glTouch;//(touch1 + touch1)/2.0f;
-            Vector3f screen(mInitialTouch.X(), mInitialTouch.Y(), 0.0f);
-            mCentroid = Camera::ScreenToCamera(screen);
-            mCentroid.Z() = 0;
+        //if (state == 0)
+        //{
+            //mInitialTouch = Vector2f(glTouch[0], glTouch[1]);//(touch1 + touch1)/2.0f;
+            //Vector3f screen(mInitialTouch.X(), mInitialTouch.Y(), 0.0f);
+            //mCentroid = Camera::ScreenToCamera(screen);
+            //mCentroid.Z() = 0;
             
-            mCurScale = mScale;
-        }
-        else if (state == 1 || state == 2)
-        {
-            mScale = mCurScale * ascale;
+            //mCurScale = mScale;
+        //}
+        //else if (state == 1 || state == 2)
+        //{
+            if (offset > 0)
+                mScale *= 1.07;  //mCurScale * ascale;
+            else 
+                mScale *= 0.93;
+
             UpdateProjectionMatrix();
             
-            Vector3f screen(mInitialTouch.X(), mInitialTouch.Y(), 0.0f);
-            Vector3f newCentroid = Camera::ScreenToCamera(screen);
-            newCentroid.Z() = 0;
+            //Vector3f screen(mInitialTouch.X(), mInitialTouch.Y(), 0.0f);
+            //Vector3f newCentroid = Camera::ScreenToCamera(screen);
+            //newCentroid.Z() = 0;
             
-            AVector translation = AVector(newCentroid - mCentroid);
-            HMatrix temp(translation);
-            mTranslationMatrix = temp * mAccumulatedTranslation;
-            UpdateViewMatrix();
+            //AVector translation = AVector(newCentroid - mCentroid);
+            //HMatrix temp(translation);
+            //mTranslationMatrix = temp * mAccumulatedTranslation;
+            //UpdateViewMatrix();
             
-            if (state == GestureState::Ended)
-            {
-                mAccumulatedTranslation = mTranslationMatrix;
-            }
-        }
+            //if (state == 2)
+            //{
+            //    mAccumulatedTranslation = mTranslationMatrix;
+            //}
+        //}
     }
 	
     void iOSCamera::UpdateProjectionMatrix()

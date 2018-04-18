@@ -34,7 +34,7 @@ namespace tyro
         void HandleOneFingerPanGesture(int state, Wm5::Vector2i glTouch);
         void HandleTwoFingerPanGesture(int state, Wm5::Vector2i glTouch);
         //void HandleRotationGesture(UIRotationGestureRecognizer* sender);
-        void HandlePinchGesture(int state, double offset);
+        void HandlePinchGesture(int state, Wm5::Vector2i glTouch, double offset);
         
         //int WorldToScreen(UIGestureRecognizer* sender, float depth, Wm5::Vector3f& win);
         //int CameraToScreen(UIGestureRecognizer* sender, float depth, Wm5::Vector3f& win);
