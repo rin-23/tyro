@@ -485,7 +485,7 @@ namespace tyro
         //auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/objlist.txt");
         //load_mesh_sequence(obj_list_file, false); //use tiny obj loader
         
-        auto obj_list_file = std::string("/home/rinat/Workspace/Tyro/Source/tmp/bunny_face/objlist.txt");
+        auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/bunny_face/objlist.txt");
         load_mesh_sequence(obj_list_file, true);
 
         m_state = App::State::LoadedModel;
