@@ -29,8 +29,12 @@ namespace tyro
         void load_bunny();
         void compute_average();
         void compute_deformation();
+        void compute_deformation2();
         void save_selected_faces(const std::string& filename);
+        void save_selected_verticies(const std::string& filename);
         void load_selected_faces(const std::string& filename);
+        void load_selected_verticies(const std::string& filename); 
+        void set_selection_type(SelectionMode sel_state);
         void save_mesh_sequence_with_selected_faces(const std::string& folder, const std::string& filename);
         
         State m_state;

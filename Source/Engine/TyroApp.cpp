@@ -19,6 +19,7 @@
 #include <igl/remove_duplicate_vertices.h>
 #include "TyroFileUtils.h"
 #include <igl/slice.h>
+#include <igl/unique.h>
 
 using namespace Wm5;
 using namespace std;
@@ -56,6 +57,44 @@ namespace tyro
             if (args.size() == 1)
             {   
                 app->save_selected_faces(args[0]);
+                return;
+            }
+        }
+
+        void console_save_selected_verticies(App* app, const std::vector<std::string> & args) 
+        {
+            RA_LOG_INFO("Saving selected verticies to tmp folder");
+
+            if (args.size() == 1)
+            {   
+                app->save_selected_verticies(args[0]);
+                return;
+            }
+        }
+
+        void console_load_selected_verticies(App* app, const std::vector<std::string> & args) 
+        {
+            RA_LOG_INFO("Loading selected verticies from tmp folder");
+
+            if (args.size() == 1)
+            {   
+                app->load_selected_verticies(args[0]);
+                return;
+            }
+        }
+
+        void console_set_selection_type(App* app, const std::vector<std::string> & args)
+        {
+            RA_LOG_INFO("Set selection type");
+
+            if (args.size() == 1)
+            {      
+                if (args[0] == "vertex") 
+                    app->set_selection_type(App::SelectionMode::Vertex);
+                else if (args[0] == "faces")
+                    app->set_selection_type(App::SelectionMode::Faces);
+                else if (args[0] == "edges")
+                    app->set_selection_type(App::SelectionMode::Edges);
                 return;
             }
         }
@@ -111,6 +150,17 @@ namespace tyro
             if (args.size() == 0)
             {   
                 app->compute_deformation();
+                return;
+            }
+        }
+
+         void console_compute_deformation2(App* app, const std::vector<std::string> & args)
+        {
+            RA_LOG_INFO("deform2");
+
+            if (args.size() == 0)
+            {   
+                app->compute_deformation2();
                 return;
             }
         }
@@ -217,8 +267,12 @@ namespace tyro
         register_console_function("load_bunny", console_load_bunny, "");
         register_console_function("compute_average", console_compute_average, "");
         register_console_function("compute_deformation", console_compute_deformation, "");
+        register_console_function("compute_deformation2", console_compute_deformation2, "");
         register_console_function("save_selected_faces", console_save_selected_faces, "");
         register_console_function("load_selected_faces", console_load_selected_faces, "");
+        register_console_function("save_selected_verticies", console_save_selected_verticies, "");
+        register_console_function("load_selected_verticies", console_load_selected_verticies, "");
+        register_console_function("set_selection_type", console_set_selection_type, "");
         register_console_function("save_mesh_sequence_with_selected_faces", console_save_mesh_sequence_with_selected_faces, "");
 
         m_state = App::State::Launched;
@@ -395,6 +449,111 @@ namespace tyro
         
     }
 
+    void App::compute_deformation2()
+    {
+        if (fid_list.size() == 0) return;
+        
+        m_frame_deformed_data.v_data.reserve(m_frame_data.v_data.size());
+        m_frame_deformed_data.f_data = m_frame_data.f_data;
+
+        //list of vids that can be deformed
+        std::vector<int> vid_deform, vid_deform_dup; 
+        for (auto fid : fid_list) 
+        {
+            int vid0 = m_frame_data.f_data.row(fid)(0);
+            int vid1 = m_frame_data.f_data.row(fid)(1);
+            int vid2 = m_frame_data.f_data.row(fid)(2);
+            
+            //check that we dont include ones that are part of the seam 
+            auto it2 = std::find(vid_list.begin(), vid_list.end(), vid0);
+            if (it2 == vid_list.end()) vid_deform_dup.push_back(vid0);
+            
+            it2 = std::find(vid_list.begin(), vid_list.end(), vid1);
+            if (it2 == vid_list.end()) vid_deform_dup.push_back(vid1);
+
+            it2 = std::find(vid_list.begin(), vid_list.end(), vid2);
+            if (it2 == vid_list.end()) vid_deform_dup.push_back(vid2);            
+        }
+        igl::unique(vid_deform_dup, vid_deform); //remove duplicates
+        
+        //list of vids that can not be deformed minus seam vids
+        std::vector<int> vid_not_deform; 
+        for (int vid = 0; vid < m_frame_data.v_data[0].rows(); ++vid) 
+        {
+            auto it = std::find(vid_deform.begin(), vid_deform.end(), vid); 
+            auto it2 = std::find(vid_list.begin(), vid_list.end(), vid);
+
+            if (it == vid_deform.end() && it2 == vid_list.end())
+            {   
+                vid_not_deform.push_back(vid);
+            }    
+        }
+
+        assert(vid_deform.size() + vid_not_deform.size() + vid_list.size() == m_frame_data.v_data[0].rows());
+
+        int num_frames = m_frame_data.v_data.size();
+        for (int i =0; i < num_frames; ++i) 
+        {   
+            RA_LOG_INFO("Compute deformation for mesh %i out of %i", i, num_frames)
+            Eigen::MatrixXd V = m_frame_data.v_data[i];
+            Eigen::MatrixXi F = m_frame_data.f_data;
+            Eigen::VectorXi b;
+            int num_fixed = vid_not_deform.size() + vid_list.size();
+            int num_not_fixed = vid_deform.size();
+            b.resize(num_fixed);
+            
+            int b_index = 0;            
+            for (int vid : vid_list) b(b_index++) = vid;
+            for (int vid : vid_not_deform) b(b_index++) = vid;
+                       
+            //do biharmonic stuff here.
+            igl::min_quad_with_fixed_data<double> data;
+            Eigen::SparseMatrix<double> L;            
+            igl::cotmatrix(V, F, L); //try average
+
+            Eigen::SparseMatrix<double> M;	
+            igl::massmatrix(V, F, igl::MASSMATRIX_TYPE_DEFAULT, M);
+
+            //Computer M inverse
+            Eigen::SimplicialLDLT <Eigen::SparseMatrix<double>> solver;
+            solver.compute(M);
+            Eigen::SparseMatrix<double> I(M.rows(), M.cols());
+            I.setIdentity();
+            Eigen::SparseMatrix<double> M_inv = solver.solve(I);
+            Eigen::SparseMatrix<double> Q = L.transpose() * M_inv * L;
+            Eigen::SparseMatrix<double> Aeq;
+            Q = 2 * Q;
+            bool result = igl::min_quad_with_fixed_precompute(Q, b, Aeq, false, data);
+            assert(result);
+
+            Eigen::MatrixXd D;
+            Eigen::MatrixXd bc;
+            bc.resize(num_fixed, 3);
+            bc.setZero();
+            b_index = 0;
+            for (int vid : vid_list)
+            {
+                bc.row(b_index++) = m_frame_data.avg_v_data.row(vid) - m_frame_data.v_data[i].row(vid);
+            }
+            //for (int vid : vid_not_deform)
+           // {
+            //    bc.row(b_index++) = V.row(vid);
+           // }
+
+            Eigen::MatrixXd B = Eigen::MatrixXd::Zero(data.n, bc.cols());
+            Eigen::VectorXd Beq;
+            
+            result = igl::min_quad_with_fixed_solve(data, B, bc, Beq, D);
+            assert(result);
+
+            Eigen::MatrixXd V_prime = V + D;
+            m_frame_deformed_data.v_data.push_back(V_prime);
+            
+        }
+        m_computed_deformation = true;
+        
+    }
+
     void App::compute_average()
     {
         if (m_frame_data.v_data.size()==0)
@@ -477,16 +636,19 @@ namespace tyro
         update_camera(tmp->WorldBoundBox);
        
         m_timeline->SetFrameRange(m_frame_data.v_data.size()-1);
+
+        compute_average();
     }
 
     void App::load_bunny()
     {
         RA_LOG_INFO("Load Bunny");
-        //auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/objlist.txt");
-        //load_mesh_sequence(obj_list_file, false); //use tiny obj loader
+        auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/01/objlist.txt");
+        load_mesh_sequence(obj_list_file, false); //use tiny obj loader
         
-        auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/bunny_face/objlist.txt");
-        load_mesh_sequence(obj_list_file, true);
+        
+        //auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/02/bunn_face/objlist.txt");
+        //load_mesh_sequence(obj_list_file, true);
 
         m_state = App::State::LoadedModel;
         render();
@@ -523,12 +685,25 @@ namespace tyro
             outFile << e << "\n";
         }
     }
+
+    void App::save_selected_verticies(const std::string& filename) 
+    {
+        RA_LOG_INFO("save selected verticies");
+        auto path = std::string("/home/rinat/Workspace/Tyro/Source/tmp/") + filename;
+
+        std::ofstream outFile(path);
+        for (const auto &e : vid_list)
+        { 
+            outFile << e << "\n";
+        }
+    }
     
     void App::load_selected_faces(const std::string& filename) 
     {
         RA_LOG_INFO("Load selected faces");
         auto path = std::string("/home/rinat/Workspace/Tyro/Source/tmp/") + filename;
 
+        fid_list.clear();
         std::fstream myfile(path, std::ios_base::in);
         int fid;
         while (myfile >> fid)
@@ -543,7 +718,37 @@ namespace tyro
         glfwPostEmptyEvent();        
         //getchar();
     }
+
+    void App::load_selected_verticies(const std::string& filename) 
+    {
+        RA_LOG_INFO("Load selected verticies");
+        auto path = std::string("/home/rinat/Workspace/Tyro/Source/tmp/") + filename;
+
+        vid_list.clear();
+        std::fstream myfile(path, std::ios_base::in);
+        int vid;
+        while (myfile >> vid)
+        {
+            printf("%i ", vid);
+            vid_list.push_back(vid);
+            Eigen::RowVector3d new_c = m_frame_data.v_data[m_frame].row(vid);
+            ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.001);
+            Wm5::Transform tr;
+            tr.SetTranslate(APoint(new_c(0), new_c(1), new_c(2)));
+            object->LocalTransform = tr * object->LocalTransform;
+            object->Update(true);
+            ball_list.push_back(object);
+        }
+        render();
+        glfwPostEmptyEvent();        
+        //getchar();
+    }
     
+    void App::set_selection_type(SelectionMode sel_state) 
+    {
+        m_sel_mode = sel_state;
+    }
+
     void App::save_mesh_sequence_with_selected_faces(const std::string& folder, const std::string& filename) 
     {   
         if (fid_list.size() > 0) 
@@ -598,6 +803,7 @@ namespace tyro
         m_mouse_btn_clicked = button;
 
         if (m_modifier == TYRO_MOD_CONTROL) return; //rotating
+        if (m_modifier == TYRO_MOD_SHIFT) return; //selection
         if (m_mouse_btn_clicked == 2) return; //translating
         
         int fid;
@@ -634,7 +840,7 @@ namespace tyro
                 {
                     Eigen::RowVector3d new_c = m_frame_data.v_data[m_frame].row(vid);
                     RA_LOG_INFO("Picked face_id %i vertex_id %i", fid, vid);
-                    ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.1);
+                    ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.001);
                     Wm5::Transform tr;
                     tr.SetTranslate(APoint(new_c(0), new_c(1), new_c(2)));
                     object->LocalTransform = tr * object->LocalTransform;
@@ -684,11 +890,17 @@ namespace tyro
     {   
         if (m_state != App::State::LoadedModel) return;
         RA_LOG_INFO("MOUSE_UP");
-        if (mouse_is_down&& m_modifier == TYRO_MOD_CONTROL) 
+        if (mouse_is_down && m_modifier == TYRO_MOD_CONTROL) 
         {   
             gesture_state = 2;
             m_camera->HandleOneFingerPanGesture(gesture_state, Vector2i(current_mouse_x, current_mouse_y));
             render();
+        }
+        else if (mouse_is_down && m_modifier == TYRO_MOD_SHIFT) 
+        {
+            gesture_state = 2;
+            //m_camera->HandleTwoFingerPanGesture(gesture_state, Vector2i(current_mouse_x, -current_mouse_y));
+            //render();
         }
         else if (mouse_is_down && m_mouse_btn_clicked == 2) 
         {
@@ -696,6 +908,7 @@ namespace tyro
             m_camera->HandleTwoFingerPanGesture(gesture_state, Vector2i(current_mouse_x, -current_mouse_y));
             render();
         }
+        
         mouse_is_down = false;
         gesture_state = 0;
     }
@@ -708,89 +921,88 @@ namespace tyro
         current_mouse_x = mouse_x;
         current_mouse_y = mouse_y;
 
-        if (mouse_is_down) 
+        if (mouse_is_down && m_modifier == TYRO_MOD_SHIFT) 
         {
-        int fid;
-        Eigen::Vector3f bc;
-        // Cast a ray in the view direction starting from the mouse position
-        double x = current_mouse_x;
-        double y = m_camera->GetViewport()[3] - current_mouse_y;
-        Eigen::Vector2f mouse_pos(x,y);
-        Wm5::HMatrix modelViewMatrix = m_camera->GetViewMatrix() * render_data.org_mesh->WorldTransform.Matrix();
-        Wm5::HMatrix projectMatrix = m_camera->GetProjectionMatrix();
-        Eigen::Matrix4f e1 = Eigen::Map<Eigen::Matrix4f>(modelViewMatrix.mEntry);
-        Eigen::Matrix4f e2 = Eigen::Map<Eigen::Matrix4f>(projectMatrix.mEntry);
-        Eigen::Vector4f e3 = Eigen::Vector4f(m_camera->GetViewport()[0],
-                                             m_camera->GetViewport()[1],
-                                             m_camera->GetViewport()[2],
-                                             m_camera->GetViewport()[3]);
-        
-        if (igl::unproject_onto_mesh(mouse_pos, 
-                                     e1.transpose(),
-                                     e2.transpose(),
-                                     e3,
-                                     m_frame_data.v_data[m_frame],
-                                     m_frame_data.f_data,
-                                     fid,
-                                     bc))
-        {
-            if (m_sel_mode == App::SelectionMode::Vertex) 
+            int fid;
+            Eigen::Vector3f bc;
+            // Cast a ray in the view direction starting from the mouse position
+            double x = current_mouse_x;
+            double y = m_camera->GetViewport()[3] - current_mouse_y;
+            Eigen::Vector2f mouse_pos(x,y);
+            Wm5::HMatrix modelViewMatrix = m_camera->GetViewMatrix() * render_data.org_mesh->WorldTransform.Matrix();
+            Wm5::HMatrix projectMatrix = m_camera->GetProjectionMatrix();
+            Eigen::Matrix4f e1 = Eigen::Map<Eigen::Matrix4f>(modelViewMatrix.mEntry);
+            Eigen::Matrix4f e2 = Eigen::Map<Eigen::Matrix4f>(projectMatrix.mEntry);
+            Eigen::Vector4f e3 = Eigen::Vector4f(m_camera->GetViewport()[0],
+                                                m_camera->GetViewport()[1],
+                                                m_camera->GetViewport()[2],
+                                                m_camera->GetViewport()[3]);
+            
+            if (igl::unproject_onto_mesh(mouse_pos, 
+                                        e1.transpose(),
+                                        e2.transpose(),
+                                        e3,
+                                        m_frame_data.v_data[m_frame],
+                                        m_frame_data.f_data,
+                                        fid,
+                                        bc))
             {
-                long c;
-                bc.maxCoeff(&c);
-                int vid = m_frame_data.f_data(fid, c);
-                auto it = std::find(vid_list.begin(), vid_list.end(), vid);
-                if (it == vid_list.end()) 
+                if (m_sel_mode == App::SelectionMode::Vertex) 
                 {
-                    Eigen::RowVector3d new_c = m_frame_data.v_data[m_frame].row(vid);
-                    RA_LOG_INFO("Picked face_id %i vertex_id %i", fid, vid);
-                    ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.1);
-                    Wm5::Transform tr;
-                    tr.SetTranslate(APoint(new_c(0), new_c(1), new_c(2)));
-                    object->LocalTransform = tr * object->LocalTransform;
-                    object->Update(true);
-                    ball_list.push_back(object);
-                    vid_list.push_back(vid);
-                }  
-                else
-                {   
-                    RA_LOG_INFO("remove vertex %i %i", fid, vid);
+                    long c;
+                    bc.maxCoeff(&c);
+                    int vid = m_frame_data.f_data(fid, c);
+                    auto it = std::find(vid_list.begin(), vid_list.end(), vid);
+                    if (it == vid_list.end()) 
+                    {
+                        Eigen::RowVector3d new_c = m_frame_data.v_data[m_frame].row(vid);
+                        RA_LOG_INFO("Picked face_id %i vertex_id %i", fid, vid);
+                        ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.1);
+                        Wm5::Transform tr;
+                        tr.SetTranslate(APoint(new_c(0), new_c(1), new_c(2)));
+                        object->LocalTransform = tr * object->LocalTransform;
+                        object->Update(true);
+                        ball_list.push_back(object);
+                        vid_list.push_back(vid);
+                    }  
+                    else
+                    {   
+                        RA_LOG_INFO("remove vertex %i %i", fid, vid);
 
-                    auto index = std::distance(vid_list.begin(), it);
-                    ball_list.erase(ball_list.begin() + index);
-                    vid_list.erase(vid_list.begin() + index);
-                }
-                render();
-            } 
-            else if (m_sel_mode == App::SelectionMode::Faces) 
-            {
-                auto it = std::find(fid_list.begin(), fid_list.end(), fid);
-                if (it == fid_list.end()) 
+                        auto index = std::distance(vid_list.begin(), it);
+                        ball_list.erase(ball_list.begin() + index);
+                        vid_list.erase(vid_list.begin() + index);
+                    }
+                    render();
+                } 
+                else if (m_sel_mode == App::SelectionMode::Faces) 
                 {
-                    RA_LOG_INFO("Picked face_id %i", fid);
-                    fid_list.push_back(fid);
+                    auto it = std::find(fid_list.begin(), fid_list.end(), fid);
+                    if (it == fid_list.end()) 
+                    {
+                        RA_LOG_INFO("Picked face_id %i", fid);
+                        fid_list.push_back(fid);
 
-                    Eigen::Vector3d clr(0,0,0.5);
-                    m_frame_data.c_data.row(fid) = clr;
-                }  
-                else
-                {   
-                    RA_LOG_INFO("remove face %i", fid);
-                    //auto index = std::distance(fid_list.begin(), it);
-                    //fid_list.erase(fid_list.begin() + index);
-                    //Eigen::Vector3d clr(0.5,0.5,0.5);
-                    //Eigen::Vector3i vtx_idx = m_frame_data.f_data.row(fid);
-                    //m_frame_data.c_data.row(vtx_idx(0)) = clr;
-                    //m_frame_data.c_data.row(vtx_idx(1)) = clr;
-                    //m_frame_data.c_data.row(vtx_idx(2)) = clr;
-                    //m_frame_data.c_data.row(fid) = clr;
-                }
-                render();
-            }                  
-        };        
+                        Eigen::Vector3d clr(0,0,0.5);
+                        m_frame_data.c_data.row(fid) = clr;
+                    }  
+                    else
+                    {   
+                        RA_LOG_INFO("remove face %i", fid);
+                        //auto index = std::distance(fid_list.begin(), it);
+                        //fid_list.erase(fid_list.begin() + index);
+                        //Eigen::Vector3d clr(0.5,0.5,0.5);
+                        //Eigen::Vector3i vtx_idx = m_frame_data.f_data.row(fid);
+                        //m_frame_data.c_data.row(vtx_idx(0)) = clr;
+                        //m_frame_data.c_data.row(vtx_idx(1)) = clr;
+                        //m_frame_data.c_data.row(vtx_idx(2)) = clr;
+                        //m_frame_data.c_data.row(fid) = clr;
+                    }
+                    render();
+                }                  
+            };        
         }
-
-        if (mouse_is_down && m_modifier == TYRO_MOD_CONTROL) 
+        else if (mouse_is_down && m_modifier == TYRO_MOD_CONTROL) 
         {   
             m_camera->HandleOneFingerPanGesture(gesture_state, Vector2i(mouse_x, mouse_y));
             gesture_state = 1;
