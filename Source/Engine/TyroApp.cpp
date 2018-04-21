@@ -607,18 +607,21 @@ namespace tyro
         m_camera = new iOSCamera(world_center, radius, aspect, 2, viewport, true);
     }
 
-    void App::load_mesh_sequence(const std::string& obj_list_file, bool use_igl_loader) 
+    void App::load_mesh_sequence(const std::vector<std::string>& obj_list, bool use_igl_loader) 
     {   
         RA_LOG_INFO("LOAD MESH SEQUENCE")
-        stop::load_mesh_sequence(obj_list_file, 
-                                 m_frame_data.v_data, 
-                                 m_frame_data.n_data, 
-                                 m_frame_data.f_data,
-                                 use_igl_loader);
+        
+        for (const auto& obj_list_file : obj_list) 
+        {
+            stop::load_mesh_sequence(obj_list_file, 
+                                     m_frame_data.v_data, 
+                                     m_frame_data.n_data, 
+                                     m_frame_data.f_data,
+                                     use_igl_loader);
+        }
         
         //@TODO need this to update camera
         Eigen::Vector3d cr(0.5,0.5,0.5);
-
         
         //m_frame_data.c_data.resize(m_frame_data.v_data[0].rows(), 
         //                           m_frame_data.v_data[0].cols());
@@ -629,9 +632,9 @@ namespace tyro
         }
 
         IGLMeshSPtr tmp = IGLMesh::Create(m_frame_data.v_data[0], 
-                                               m_frame_data.f_data, 
-                                               m_frame_data.n_data[0], 
-                                               cr);
+                                          m_frame_data.f_data, 
+                                          m_frame_data.n_data[0], 
+                                          cr);
         tmp->Update(true);        
         update_camera(tmp->WorldBoundBox);
        
@@ -643,8 +646,11 @@ namespace tyro
     void App::load_bunny()
     {
         RA_LOG_INFO("Load Bunny");
-        auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/01/objlist.txt");
-        load_mesh_sequence(obj_list_file, false); //use tiny obj loader
+        auto obj_list_file1 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/04/noears/objlist.txt");
+        auto obj_list_file2 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/05/noears/objlist.txt");
+        //auto obj_list_file3 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/03/objlist.txt");
+        std::vector<std::string> obj_list = {obj_list_file1, obj_list_file2};
+        load_mesh_sequence(obj_list, false); //use tiny obj loader
         
         
         //auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/02/bunn_face/objlist.txt");
@@ -659,7 +665,7 @@ namespace tyro
     {   
         RA_LOG_INFO("LOAD_BLOBBY");
         auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/Claymation/data/hello/FramesOBJ/objlist2.txt");
-        load_mesh_sequence(obj_list_file);
+        //load_mesh_sequence(obj_list_file);
         m_state = App::State::LoadedModel;
         render();
     }
@@ -669,7 +675,7 @@ namespace tyro
     {   
         RA_LOG_INFO("LOAD OLDMAN");
         auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/Claymation/data/oldman/gotolunch/FramesOBJ/FullFace/objlist2.txt");
-        load_mesh_sequence(obj_list_file);
+        //load_mesh_sequence(obj_list_file);
         m_state = App::State::LoadedModel;
         render();
     }

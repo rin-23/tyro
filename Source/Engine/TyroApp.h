@@ -105,7 +105,7 @@ namespace tyro
         void register_console_function(const std::string& name,
                                    const std::function<void(App*, const std::vector<std::string>&)>& con_fun,
                                    const std::string& help_txt);
-        void load_mesh_sequence(const std::string& obj_list_file, bool use_igl_loader = true); 
+        void load_mesh_sequence(const std::vector<std::string>& obj_list, bool use_igl_loader = true); 
         void update_camera(const AxisAlignedBBox& WorldBoundBox);
         void render();
         std::atomic<bool> m_need_rendering;
