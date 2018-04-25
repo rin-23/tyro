@@ -20,6 +20,7 @@
 #include "TyroFileUtils.h"
 #include <igl/slice.h>
 #include <igl/unique.h>
+#include <igl/project.h>
 
 using namespace Wm5;
 using namespace std;
@@ -28,6 +29,14 @@ namespace tyro
 {   
     namespace
     {   
+        void console_align_all_models(App* app, const std::vector<std::string> & args) 
+        {
+            RA_LOG_INFO("aligning models");
+
+            app->align_all_models();
+            return;
+        }
+
         void console_save_mesh_sequence_with_selected_faces(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("Saving mesh sequence with selected faces");
@@ -83,18 +92,33 @@ namespace tyro
             }
         }
 
-        void console_set_selection_type(App* app, const std::vector<std::string> & args)
+        void console_set_sel_primitive(App* app, const std::vector<std::string> & args)
         {
             RA_LOG_INFO("Set selection type");
 
             if (args.size() == 1)
             {      
                 if (args[0] == "vertex") 
-                    app->set_selection_type(App::SelectionMode::Vertex);
+                    app->set_sel_primitive(App::SelectionPrimitive::Vertex);
                 else if (args[0] == "faces")
-                    app->set_selection_type(App::SelectionMode::Faces);
+                    app->set_sel_primitive(App::SelectionPrimitive::Faces);
                 else if (args[0] == "edges")
-                    app->set_selection_type(App::SelectionMode::Edges);
+                    app->set_sel_primitive(App::SelectionPrimitive::Edges);
+                return;
+            }
+        }
+
+        void console_set_sel_method(App* app, const std::vector<std::string> & args)
+        {
+            RA_LOG_INFO("Set selection type");
+
+            if (args.size() == 1)
+            {      
+                if (args[0] == "oneclick") 
+                    app->set_sel_method(App::SelectionMethod::OneClick);
+                else if (args[0] == "square")
+                    app->set_sel_method(App::SelectionMethod::Square);
+                
                 return;
             }
         }
@@ -154,7 +178,7 @@ namespace tyro
             }
         }
 
-         void console_compute_deformation2(App* app, const std::vector<std::string> & args)
+        void console_compute_deformation2(App* app, const std::vector<std::string> & args)
         {
             RA_LOG_INFO("deform2");
 
@@ -163,6 +187,13 @@ namespace tyro
                 app->compute_deformation2();
                 return;
             }
+        }
+
+        void console_invert_face_selection(App* app, const std::vector<std::string> & args) 
+        {
+            RA_LOG_INFO("invert face selection");
+            app->invert_face_selection();
+            return;
         }
     }
 
@@ -179,7 +210,8 @@ namespace tyro
     m_need_rendering(false),
     m_computed_deformation(false),
     m_computed_avg(false),
-    m_sel_mode(App::SelectionMode::Faces)
+    m_sel_primitive(App::SelectionPrimitive::Vertex),
+    m_sel_method(App::SelectionMethod::Square)
     {}
 
     App::~App() 
@@ -272,9 +304,12 @@ namespace tyro
         register_console_function("load_selected_faces", console_load_selected_faces, "");
         register_console_function("save_selected_verticies", console_save_selected_verticies, "");
         register_console_function("load_selected_verticies", console_load_selected_verticies, "");
-        register_console_function("set_selection_type", console_set_selection_type, "");
+        register_console_function("set_sel_primitive", console_set_sel_primitive, "");
+        register_console_function("set_sel_method", console_set_sel_method, "");
         register_console_function("save_mesh_sequence_with_selected_faces", console_save_mesh_sequence_with_selected_faces, "");
-
+        register_console_function("invert_face_selection", console_invert_face_selection, "");
+        register_console_function("align_all_models", console_align_all_models, "");
+        
         m_state = App::State::Launched;
         // Loop until the user closes the window
         m_tyro_window->GetGLContext()->swapBuffers();
@@ -449,6 +484,34 @@ namespace tyro
         
     }
 
+    void App::invert_face_selection() 
+    {
+        std::vector<int> newlist;
+        for (int fid = 0; fid < m_frame_data.f_data.rows(); ++fid) 
+        {
+            auto it2 = std::find(fid_list.begin(), fid_list.end(), fid);
+            if (it2 == fid_list.end()) 
+            { 
+                newlist.push_back(fid);
+            } 
+        }
+
+        for (auto fid : fid_list)
+        {
+            setFaceColor(fid, false);
+        }
+        fid_list.clear();
+
+        for (auto fid : newlist) 
+        {
+            fid_list.push_back(fid);
+            setFaceColor(fid, true);
+
+        }
+        render();
+        glfwPostEmptyEvent();
+    }
+
     void App::compute_deformation2()
     {
         if (fid_list.size() == 0) return;
@@ -607,6 +670,49 @@ namespace tyro
         m_camera = new iOSCamera(world_center, radius, aspect, 2, viewport, true);
     }
 
+    void App::addSphere(int vid) 
+    {   
+        Eigen::RowVector3d new_c = m_frame_data.v_data[m_frame].row(vid);
+        ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.001);
+        Wm5::Transform tr;
+        tr.SetTranslate(APoint(new_c(0), new_c(1), new_c(2)));
+        object->LocalTransform = tr * object->LocalTransform;
+        object->Update(true);
+        ball_list.push_back(object);
+    }     
+
+    void App::removeSpheres(std::vector<int> vids) 
+    {   
+        assert(false);
+    }
+    
+    void App::setFaceColor(int fid, bool selected) 
+    {
+        Eigen::Vector3d clr;
+        if (selected) 
+            clr = Eigen::Vector3d(0, 0, 0.5);
+        else
+            clr = Eigen::Vector3d(0.5,0.5,0.5);
+        
+        m_frame_data.c_data.row(fid) = clr;
+    }
+   
+
+    void App::clear_all_selection() 
+    {
+        vid_list.clear();
+        ball_list.clear();
+        
+        for (auto fid : fid_list) 
+        {
+            setFaceColor(fid, false);
+        }
+        fid_list.clear();        
+        
+        render();
+    }
+        
+
     void App::load_mesh_sequence(const std::vector<std::string>& obj_list, bool use_igl_loader) 
     {   
         RA_LOG_INFO("LOAD MESH SEQUENCE")
@@ -631,28 +737,42 @@ namespace tyro
             m_frame_data.c_data.row(i) = cr;
         }
 
+        
+       
+        m_timeline->SetFrameRange(m_frame_data.v_data.size()-1);
+
+        //compute_average();
+    }
+
+    void App::load_bunny()
+    {
+        RA_LOG_INFO("Load Bunny");
+        int offset_vid = 1222;
+        auto offset = Eigen::Vector3d(0.613322, 2.613381, 2.238946);
+        auto obj_list_file1 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/03_apple/just_face/objlist.txt");
+        
+        //auto obj_list_file1 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/03_apple/01/noears/objlist.txt");
+        //auto obj_list_file2 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/03_apple/02/noears/objlist.txt");
+        //auto obj_list_file3 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/03_apple/03/noears/objlist.txt");
+        //auto obj_list_file4 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/03_apple/05/noears/objlist.txt");
+        //auto obj_list_file5 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/03_apple/06/noears/objlist.txt");
+        
+        //auto obj_list_file3 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/03/objlist.txt");
+        std::vector<std::string> obj_list = {obj_list_file1};
+                                             //obj_list_file2, 
+                                             //obj_list_file3,  
+                                             //obj_list_file4,
+                                             //obj_list_file5};
+        load_mesh_sequence(obj_list, true); //use tiny obj loader
+        //align_all_models(offset_vid, offset);
+        Eigen::Vector3d cr(0.5,0.5,0.5);
+
         IGLMeshSPtr tmp = IGLMesh::Create(m_frame_data.v_data[0], 
                                           m_frame_data.f_data, 
                                           m_frame_data.n_data[0], 
                                           cr);
         tmp->Update(true);        
         update_camera(tmp->WorldBoundBox);
-       
-        m_timeline->SetFrameRange(m_frame_data.v_data.size()-1);
-
-        compute_average();
-    }
-
-    void App::load_bunny()
-    {
-        RA_LOG_INFO("Load Bunny");
-        auto obj_list_file1 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/04/noears/objlist.txt");
-        auto obj_list_file2 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/05/noears/objlist.txt");
-        //auto obj_list_file3 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/03/objlist.txt");
-        std::vector<std::string> obj_list = {obj_list_file1, obj_list_file2};
-        load_mesh_sequence(obj_list, false); //use tiny obj loader
-        
-        
         //auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/02/bunn_face/objlist.txt");
         //load_mesh_sequence(obj_list_file, true);
 
@@ -704,6 +824,7 @@ namespace tyro
         }
     }
     
+
     void App::load_selected_faces(const std::string& filename) 
     {
         RA_LOG_INFO("Load selected faces");
@@ -715,10 +836,8 @@ namespace tyro
         while (myfile >> fid)
         {
             printf("%i ", fid);
-            fid_list.push_back(fid);
-
-            Eigen::Vector3d clr(0,0,0.5);
-            m_frame_data.c_data.row(fid) = clr;
+            fid_list.push_back(fid);            
+            setFaceColor(fid, true);
         }
         render();
         glfwPostEmptyEvent();        
@@ -737,31 +856,69 @@ namespace tyro
         {
             printf("%i ", vid);
             vid_list.push_back(vid);
-            Eigen::RowVector3d new_c = m_frame_data.v_data[m_frame].row(vid);
-            ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.001);
-            Wm5::Transform tr;
-            tr.SetTranslate(APoint(new_c(0), new_c(1), new_c(2)));
-            object->LocalTransform = tr * object->LocalTransform;
-            object->Update(true);
-            ball_list.push_back(object);
+            addSphere(vid);
         }
         render();
         glfwPostEmptyEvent();        
         //getchar();
     }
     
-    void App::set_selection_type(SelectionMode sel_state) 
+    void App::set_sel_primitive(App::SelectionPrimitive sel_state) 
     {
-        m_sel_mode = sel_state;
+        m_sel_primitive = sel_state;
     }
 
+    void App::set_sel_method(App::SelectionMethod sel_state) 
+    {
+        m_sel_method = sel_state;
+    }
+
+    void App::align_all_models(int vid, Eigen::Vector3d ref_vec)
+    {
+        for (int frame = 0; frame < m_frame_data.v_data.size(); ++frame) 
+        {
+                Eigen::Vector3d new_vec = m_frame_data.v_data[frame].row(vid);
+                Eigen::Vector3d d = ref_vec - new_vec;
+                Eigen::RowVector3d diff(d(0), d(1), d(2)); 
+                m_frame_data.v_data[frame].rowwise() += diff;
+        }
+        render();
+    }
+        
+
+    void App::align_all_models() 
+    {
+        //last selected vid 
+        if (vid_list.size()==0) return;
+        int vid = vid_list.back();
+        
+        Eigen::Vector3d ref_vec;
+        for (int frame = 0; frame < m_frame_data.v_data.size(); ++frame) 
+        {
+            if (frame ==0 ) 
+            {
+                ref_vec = m_frame_data.v_data[frame].row(vid);
+            }
+            else 
+            {
+                Eigen::Vector3d new_vec = m_frame_data.v_data[frame].row(vid);
+                Eigen::Vector3d d = ref_vec - new_vec;
+                Eigen::RowVector3d diff(d(0), d(1), d(2)); 
+                m_frame_data.v_data[frame].rowwise() += diff;
+            }
+        }
+
+        render();
+        glfwPostEmptyEvent();
+    }
+    
     void App::save_mesh_sequence_with_selected_faces(const std::string& folder, const std::string& filename) 
     {   
         if (fid_list.size() > 0) 
         {   
-            auto path = std::string("/home/rinat/Workspace/Tyro/Source/tmp/") + folder + std::string("/") + filename;
-            auto tmp_path = std::string("/home/rinat/Workspace/Tyro/Source/tmp/") + folder + std::string("/") + "tmp";
-            auto objlist_path = std::string("/home/rinat/Workspace/Tyro/Source/tmp/") + folder + std::string("/") + std::string("objlist.txt");
+            auto path = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/03_apple/") + folder + std::string("/") + filename;
+            auto tmp_path = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/03_apple/") + folder + std::string("/") + "tmp";
+            auto objlist_path = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/03_apple/") + folder + std::string("/") + std::string("objlist.txt");
             ofstream objlist_file;
             objlist_file.open (objlist_path);
             
@@ -798,26 +955,10 @@ namespace tyro
         }
     }
 
-    void App::mouse_down(Window& window, int button, int modifier) 
-    {   
-        RA_LOG_INFO("mouse down %i", button);
-
-        if (m_state != App::State::LoadedModel) return;
-
-        mouse_is_down = true;
-        m_modifier = modifier;
-        m_mouse_btn_clicked = button;
-
-        if (m_modifier == TYRO_MOD_CONTROL) return; //rotating
-        if (m_modifier == TYRO_MOD_SHIFT) return; //selection
-        if (m_mouse_btn_clicked == 2) return; //translating
-        
+    void App::selectVertex(Eigen::Vector2f& mouse_pos) 
+    {
         int fid;
         Eigen::Vector3f bc;
-        // Cast a ray in the view direction starting from the mouse position
-        double x = current_mouse_x;
-        double y = m_camera->GetViewport()[3] - current_mouse_y;
-        Eigen::Vector2f mouse_pos(x,y);
         Wm5::HMatrix modelViewMatrix = m_camera->GetViewMatrix() * render_data.org_mesh->WorldTransform.Matrix();
         Wm5::HMatrix projectMatrix = m_camera->GetProjectionMatrix();
         Eigen::Matrix4f e1 = Eigen::Map<Eigen::Matrix4f>(modelViewMatrix.mEntry);
@@ -836,60 +977,73 @@ namespace tyro
                                      fid,
                                      bc))
         {
-            if (m_sel_mode == App::SelectionMode::Vertex) 
+            if (m_sel_primitive == App::SelectionPrimitive::Vertex) 
             {
                 long c;
                 bc.maxCoeff(&c);
                 int vid = m_frame_data.f_data(fid, c);
                 auto it = std::find(vid_list.begin(), vid_list.end(), vid);
                 if (it == vid_list.end()) 
-                {
-                    Eigen::RowVector3d new_c = m_frame_data.v_data[m_frame].row(vid);
-                    RA_LOG_INFO("Picked face_id %i vertex_id %i", fid, vid);
-                    ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.001);
-                    Wm5::Transform tr;
-                    tr.SetTranslate(APoint(new_c(0), new_c(1), new_c(2)));
-                    object->LocalTransform = tr * object->LocalTransform;
-                    object->Update(true);
-                    ball_list.push_back(object);
+                {       
+                Eigen::Vector3d vec = m_frame_data.v_data[m_frame].row(vid);
+                    RA_LOG_INFO("Picked face_id %i vertex_id %i coord %f %f %f", fid, vid, vec(0), vec(1), vec(2));
+                    addSphere(vid);
                     vid_list.push_back(vid);
                 }  
                 else
                 {   
                     RA_LOG_INFO("remove vertex %i %i", fid, vid);
-
                     auto index = std::distance(vid_list.begin(), it);
                     ball_list.erase(ball_list.begin() + index);
                     vid_list.erase(vid_list.begin() + index);
                 }
                 render();
             } 
-            else if (m_sel_mode == App::SelectionMode::Faces) 
+            else if (m_sel_primitive == App::SelectionPrimitive::Faces) 
             {
                 auto it = std::find(fid_list.begin(), fid_list.end(), fid);
                 if (it == fid_list.end()) 
                 {
                     RA_LOG_INFO("Picked face_id %i", fid);
                     fid_list.push_back(fid);
-
-                    Eigen::Vector3d clr(0,0,0.5);
-                    m_frame_data.c_data.row(fid) = clr;
+                    setFaceColor(fid, true);
                 }  
                 else
                 {   
                     RA_LOG_INFO("remove face %i", fid);
                     auto index = std::distance(fid_list.begin(), it);
                     fid_list.erase(fid_list.begin() + index);
-                    Eigen::Vector3d clr(0.5,0.5,0.5);
-                    //Eigen::Vector3i vtx_idx = m_frame_data.f_data.row(fid);
-                    //m_frame_data.c_data.row(vtx_idx(0)) = clr;
-                    //m_frame_data.c_data.row(vtx_idx(1)) = clr;
-                    //m_frame_data.c_data.row(vtx_idx(2)) = clr;
-                    m_frame_data.c_data.row(fid) = clr;
+                    setFaceColor(fid, false);
                 }
                 render();
             }                  
-        };        
+        }   
+    }
+
+    void App::mouse_down(Window& window, int button, int modifier) 
+    {   
+        RA_LOG_INFO("mouse down %i", button);
+
+        if (m_state != App::State::LoadedModel) return;
+
+        mouse_is_down = true;
+        m_modifier = modifier;
+        m_mouse_btn_clicked = button;
+
+        if (m_modifier == TYRO_MOD_CONTROL) return; //rotating
+        if (m_modifier == TYRO_MOD_SHIFT) 
+        {   
+            m_square_sel_start_x = current_mouse_x;
+            m_square_sel_start_y = current_mouse_y;
+            return; //selection
+        }
+        if (m_mouse_btn_clicked == 2) return; //translating
+        
+        // Cast a ray in the view direction starting from the mouse position
+        double x = current_mouse_x;
+        double y = m_camera->GetViewport()[3] - current_mouse_y;
+        Eigen::Vector2f mouse_pos(x,y);
+        selectVertex(mouse_pos);     
     }
 
     void App::mouse_up(Window& window, int button, int modifier) 
@@ -902,11 +1056,98 @@ namespace tyro
             m_camera->HandleOneFingerPanGesture(gesture_state, Vector2i(current_mouse_x, current_mouse_y));
             render();
         }
-        else if (mouse_is_down && m_modifier == TYRO_MOD_SHIFT) 
+        else if (mouse_is_down && m_modifier == TYRO_MOD_SHIFT && m_sel_method == App::SelectionMethod::Square) 
         {
             gesture_state = 2;
+            //double x = current_mouse_x;
+            //double y = m_camera->GetViewport()[3] - current_mouse_y;
+            //Eigen::Vector2f mouse_pos(x,y);
+            
+            int x0 = m_square_sel_start_x;
+            int y0 = m_camera->GetViewport()[3] - m_square_sel_start_y;
+            int x1 = current_mouse_x;
+            int y1 = m_camera->GetViewport()[3] - current_mouse_y;
+
+            Wm5::HMatrix modelViewMatrix = m_camera->GetViewMatrix() * render_data.org_mesh->WorldTransform.Matrix();
+            Wm5::HMatrix projectMatrix = m_camera->GetProjectionMatrix();
+            Eigen::Matrix4f e1 = Eigen::Map<Eigen::Matrix4f>(modelViewMatrix.mEntry);
+            Eigen::Matrix4f e2 = Eigen::Map<Eigen::Matrix4f>(projectMatrix.mEntry);
+            Eigen::Vector4f e3 = Eigen::Vector4f(m_camera->GetViewport()[0],
+                                                m_camera->GetViewport()[1],
+                                                m_camera->GetViewport()[2],
+                                                m_camera->GetViewport()[3]);
+
+
+            Eigen::MatrixXd P;
+            igl::project(m_frame_data.v_data[m_frame],
+                         e1.transpose(), 
+                         e2.transpose(),
+                         e3,
+                         P);
+
+            
+            std::vector<int> vid_selected;
+            for (int vid = 0; vid < P.rows(); ++vid) 
+            {
+                int px = P.row(vid)(0);
+                int py = P.row(vid)(1);
+
+                int minx = std::min(x0, x1);
+                int maxx = std::max(x0, x1);
+                int miny = std::min(y0, y1);
+                int maxy = std::max(y0, y1);
+                if (px <=maxx && px >= minx && py <= maxy && py >= miny) 
+                {
+                    vid_selected.push_back(vid);
+                }
+            }
+            if (m_sel_primitive == App::SelectionPrimitive::Vertex) 
+            {   
+                for (auto vid : vid_selected) 
+                {
+                    addSphere(vid);
+                    vid_list.push_back(vid);
+                }
+            }
+            else if (m_sel_primitive == App::SelectionPrimitive::Faces) 
+            {   
+                //std::vector<int> fid_selected;
+                for (int fid = 0; fid < m_frame_data.f_data.rows(); ++fid) 
+                {
+                    Eigen::Vector3i vids = m_frame_data.f_data.row(fid);
+
+                    auto it = std::find(vid_selected.begin(), vid_selected.end(), vids(0));
+                    if (it != vid_selected.end())  
+                    {
+                        fid_list.push_back(fid); 
+                        continue;
+                    } 
+                    
+                    it = std::find(vid_selected.begin(), vid_selected.end(), vids(1));
+                    if (it != vid_selected.end()) 
+                    { 
+                        fid_list.push_back(fid);
+                        continue;
+                    }
+
+                    it = std::find(vid_selected.begin(), vid_selected.end(), vids(2));
+                    if (it != vid_selected.end()) 
+                    {
+                        fid_list.push_back(fid); 
+                        continue;
+                    }
+                }
+
+                for (auto fid : fid_list) 
+                {
+                    setFaceColor(fid, true);
+                }
+            }
+
+            
+        
             //m_camera->HandleTwoFingerPanGesture(gesture_state, Vector2i(current_mouse_x, -current_mouse_y));
-            //render();
+            render();
         }
         else if (mouse_is_down && m_mouse_btn_clicked == 2) 
         {
@@ -927,86 +1168,17 @@ namespace tyro
         current_mouse_x = mouse_x;
         current_mouse_y = mouse_y;
 
-        if (mouse_is_down && m_modifier == TYRO_MOD_SHIFT) 
+        if (mouse_is_down && m_modifier == TYRO_MOD_SHIFT && m_sel_method == App::SelectionMethod::OneClick) 
         {
-            int fid;
-            Eigen::Vector3f bc;
             // Cast a ray in the view direction starting from the mouse position
             double x = current_mouse_x;
             double y = m_camera->GetViewport()[3] - current_mouse_y;
             Eigen::Vector2f mouse_pos(x,y);
-            Wm5::HMatrix modelViewMatrix = m_camera->GetViewMatrix() * render_data.org_mesh->WorldTransform.Matrix();
-            Wm5::HMatrix projectMatrix = m_camera->GetProjectionMatrix();
-            Eigen::Matrix4f e1 = Eigen::Map<Eigen::Matrix4f>(modelViewMatrix.mEntry);
-            Eigen::Matrix4f e2 = Eigen::Map<Eigen::Matrix4f>(projectMatrix.mEntry);
-            Eigen::Vector4f e3 = Eigen::Vector4f(m_camera->GetViewport()[0],
-                                                m_camera->GetViewport()[1],
-                                                m_camera->GetViewport()[2],
-                                                m_camera->GetViewport()[3]);
-            
-            if (igl::unproject_onto_mesh(mouse_pos, 
-                                        e1.transpose(),
-                                        e2.transpose(),
-                                        e3,
-                                        m_frame_data.v_data[m_frame],
-                                        m_frame_data.f_data,
-                                        fid,
-                                        bc))
-            {
-                if (m_sel_mode == App::SelectionMode::Vertex) 
-                {
-                    long c;
-                    bc.maxCoeff(&c);
-                    int vid = m_frame_data.f_data(fid, c);
-                    auto it = std::find(vid_list.begin(), vid_list.end(), vid);
-                    if (it == vid_list.end()) 
-                    {
-                        Eigen::RowVector3d new_c = m_frame_data.v_data[m_frame].row(vid);
-                        RA_LOG_INFO("Picked face_id %i vertex_id %i", fid, vid);
-                        ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.1);
-                        Wm5::Transform tr;
-                        tr.SetTranslate(APoint(new_c(0), new_c(1), new_c(2)));
-                        object->LocalTransform = tr * object->LocalTransform;
-                        object->Update(true);
-                        ball_list.push_back(object);
-                        vid_list.push_back(vid);
-                    }  
-                    else
-                    {   
-                        RA_LOG_INFO("remove vertex %i %i", fid, vid);
-
-                        auto index = std::distance(vid_list.begin(), it);
-                        ball_list.erase(ball_list.begin() + index);
-                        vid_list.erase(vid_list.begin() + index);
-                    }
-                    render();
-                } 
-                else if (m_sel_mode == App::SelectionMode::Faces) 
-                {
-                    auto it = std::find(fid_list.begin(), fid_list.end(), fid);
-                    if (it == fid_list.end()) 
-                    {
-                        RA_LOG_INFO("Picked face_id %i", fid);
-                        fid_list.push_back(fid);
-
-                        Eigen::Vector3d clr(0,0,0.5);
-                        m_frame_data.c_data.row(fid) = clr;
-                    }  
-                    else
-                    {   
-                        RA_LOG_INFO("remove face %i", fid);
-                        //auto index = std::distance(fid_list.begin(), it);
-                        //fid_list.erase(fid_list.begin() + index);
-                        //Eigen::Vector3d clr(0.5,0.5,0.5);
-                        //Eigen::Vector3i vtx_idx = m_frame_data.f_data.row(fid);
-                        //m_frame_data.c_data.row(vtx_idx(0)) = clr;
-                        //m_frame_data.c_data.row(vtx_idx(1)) = clr;
-                        //m_frame_data.c_data.row(vtx_idx(2)) = clr;
-                        //m_frame_data.c_data.row(fid) = clr;
-                    }
-                    render();
-                }                  
-            };        
+            selectVertex(mouse_pos);
+        }
+        else if (mouse_is_down && m_modifier == TYRO_MOD_SHIFT && m_sel_method == App::SelectionMethod::Square) 
+        {
+            //update
         }
         else if (mouse_is_down && m_modifier == TYRO_MOD_CONTROL) 
         {   

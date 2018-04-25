@@ -16,7 +16,9 @@ namespace tyro
     public:
 
         enum State {None, Launched, LoadedModel, PlayingAnimation};
-        enum SelectionMode {Vertex, Faces, Edges};
+        enum SelectionPrimitive {Vertex, Faces, Edges};
+        enum SelectionMethod {OneClick, Square};
+        enum SelectionType {Select, Deselect};
 
         App();
         
@@ -34,11 +36,17 @@ namespace tyro
         void save_selected_verticies(const std::string& filename);
         void load_selected_faces(const std::string& filename);
         void load_selected_verticies(const std::string& filename); 
-        void set_selection_type(SelectionMode sel_state);
+        void set_sel_primitive(App::SelectionPrimitive sel_state);
+        void set_sel_method(App::SelectionMethod sel_state);
         void save_mesh_sequence_with_selected_faces(const std::string& folder, const std::string& filename);
+        void clear_all_selection();
+        void invert_face_selection();
+        void align_all_models();
+        void align_all_models(int vid, Eigen::Vector3d offset);
         
         State m_state;
-        SelectionMode m_sel_mode;
+        SelectionPrimitive m_sel_primitive;
+        SelectionMethod m_sel_method;
     private:
         Timeline* m_timeline;
         Window* m_tyro_window;
@@ -63,6 +71,11 @@ namespace tyro
         bool m_computed_deformation;
         bool m_computed_avg;
         Console m_console;
+
+        //square selection
+        int m_square_sel_start_x;
+        int m_square_sel_start_y;
+        
 
         //IGLMeshSPtr igl_mesh;
         //IGLMeshWireframeSPtr igl_mesh_wire;
@@ -108,6 +121,10 @@ namespace tyro
         void load_mesh_sequence(const std::vector<std::string>& obj_list, bool use_igl_loader = true); 
         void update_camera(const AxisAlignedBBox& WorldBoundBox);
         void render();
+        void addSphere(int vid);        
+        void removeSpheres(std::vector<int> vids);
+        void setFaceColor(int fid, bool selected);
+        void selectVertex(Eigen::Vector2f& mouse_pos);
         std::atomic<bool> m_need_rendering;
     };
 }

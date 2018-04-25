@@ -222,7 +222,30 @@ namespace tyro
             //}
         //}
     }
-	
+
+    /*
+    Eigen::Matrix4f iOSCamera::GetEigenViewMatrix() 
+    {   
+        Eigen::Matrix4f e1 = Eigen::Map<Eigen::Matrix4f>(GetViewMatrix().mEntry);
+        return e1.transpose();
+    }
+    
+    Eigen::Matrix4f iOSCamera::GetEigenProjMatrix() 
+    {
+        Eigen::Matrix4f e2 = Eigen::Map<Eigen::Matrix4f>(GetProjectionMatrix().mEntry);
+        return e2.transpose();
+    }
+
+    Eigen::Vector4f iOSCamera::GetEigenViewport() 
+    {
+         Eigen::Vector4f e3 = Eigen::Vector4f(GetViewport()[0],
+                                              GetViewport()[1],
+                                              GetViewport()[2],
+                                              GetViewport()[3]);
+        return e3;            
+    }
+        */
+
     void iOSCamera::UpdateProjectionMatrix()
     {
         if (mIsOrtho)

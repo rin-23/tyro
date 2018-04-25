@@ -11,6 +11,7 @@
 #include "RACamera.h"
 #include "Wm5Vector2.h"
 #include "RAEnginePrerequisites.h"
+#include <Eigen/Core>
 
 namespace tyro
 {
@@ -36,6 +37,9 @@ namespace tyro
         //void HandleRotationGesture(UIRotationGestureRecognizer* sender);
         void HandlePinchGesture(int state, Wm5::Vector2i glTouch, double offset);
         
+        //Eigen::Matrix4f GetEigenViewMatrix();
+        //Eigen::Matrix4f GetEigenProjMatrix();
+        //Eigen::Vector4f GetEigenViewport();
         //int WorldToScreen(UIGestureRecognizer* sender, float depth, Wm5::Vector3f& win);
         //int CameraToScreen(UIGestureRecognizer* sender, float depth, Wm5::Vector3f& win);
         //Wm5::Vector3f ScreenGestureToWorld(UIGestureRecognizer* sender, float depth) const;
