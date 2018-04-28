@@ -9,18 +9,19 @@
 #include <igl/per_vertex_normals.h>
 #include "TyroIGLMesh.h"
 #include <igl/unproject_onto_mesh.h>
-#include <igl/min_quad_with_fixed.h>
-#include <igl/cotmatrix.h>
-#include <igl/massmatrix.h>
-#include "stop_motion_data.h"
+
 #include <igl/writeSTL.h>
 #include <igl/readSTL.h>
 #include <igl/writeOBJ.h>
 #include <igl/remove_duplicate_vertices.h>
+
 #include "TyroFileUtils.h"
+
 #include <igl/slice.h>
-#include <igl/unique.h>
 #include <igl/project.h>
+#include "load_mesh_sequence.h"
+#include "compute_deformation.h"
+#include <igl/min_quad_with_fixed.h>
 
 using namespace Wm5;
 using namespace std;
@@ -178,18 +179,7 @@ namespace tyro
             }
         }
 
-        void console_compute_deformation2(App* app, const std::vector<std::string> & args)
-        {
-            RA_LOG_INFO("deform2");
-
-            if (args.size() == 0)
-            {   
-                app->compute_deformation2();
-                return;
-            }
-        }
-
-        void console_invert_face_selection(App* app, const std::vector<std::string> & args) 
+          void console_invert_face_selection(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("invert face selection");
             app->invert_face_selection();
@@ -293,13 +283,11 @@ namespace tyro
             this->mouse_scroll(window, ydelta);
         };
 
-
         register_console_function("load_blobby", console_load_blobby, "");
         register_console_function("load_oldman", console_load_oldman, "");
         register_console_function("load_bunny", console_load_bunny, "");
         register_console_function("compute_average", console_compute_average, "");
         register_console_function("compute_deformation", console_compute_deformation, "");
-        register_console_function("compute_deformation2", console_compute_deformation2, "");
         register_console_function("save_selected_faces", console_save_selected_faces, "");
         register_console_function("load_selected_faces", console_load_selected_faces, "");
         register_console_function("save_selected_verticies", console_save_selected_verticies, "");
@@ -417,73 +405,6 @@ namespace tyro
         m_need_rendering = true;
     }
 
-    void App::compute_deformation()
-    {
-        assert(vid_list.size() > 0);
-        
-        m_frame_deformed_data.v_data.reserve(m_frame_data.v_data.size());
-        m_frame_deformed_data.f_data = m_frame_data.f_data;
-
-        int num_frames = m_frame_data.v_data.size();
-        for (int i =0; i < num_frames; ++i) 
-        {   
-            RA_LOG_INFO("Compute deformation for mesh %i out of %i", i, num_frames)
-            Eigen::MatrixXd V = m_frame_data.v_data[i];
-            Eigen::MatrixXi F = m_frame_data.f_data;
-            Eigen::VectorXi b;
-            b.resize(vid_list.size());
-            int b_index = 0;
-            
-            for (int vid : vid_list)
-            {
-                b(b_index++) = vid;
-                //RA_LOG_INFO("vide %i", vid)
-            }
-           
-            //do biharmonic stuff here.
-            igl::min_quad_with_fixed_data<double> data;
-            Eigen::SparseMatrix<double> L;
-            
-            igl::cotmatrix(V, F, L);
-
-            Eigen::SparseMatrix<double> M;	
-            igl::massmatrix(V, F, igl::MASSMATRIX_TYPE_DEFAULT, M);
-
-            //Computer M inverse
-            Eigen::SimplicialLDLT <Eigen::SparseMatrix<double> > solver;
-            solver.compute(M);
-            Eigen::SparseMatrix<double> I(M.rows(), M.cols());
-            I.setIdentity();
-            Eigen::SparseMatrix<double> M_inv = solver.solve(I);
-            Eigen::SparseMatrix<double> Q = L.transpose() * M_inv * L;
-            Eigen::SparseMatrix<double> Aeq;
-            Q = 2 * Q;
-            bool result = igl::min_quad_with_fixed_precompute(Q, b, Aeq, false, data);
-            assert(result);
-
-            Eigen::MatrixXd D;
-            Eigen::MatrixXd bc;
-            bc.resize(vid_list.size(), 3);
-            b_index = 0;
-            for (int vid : vid_list)
-            {
-                bc.row(b_index++) = m_frame_data.avg_v_data.row(vid) - m_frame_data.v_data[i].row(vid);
-            }
-
-            Eigen::MatrixXd B = Eigen::MatrixXd::Zero(data.n, bc.cols());
-            Eigen::VectorXd Beq;
-            //Beq.resize(bc.)
-            result = igl::min_quad_with_fixed_solve(data, B, bc, Beq, D);
-            assert(result);
-
-            Eigen::MatrixXd V_prime = V + D;
-            m_frame_deformed_data.v_data.push_back(V_prime);
-            
-        }
-        m_computed_deformation = true;
-        
-    }
-
     void App::invert_face_selection() 
     {
         std::vector<int> newlist;
@@ -511,112 +432,20 @@ namespace tyro
         render();
         glfwPostEmptyEvent();
     }
-
-    void App::compute_deformation2()
-    {
-        if (fid_list.size() == 0) return;
-        
-        m_frame_deformed_data.v_data.reserve(m_frame_data.v_data.size());
-        m_frame_deformed_data.f_data = m_frame_data.f_data;
-
-        //list of vids that can be deformed
-        std::vector<int> vid_deform, vid_deform_dup; 
-        for (auto fid : fid_list) 
-        {
-            int vid0 = m_frame_data.f_data.row(fid)(0);
-            int vid1 = m_frame_data.f_data.row(fid)(1);
-            int vid2 = m_frame_data.f_data.row(fid)(2);
-            
-            //check that we dont include ones that are part of the seam 
-            auto it2 = std::find(vid_list.begin(), vid_list.end(), vid0);
-            if (it2 == vid_list.end()) vid_deform_dup.push_back(vid0);
-            
-            it2 = std::find(vid_list.begin(), vid_list.end(), vid1);
-            if (it2 == vid_list.end()) vid_deform_dup.push_back(vid1);
-
-            it2 = std::find(vid_list.begin(), vid_list.end(), vid2);
-            if (it2 == vid_list.end()) vid_deform_dup.push_back(vid2);            
-        }
-        igl::unique(vid_deform_dup, vid_deform); //remove duplicates
-        
-        //list of vids that can not be deformed minus seam vids
-        std::vector<int> vid_not_deform; 
-        for (int vid = 0; vid < m_frame_data.v_data[0].rows(); ++vid) 
-        {
-            auto it = std::find(vid_deform.begin(), vid_deform.end(), vid); 
-            auto it2 = std::find(vid_list.begin(), vid_list.end(), vid);
-
-            if (it == vid_deform.end() && it2 == vid_list.end())
-            {   
-                vid_not_deform.push_back(vid);
-            }    
-        }
-
-        assert(vid_deform.size() + vid_not_deform.size() + vid_list.size() == m_frame_data.v_data[0].rows());
-
-        int num_frames = m_frame_data.v_data.size();
-        for (int i =0; i < num_frames; ++i) 
-        {   
-            RA_LOG_INFO("Compute deformation for mesh %i out of %i", i, num_frames)
-            Eigen::MatrixXd V = m_frame_data.v_data[i];
-            Eigen::MatrixXi F = m_frame_data.f_data;
-            Eigen::VectorXi b;
-            int num_fixed = vid_not_deform.size() + vid_list.size();
-            int num_not_fixed = vid_deform.size();
-            b.resize(num_fixed);
-            
-            int b_index = 0;            
-            for (int vid : vid_list) b(b_index++) = vid;
-            for (int vid : vid_not_deform) b(b_index++) = vid;
-                       
-            //do biharmonic stuff here.
-            igl::min_quad_with_fixed_data<double> data;
-            Eigen::SparseMatrix<double> L;            
-            igl::cotmatrix(V, F, L); //try average
-
-            Eigen::SparseMatrix<double> M;	
-            igl::massmatrix(V, F, igl::MASSMATRIX_TYPE_DEFAULT, M);
-
-            //Computer M inverse
-            Eigen::SimplicialLDLT <Eigen::SparseMatrix<double>> solver;
-            solver.compute(M);
-            Eigen::SparseMatrix<double> I(M.rows(), M.cols());
-            I.setIdentity();
-            Eigen::SparseMatrix<double> M_inv = solver.solve(I);
-            Eigen::SparseMatrix<double> Q = L.transpose() * M_inv * L;
-            Eigen::SparseMatrix<double> Aeq;
-            Q = 2 * Q;
-            bool result = igl::min_quad_with_fixed_precompute(Q, b, Aeq, false, data);
-            assert(result);
-
-            Eigen::MatrixXd D;
-            Eigen::MatrixXd bc;
-            bc.resize(num_fixed, 3);
-            bc.setZero();
-            b_index = 0;
-            for (int vid : vid_list)
-            {
-                bc.row(b_index++) = m_frame_data.avg_v_data.row(vid) - m_frame_data.v_data[i].row(vid);
-            }
-            //for (int vid : vid_not_deform)
-           // {
-            //    bc.row(b_index++) = V.row(vid);
-           // }
-
-            Eigen::MatrixXd B = Eigen::MatrixXd::Zero(data.n, bc.cols());
-            Eigen::VectorXd Beq;
-            
-            result = igl::min_quad_with_fixed_solve(data, B, bc, Beq, D);
-            assert(result);
-
-            Eigen::MatrixXd V_prime = V + D;
-            m_frame_deformed_data.v_data.push_back(V_prime);
-            
-        }
-        m_computed_deformation = true;
-        
+    
+    void App::compute_deformation()
+    {     
+        bool result = tyro::compute_deformation(vid_list, 
+                                                fid_list,
+                                                m_frame_data.v_data,
+                                                m_frame_data.f_data,
+                                                m_frame_data.avg_v_data,
+                                                m_frame_deformed_data.v_data,
+                                                m_frame_deformed_data.f_data);
+        assert(result);
+        m_computed_deformation = true;    
     }
-
+    
     void App::compute_average()
     {
         if (m_frame_data.v_data.size()==0)
@@ -717,27 +546,22 @@ namespace tyro
     {   
         RA_LOG_INFO("LOAD MESH SEQUENCE")
         
-        for (const auto& obj_list_file : obj_list) 
-        {
-            stop::load_mesh_sequence(obj_list_file, 
+        //for (const auto& obj_list_file : obj_list) 
+        //{
+            tyro::load_mesh_sequence(obj_list, 
                                      m_frame_data.v_data, 
                                      m_frame_data.n_data, 
                                      m_frame_data.f_data,
                                      use_igl_loader);
-        }
+       // }
         
         //@TODO need this to update camera
         Eigen::Vector3d cr(0.5,0.5,0.5);
-        
-        //m_frame_data.c_data.resize(m_frame_data.v_data[0].rows(), 
-        //                           m_frame_data.v_data[0].cols());
         m_frame_data.c_data.resize(m_frame_data.f_data.rows(), 3);
         for (int i =0 ; i <  m_frame_data.f_data.rows(); ++i) 
         {
             m_frame_data.c_data.row(i) = cr;
         }
-
-        
        
         m_timeline->SetFrameRange(m_frame_data.v_data.size()-1);
 
@@ -749,21 +573,23 @@ namespace tyro
         RA_LOG_INFO("Load Bunny");
         int offset_vid = 1222;
         auto offset = Eigen::Vector3d(0.613322, 2.613381, 2.238946);
-        auto obj_list_file1 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/03_apple/just_face/objlist.txt");
+        auto obj_list_folder1 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/just_face/");
         
-        //auto obj_list_file1 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/03_apple/01/noears/objlist.txt");
-        //auto obj_list_file2 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/03_apple/02/noears/objlist.txt");
-        //auto obj_list_file3 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/03_apple/03/noears/objlist.txt");
-        //auto obj_list_file4 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/03_apple/05/noears/objlist.txt");
-        //auto obj_list_file5 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/03_apple/06/noears/objlist.txt");
+        //auto obj_list_file1 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/03_apple/01/noears/objlist.txt");
+        //auto obj_list_file2 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/03_apple/02/noears/objlist.txt");
+        //auto obj_list_file3 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/03_apple/03/noears/objlist.txt");
+        //auto obj_list_file4 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/03_apple/05/noears/objlist.txt");
+        //auto obj_list_file5 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/03_apple/06/noears/objlist.txt");
         
-        //auto obj_list_file3 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/03/objlist.txt");
-        std::vector<std::string> obj_list = {obj_list_file1};
+        //auto obj_list_file3 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/02_rabbit/03/objlist.txt");
+        //std::vector<std::string> obj_list = {obj_list_file1};
                                              //obj_list_file2, 
                                              //obj_list_file3,  
                                              //obj_list_file4,
                                              //obj_list_file5};
-        load_mesh_sequence(obj_list, true); //use tiny obj loader
+        std::vector<std::string> obj_paths;
+        tyro::obj_file_path_list(obj_list_folder1, "objlist.txt", obj_paths);
+        load_mesh_sequence(obj_paths, true); //use tiny obj loader
         //align_all_models(offset_vid, offset);
         Eigen::Vector3d cr(0.5,0.5,0.5);
 
@@ -773,7 +599,7 @@ namespace tyro
                                           cr);
         tmp->Update(true);        
         update_camera(tmp->WorldBoundBox);
-        //auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/02_rabbit/02/bunn_face/objlist.txt");
+        //auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/02_rabbit/02/bunn_face/objlist.txt");
         //load_mesh_sequence(obj_list_file, true);
 
         m_state = App::State::LoadedModel;
@@ -916,9 +742,9 @@ namespace tyro
     {   
         if (fid_list.size() > 0) 
         {   
-            auto path = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/03_apple/") + folder + std::string("/") + filename;
-            auto tmp_path = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/03_apple/") + folder + std::string("/") + "tmp";
-            auto objlist_path = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/Production Files Archive Rinat/production/obj_export/03_apple/") + folder + std::string("/") + std::string("objlist.txt");
+            auto path = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/03_apple/") + folder + std::string("/") + filename;
+            auto tmp_path = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/03_apple/") + folder + std::string("/") + "tmp";
+            auto objlist_path = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/03_apple/") + folder + std::string("/") + std::string("objlist.txt");
             ofstream objlist_file;
             objlist_file.open (objlist_path);
             

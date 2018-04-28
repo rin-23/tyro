@@ -10,7 +10,9 @@
 #include <atomic>
 
 namespace tyro
-{
+{   
+
+    
     class App 
     {
     public:
@@ -31,7 +33,6 @@ namespace tyro
         void load_bunny();
         void compute_average();
         void compute_deformation();
-        void compute_deformation2();
         void save_selected_faces(const std::string& filename);
         void save_selected_verticies(const std::string& filename);
         void load_selected_faces(const std::string& filename);
@@ -84,7 +85,7 @@ namespace tyro
         std::vector<SpatialSPtr> ball_list;
         std::atomic<int> m_frame;
 
-        typedef struct MRenderData 
+        struct MRenderData 
         {
             IGLMeshSPtr org_mesh;
             IGLMeshWireframeSPtr org_mesh_wire;
@@ -97,21 +98,26 @@ namespace tyro
             IGLMeshSPtr dfm_mesh;
             IGLMeshWireframeSPtr dfm_mesh_wire;            
             bool dfm_visible;
-        } MRenderData;
+        };
         MRenderData render_data;
 
-        typedef struct MAnimation 
+        struct MAnimation 
         {   
             std::vector<Eigen::MatrixXd> v_data; // Vertex data. 3*num_vert by num_frames. 
             std::vector<Eigen::MatrixXd> n_data; // Normal data. 3*num_vert by num_frames. 
-            Eigen::MatrixXi f_data; // Face data.   num_faces by 3
-            Eigen::MatrixXd c_data;
-            Eigen::MatrixXd avg_v_data;
-        } MAnimation;
+            Eigen::MatrixXi f_data; // Face data.  
+            Eigen::MatrixXd c_data; // Color data
+            Eigen::MatrixXd avg_v_data; // average of v_data
+        };
 
         MAnimation m_frame_data;
         MAnimation m_frame_deformed_data;
 
+        struct MMovie 
+        {   
+            std::vector<MAnimation> anim; // list of animations in the movie 
+        };
+        
         std::vector<int> vid_list;
         std::vector<int> fid_list;
 

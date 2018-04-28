@@ -71,7 +71,8 @@
         "specialfunctions": "cpp",
         "*.expression": "cpp",
         "dense": "cpp",
-        "future": "cpp"
+        "future": "cpp",
+        "*.tpp": "cpp"
     },
     "python.linting.enabled": false
 }

@@ -1,6 +1,4 @@
-#include "stop_motion_data.h"
-#include <iostream>
-#include <fstream>
+#include "load_mesh_sequence.h"
 #include "RAEnginePrerequisites.h"
 #include <igl/readOBJ.h>
 #include <igl/per_vertex_normals.h>
@@ -8,28 +6,18 @@
 #define TINYOBJLOADER_IMPLEMENTATION // define this in only *one* .cc
 #include "tiny_obj_loader.h"
 
-using namespace tyro;
-
-namespace stop 
+namespace tyro 
 {   
-    bool load_mesh_sequence(const std::string& obj_list_file,
+    bool load_mesh_sequence(const std::vector<std::string>& obj_paths,
                             std::vector<Eigen::MatrixXd>& v_data, 
                             std::vector<Eigen::MatrixXd>& n_data,  
                             Eigen::MatrixXi& f_data,
                             bool use_igl_loader) 
     {   
         if (use_igl_loader) 
-        {
-            std::ifstream input(obj_list_file.c_str());
-            if (input.fail())
-            {
-                RA_LOG_ERROR_ASSERT("Cannot find file %s",obj_list_file);
-                return false;
-            }
-
-            std::string line;
+        {            
             bool saved_faces = false;
-            while (std::getline(input, line))
+            for (auto& line : obj_paths)
             {
                 if (line[0] == '#') //skip comments
                     continue;
@@ -53,29 +41,18 @@ namespace stop
         } 
         else //use tinyobjloader
         {   
-            std::ifstream input(obj_list_file.c_str());
-            if (input.fail())
-            {
-                RA_LOG_ERROR_ASSERT("Cannot find file %s",obj_list_file);
-                return false;
-            }
-
-            std::string line;
             bool saved_faces = false;
             std::string shape_name("rabbit");
 
-            while (std::getline(input, line))
+            for (auto& line : obj_paths)
             {
-                if (line[0] == '#') //skip comments
-                    continue;
-
-                std::string inputfile = line;
+                //std::string inputfile = line;
                 tinyobj::attrib_t attrib;
                 std::vector<tinyobj::shape_t> shapes;
                 std::vector<tinyobj::material_t> materials;
                 
                 std::string err;
-                bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, inputfile.c_str(), NULL, true);
+                bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, line.c_str(), NULL, true);
                 
                 if (!err.empty()) { // `err` may contain warning message.
                 std::cerr << err << std::endl;
@@ -89,7 +66,6 @@ namespace stop
                 std::vector<std::vector<double>> V_array;
                 std::vector<std::vector<int>> F_array;
 
-            
 
                 //generate F array
                 int min_idx = INT_MAX;
@@ -169,13 +145,6 @@ namespace stop
             }
         }
     }
-    /*
-    bool load_mesh_sequence(const std::string& obj_list_file,
-                            Eigen::MatrixXd v_data, 
-                            Eigen::MatrixXd n_data,  
-                            Eigen::MatrixXi f_data)
-    {
-        assert(false);
-    }
-    */
+
+   
 }

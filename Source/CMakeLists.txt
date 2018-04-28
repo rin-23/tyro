@@ -4,6 +4,7 @@ project(Tyro)
 # Set OS-specific things here
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 message(STATUS "Compiling on Unix")
 
@@ -59,6 +60,9 @@ endif()
 add_subdirectory(Math)
 include(Core/CMakeSources.cmake)
 include(Engine/CMakeSources.cmake)
+include(GraphCutMethods/CMakeSources.cmake)
+include(StopMotion/CMakeSources.cmake)
+
 #include(External/CMakeSources.cmake)
 
 set(TYRO_MATH_INC_EXE 
@@ -104,9 +108,18 @@ set(TYRO_ENGINE_INC_EXE
 
 set(TYRO_EXTERNAL_INC_EXE
     "./External"
-)
+    )
 
-include_directories("./" ${TYRO_MATH_INC_EXE} ${TYRO_CORE_INC_EXE} ${TYRO_ENGINE_INC_EXE} ${TYRO_EXTERNAL_INC_EXE})
+set(TYRO_GRAPHCUT_INC_EXE
+    "./GraphCutMethods/GCOLib"
+    "./GraphCutMethods/kmeans"
+    "./GraphCutMethods/labeling"   
+    )
+set(TYRO_STOPMOTION_INC_EXE 
+    "./StopMotion"
+    )
+
+include_directories("./" ${TYRO_MATH_INC_EXE} ${TYRO_CORE_INC_EXE} ${TYRO_ENGINE_INC_EXE} ${TYRO_EXTERNAL_INC_EXE} ${TYRO_GRAPHCUT_INC_EXE} ${TYRO_STOPMOTION_INC_EXE})
 include_directories(${GLFW_INCLUDE_DIRS})
 include_directories(${OPENGL_INCLUDE_DIR})
 include_directories(${GLEW_INCLUDE_DIR})
@@ -117,14 +130,14 @@ include_directories(SYSTEM "/home/rinat/Workspace/poco-1.9.0/Foundation/include"
 include_directories(SYSTEM "/home/rinat/Workspace/Tyro/Source/External/tinyobjloader/")
 
 
-add_executable(tyro main.cpp ${TYRO_CORE_SRC} ${TYRO_ENGINE_SRC})
+add_executable(tyro main.cpp ${TYRO_CORE_SRC} ${TYRO_ENGINE_SRC} ${TYRO_GCOLIB_SRC} ${TYRO_STOPMOTION_SRC})
 
 IF(CMAKE_BUILD_TYPE MATCHES Debug)
-    add_definitions(-D_DEBUG)
+    add_definitions(-D_DEBUG )
 ENDIF()
 
 IF(CMAKE_BUILD_TYPE MATCHES Release)
-    add_definitions(-D_RELEASE)
+    add_definitions(-D_RELEASE )
 ENDIF()
 
 target_link_libraries(tyro ${OPENGL_LIBRARIES})
@@ -133,9 +146,9 @@ target_link_libraries(tyro ${GLEW_LIBRARIES})
 target_link_libraries(tyro ${FREETYPE_LIBRARIES})
 target_link_libraries(tyro ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(tyro TyroMath)
+target_link_libraries(tyro "/home/rinat/Workspace/poco-1.9.0/cmake-build/lib/libPocoFoundation.so")
 #target_link_libraries(tyro Qt5::Core)
 #target_link_libraries(tyro Qt5::Widgets)
 #target_link_libraries(tyro TyroCore)
-target_link_libraries(tyro "/home/rinat/Workspace/poco-1.9.0/cmake-build/lib/libPocoFoundation.so")
-
+#target_link_libraries(tyro "/home/rinat/Workspace/Tyro/Source/External/libigl/lib/libigl_core.a")
 
