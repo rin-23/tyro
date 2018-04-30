@@ -60,7 +60,7 @@ namespace tyro
 	    SetVertexArray(varray);        
         GetVisualEffect()->GetCullState()->Enabled = false;
         GetVisualEffect()->GetPolygonOffset()->Enabled = true;
-        GetVisualEffect()->GetPolygonOffset()->Offset = 1.0;
+        GetVisualEffect()->GetPolygonOffset()->Offset = 2.0;
     }
 
     /*

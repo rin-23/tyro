@@ -23,6 +23,8 @@
 #include "compute_deformation.h"
 #include <igl/min_quad_with_fixed.h>
 
+#include "stop_motion.h"
+
 using namespace Wm5;
 using namespace std;
 
@@ -30,10 +32,21 @@ namespace tyro
 {   
     namespace
     {   
+
+        void console_stop_motion(App* app, const std::vector<std::string> & args) 
+        {
+            RA_LOG_INFO("running stop motion");
+
+            if (args.size() == 1)
+            {   int num_labels = std::stoi(args[0]);
+                app->stop_motion(num_labels);
+                return;
+            }
+        }
+
         void console_align_all_models(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("aligning models");
-
             app->align_all_models();
             return;
         }
@@ -201,7 +214,8 @@ namespace tyro
     m_computed_deformation(false),
     m_computed_avg(false),
     m_sel_primitive(App::SelectionPrimitive::Vertex),
-    m_sel_method(App::SelectionMethod::Square)
+    m_sel_method(App::SelectionMethod::Square),
+    m_computed_stop_motion(false)
     {}
 
     App::~App() 
@@ -297,6 +311,7 @@ namespace tyro
         register_console_function("save_mesh_sequence_with_selected_faces", console_save_mesh_sequence_with_selected_faces, "");
         register_console_function("invert_face_selection", console_invert_face_selection, "");
         register_console_function("align_all_models", console_align_all_models, "");
+        register_console_function("stop_motion", console_stop_motion, "");
         
         m_state = App::State::Launched;
         // Loop until the user closes the window
@@ -326,25 +341,23 @@ namespace tyro
                     //create renderable for mesh
                     VisibleSet vis_set;
 
-                    if (!m_computed_deformation) 
-                    {
-                        //ORIGNAL MODEL
-                        //Eigen::Vector3d cr(0.5,0.5,0.5);
-                        render_data.org_mesh = IGLMesh::Create(m_frame_data.v_data[m_frame], 
-                                                               m_frame_data.f_data, 
-                                                               m_frame_data.n_data[m_frame],
-                                                               m_frame_data.c_data);
-                        render_data.org_mesh->Update(true);
-                        vis_set.Insert(render_data.org_mesh.get());
+                    //ORIGNAL MODEL
+                    //Eigen::Vector3d cr(0.5,0.5,0.5);
+                    render_data.org_mesh = IGLMesh::Create(m_frame_data.v_data[m_frame], 
+                                                           m_frame_data.f_data, 
+                                                           m_frame_data.n_data[m_frame],
+                                                           m_frame_data.c_data);
+                    render_data.org_mesh->Update(true);
+                    vis_set.Insert(render_data.org_mesh.get());
 
-                        //create renderable for mesh wireframe
-                        Eigen::Vector3d cr2(0,0,0);
-                        render_data.org_mesh_wire = IGLMeshWireframe::Create(m_frame_data.v_data[m_frame], 
-                                                                             m_frame_data.f_data,
-                                                                             cr2);
-                        render_data.org_mesh_wire->Update(true);
-                        vis_set.Insert(render_data.org_mesh_wire.get());
-                    }
+                    //create renderable for mesh wireframe
+                    Eigen::Vector3d cr2(0,0,0);
+                    render_data.org_mesh_wire = IGLMeshWireframe::Create(m_frame_data.v_data[m_frame], 
+                                                                            m_frame_data.f_data,
+                                                                            cr2);
+                    render_data.org_mesh_wire->Update(true);
+                    vis_set.Insert(render_data.org_mesh_wire.get());
+                    
                     //DEFORMED MODEL
                     if (m_computed_deformation)
                     {
@@ -353,7 +366,12 @@ namespace tyro
                                                                m_frame_deformed_data.f_data, 
                                                                m_frame_data.n_data[m_frame],
                                                                cr);
+                        Wm5::Transform tr;
                         render_data.dfm_mesh->Update(true);
+                        tr.SetTranslate(APoint(2*render_data.org_mesh->WorldBoundBox.GetRadius(), 0, 0));
+                        render_data.dfm_mesh->LocalTransform = tr * render_data.dfm_mesh->LocalTransform;
+                        render_data.dfm_mesh->Update(true);
+                        
                         vis_set.Insert(render_data.dfm_mesh.get());
 
                         //create renderable for mesh wireframe
@@ -362,7 +380,37 @@ namespace tyro
                                                                              m_frame_deformed_data.f_data,
                                                                              cr2);
                         render_data.dfm_mesh_wire->Update(true);
+                        render_data.dfm_mesh_wire->LocalTransform = tr * render_data.dfm_mesh_wire->LocalTransform;
+                        render_data.dfm_mesh_wire->Update(true);
                         vis_set.Insert(render_data.dfm_mesh_wire.get());
+                    }
+
+
+                    //Stop motion mesh data
+                    if (m_computed_stop_motion) 
+                    {
+                        render_data.stop_motion_mesh = IGLMesh::Create(m_sm_data.v_data[m_frame], 
+                                                                       m_sm_data.f_data, 
+                                                                       m_frame_data.n_data[m_frame],
+                                                                       m_sm_data.c_data);
+                        Wm5::Transform tr;
+                        render_data.stop_motion_mesh->Update(true);
+                        tr.SetTranslate(APoint(render_data.stop_motion_mesh->WorldBoundBox.GetRadius(), 0, 0));
+                        render_data.stop_motion_mesh->LocalTransform = tr * render_data.stop_motion_mesh->LocalTransform;
+                        render_data.stop_motion_mesh->Update(true);
+                        vis_set.Insert(render_data.stop_motion_mesh.get());
+
+                        //create renderable for mesh wireframe
+                        Eigen::Vector3d cr2(0,0,0);
+                        render_data.stop_motion_mesh_wire = IGLMeshWireframe::Create(m_sm_data.v_data[m_frame], 
+                                                                                     m_sm_data.f_data,
+                                                                                     cr2);
+                        render_data.stop_motion_mesh_wire->Update(true);
+                        render_data.stop_motion_mesh_wire->LocalTransform = tr * render_data.stop_motion_mesh_wire->LocalTransform;
+                        render_data.stop_motion_mesh_wire->Update(true);
+                        
+                        vis_set.Insert(render_data.stop_motion_mesh_wire.get());
+                    
                     }
 
                     if (m_computed_avg) 
@@ -433,6 +481,34 @@ namespace tyro
         glfwPostEmptyEvent();
     }
     
+    void App::stop_motion(int num_labels) 
+    {
+
+        std::vector<Eigen::MatrixXd> D;
+        Eigen::VectorXi S_vec;
+        double result_energy;
+
+        tyro::stop_motion_vertex_distance(num_labels, 
+                            	          m_frame_data.v_data,
+                            	          m_frame_data.f_data,
+								          D, //dictionary
+								          S_vec, //labels 
+                            	          result_energy);
+
+        m_sm_data.v_data.clear();
+        for (int i = 0; i < S_vec.size(); ++i) 
+        {
+            int l_indx = S_vec(i);
+            m_sm_data.v_data.push_back(D[l_indx]);
+        }
+        m_sm_data.f_data = m_frame_data.f_data;
+        m_sm_data.c_data = m_frame_data.c_data;
+        m_computed_stop_motion = true;
+        render();
+        glfwPostEmptyEvent();
+    }
+        
+
     void App::compute_deformation()
     {     
         bool result = tyro::compute_deformation(vid_list, 
@@ -469,7 +545,7 @@ namespace tyro
         render_data.avg_mesh->Update(true);
 
         Wm5::Transform tr;
-        tr.SetTranslate(APoint(render_data.avg_mesh->WorldBoundBox.GetRadius(), 0, 0));
+        tr.SetTranslate(APoint(3*render_data.avg_mesh->WorldBoundBox.GetRadius(), 0, 0));
         render_data.avg_mesh->LocalTransform = tr * render_data.avg_mesh->LocalTransform;
         render_data.avg_mesh->Update(true);
 
@@ -540,7 +616,7 @@ namespace tyro
         
         render();
     }
-        
+       
 
     void App::load_mesh_sequence(const std::vector<std::string>& obj_list, bool use_igl_loader) 
     {   
@@ -588,7 +664,7 @@ namespace tyro
                                              //obj_list_file4,
                                              //obj_list_file5};
         std::vector<std::string> obj_paths;
-        tyro::obj_file_path_list(obj_list_folder1, "objlist.txt", obj_paths);
+        tyro::obj_file_path_list(obj_list_folder1, "objlist2.txt", obj_paths);
         load_mesh_sequence(obj_paths, true); //use tiny obj loader
         //align_all_models(offset_vid, offset);
         Eigen::Vector3d cr(0.5,0.5,0.5);
@@ -845,6 +921,7 @@ namespace tyro
             }                  
         }   
     }
+
 
     void App::mouse_down(Window& window, int button, int modifier) 
     {   
@@ -1114,4 +1191,5 @@ namespace tyro
         std::function<void (const std::vector<std::string>&)> f = bind(con_fun, this, std::placeholders::_1);
         m_console.reg_cmdN(name, f, help_txt);
     }
+
 }

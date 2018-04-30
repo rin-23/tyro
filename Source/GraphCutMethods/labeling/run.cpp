@@ -409,8 +409,6 @@ int runlabeling_true_VERTEX(int num_labels, double& result_energy)
 		build_L_Matrix_Vertex(F, D, num_labels);
 #endif
 
-		
-
 		VectorXi S_vec;
 		double oldEnergy = 0; 
 		double newEnergy = 0;

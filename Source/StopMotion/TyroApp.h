@@ -11,7 +11,6 @@
 
 namespace tyro
 {   
-
     
     class App 
     {
@@ -44,7 +43,8 @@ namespace tyro
         void invert_face_selection();
         void align_all_models();
         void align_all_models(int vid, Eigen::Vector3d offset);
-        
+        void stop_motion(int num_labels);
+
         State m_state;
         SelectionPrimitive m_sel_primitive;
         SelectionMethod m_sel_method;
@@ -71,17 +71,13 @@ namespace tyro
         int m_mouse_btn_clicked;
         bool m_computed_deformation;
         bool m_computed_avg;
+        bool m_computed_stop_motion;
         Console m_console;
 
         //square selection
         int m_square_sel_start_x;
         int m_square_sel_start_y;
         
-
-        //IGLMeshSPtr igl_mesh;
-        //IGLMeshWireframeSPtr igl_mesh_wire;
-
-        //std::vector<SpatialSPtr> object_list;
         std::vector<SpatialSPtr> ball_list;
         std::atomic<int> m_frame;
 
@@ -98,6 +94,10 @@ namespace tyro
             IGLMeshSPtr dfm_mesh;
             IGLMeshWireframeSPtr dfm_mesh_wire;            
             bool dfm_visible;
+
+            IGLMeshSPtr stop_motion_mesh;
+            IGLMeshWireframeSPtr stop_motion_mesh_wire;
+            bool stop_motion_visible = true;
         };
         MRenderData render_data;
 
@@ -112,11 +112,12 @@ namespace tyro
 
         MAnimation m_frame_data;
         MAnimation m_frame_deformed_data;
+        MAnimation m_sm_data; //stop motion data
 
-        struct MMovie 
-        {   
-            std::vector<MAnimation> anim; // list of animations in the movie 
-        };
+        //struct MMovie 
+        //{   
+        //    std::vector<MAnimation> anim; // list of animations in the movie 
+        //};
         
         std::vector<int> vid_list;
         std::vector<int> fid_list;
