@@ -27,14 +27,54 @@
 
 #include "RAES2TextOverlay.h"
 #include "RAFont.h"
+#include "mesh_split.h"
+#include <igl/oriented_facets.h>
 
 using namespace Wm5;
 using namespace std;
 
+void tyro::convert_vertex_to_edge_selection(const std::vector<int>& vid_list, Eigen::MatrixXi& E) 
+{
+    int num_edges = vid_list.size();
+    E.resize(num_edges, 2);
+    for (int i = 0; i < num_edges; ++i) 
+    {   
+        if (i == num_edges - 1) //last edge
+            E.row(i) = Eigen::Vector2i(vid_list[i], vid_list[0]);
+        else
+            E.row(i) = Eigen::Vector2i(vid_list[i], vid_list[i+1]);
+    }
+}
+
 namespace tyro
 {   
     namespace
-    {      
+    {    
+        
+        void console_split_mesh(App* app, const std::vector<std::string> & args) 
+        {
+            RA_LOG_INFO("Cutting mesh");
+            
+            if (app->vid_list.size() == 0) 
+            {
+                return;
+            }
+
+            Eigen::MatrixXi F1, F2, E_sel;
+            Eigen::VectorXi E_seam;
+            tyro::convert_vertex_to_edge_selection(app->vid_list, E_sel);
+            
+            for 
+
+
+            tyro::mesh_cut(app->m_frame_data.f_data,
+                           E_seam, 
+                           F1, 
+                           F2);
+            
+            return;
+        }
+
         void console_frame(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("Jump to a new frame");
@@ -317,17 +357,20 @@ namespace tyro
         register_console_function("load_bunny", console_load_bunny, "");
         register_console_function("compute_average", console_compute_average, "");
         register_console_function("compute_deformation", console_compute_deformation, "");
+
         register_console_function("save_selected_faces", console_save_selected_faces, "");
         register_console_function("load_selected_faces", console_load_selected_faces, "");
         register_console_function("save_selected_verticies", console_save_selected_verticies, "");
         register_console_function("load_selected_verticies", console_load_selected_verticies, "");
+        register_console_function("invert_face_selection", console_invert_face_selection, "");
+
         register_console_function("set_sel_primitive", console_set_sel_primitive, "");
         register_console_function("set_sel_method", console_set_sel_method, "");
         register_console_function("save_mesh_sequence_with_selected_faces", console_save_mesh_sequence_with_selected_faces, "");
-        register_console_function("invert_face_selection", console_invert_face_selection, "");
         register_console_function("align_all_models", console_align_all_models, "");
         register_console_function("stop_motion", console_stop_motion, "");
         register_console_function("frame", console_frame, "");
+        register_console_function("split_mesh", console_split_mesh, "");
 
         m_state = App::State::Launched;
         // Loop until the user closes the window
@@ -987,6 +1030,13 @@ namespace tyro
     void App::frame(int frame) 
     {
         m_timeline->SetFrame(frame);
+    }
+
+    void App::split_mesh() 
+    {
+        Eigen::MatrixXd E;
+        convert_vertex_to_edge_selection(vid_list, E);
+
     }
 
     void App::mouse_down(Window& window, int button, int modifier) 

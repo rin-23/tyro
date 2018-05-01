@@ -72,7 +72,8 @@
         "*.expression": "cpp",
         "dense": "cpp",
         "future": "cpp",
-        "*.tpp": "cpp"
+        "*.tpp": "cpp",
+        "*.isph": "cpp"
     },
     "python.linting.enabled": false
 }

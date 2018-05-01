@@ -10,7 +10,13 @@
 #include <atomic>
 
 namespace tyro
-{       
+{   
+    //Convert vertex selection to edge selection.
+    //in vid_list - list of vertex ids (ORDERED RIGHT NOW, ASSUME CLOSED LOOP)
+    //out E - vid_list.size() by 2 matrix of edges
+    void convert_vertex_to_edge_selection(const std::vector<int>& vid_list, 
+                                          Eigen::MatrixXi& E);
+ 
     class App 
     {
     public:
@@ -45,12 +51,13 @@ namespace tyro
         void align_all_models(int vid, Eigen::Vector3d offset);
         void stop_motion(int num_labels);
         void frame(int frame);
+        //void split_mesh();
 
         State m_state;
         SelectionPrimitive m_sel_primitive;
         SelectionMethod m_sel_method;
 
-    private:
+    
         
         Timeline* m_timeline;
         Window* m_tyro_window;
@@ -124,6 +131,7 @@ namespace tyro
         
         std::vector<int> vid_list;
         std::vector<int> fid_list;
+        std::vector<int> eid_list;
 
         void register_console_function(const std::string& name,
                                        const std::function<void(App*, const std::vector<std::string>&)>& con_fun,
@@ -135,6 +143,7 @@ namespace tyro
         void removeSpheres(std::vector<int> vids);
         void setFaceColor(int fid, bool selected);
         void selectVertex(Eigen::Vector2f& mouse_pos);
+        
         std::atomic<bool> m_need_rendering;
     };
 }
