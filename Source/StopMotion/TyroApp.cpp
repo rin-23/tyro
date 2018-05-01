@@ -34,7 +34,17 @@ using namespace std;
 namespace tyro
 {   
     namespace
-    {   
+    {      
+        void console_frame(App* app, const std::vector<std::string> & args) 
+        {
+            RA_LOG_INFO("Jump to a new frame");
+
+            if (args.size() == 1)
+            {   int frame = std::stoi(args[0]);
+                app->frame(frame);
+                return;
+            }
+        }
 
         void console_stop_motion(App* app, const std::vector<std::string> & args) 
         {
@@ -260,8 +270,6 @@ namespace tyro
         {   
             RA_LOG_INFO("Frame Change BEGIN");
             m_frame = frame;
-            std::string fstr = std::string("Frame ") + std::to_string(frame) + std::string("/") + std::to_string(m_frame_data.v_data.size());
-            m_frame_overlay->SetText(fstr);
             m_need_rendering = true;
             glfwPostEmptyEvent();
             RA_LOG_INFO("Frame Change END");
@@ -319,7 +327,8 @@ namespace tyro
         register_console_function("invert_face_selection", console_invert_face_selection, "");
         register_console_function("align_all_models", console_align_all_models, "");
         register_console_function("stop_motion", console_stop_motion, "");
-        
+        register_console_function("frame", console_frame, "");
+
         m_state = App::State::Launched;
         // Loop until the user closes the window
         m_tyro_window->GetGLContext()->swapBuffers();
@@ -338,13 +347,13 @@ namespace tyro
         fManager->Setup(ppi, scale);
 
         ES2FontSPtr font = FontManager::GetSingleton()->GetSystemFontOfSize12();
-        std::string strrr("Frame 10/9000");
+        std::string strrr("Frame 0/9000");
         m_frame_overlay = ES2TextOverlay::Create(strrr, 
                                                  Vector2f(0, 0), 
                                                  font, 
                                                  Vector4f(0,0,0,1), 
                                                  viewport);
-        m_frame_overlay->SetTranslate(Wm5::Vector2i(20,20));
+        m_frame_overlay->SetTranslate(Wm5::Vector2i(-viewport[2]/2 + 50,-viewport[3]/2 + 50));
         
         while (!m_tyro_window->ShouldClose())
         {   
@@ -444,6 +453,9 @@ namespace tyro
                         vis_set.Insert(object_sptr.get());
                     }
                     
+                    std::string fstr = std::string("Frame ") + std::to_string(m_frame) + std::string("/") + std::to_string(m_frame_data.v_data.size());
+                    m_frame_overlay->SetText(fstr);
+
                     vis_set.Insert(m_frame_overlay.get());
 
                     if (m_update_camera) 
@@ -971,11 +983,15 @@ namespace tyro
             }                  
         }   
     }
-
+    
+    void App::frame(int frame) 
+    {
+        m_timeline->SetFrame(frame);
+    }
 
     void App::mouse_down(Window& window, int button, int modifier) 
     {   
-        RA_LOG_INFO("mouse down %i", button);
+        //RA_LOG_INFO("mouse down %i", button);
 
         if (m_state != App::State::LoadedModel) return;
 
@@ -1002,7 +1018,7 @@ namespace tyro
     void App::mouse_up(Window& window, int button, int modifier) 
     {   
         if (m_state != App::State::LoadedModel) return;
-        RA_LOG_INFO("MOUSE_UP");
+        //RA_LOG_INFO("MOUSE_UP");
         if (mouse_is_down && m_modifier == TYRO_MOD_CONTROL) 
         {   
             gesture_state = 2;
@@ -1115,7 +1131,7 @@ namespace tyro
     
     void App::mouse_move(Window& window, int mouse_x, int mouse_y) 
     {   
-        RA_LOG_INFO("mouse move state %i", m_state);
+        //RA_LOG_INFO("mouse move state %i", m_state);
         if (m_state != App::State::LoadedModel) return;
         
         current_mouse_x = mouse_x;
@@ -1167,11 +1183,11 @@ namespace tyro
 
     void App::key_pressed(Window& window, unsigned int key, int modifiers) 
     {   
-        RA_LOG_INFO("Key pressed %c", key);
+        //RA_LOG_INFO("Key pressed %c", key);
         
         if (key == '`') 
         {   
-            RA_LOG_INFO("Pressed %c", key);
+            //RA_LOG_INFO("Pressed %c", key);
             show_console = !show_console;
             render();
             return;
@@ -1208,7 +1224,7 @@ namespace tyro
     
     void App::key_down(Window& window, unsigned int key, int modifiers) 
    {   
-        RA_LOG_INFO("Key down %i", key)
+        //RA_LOG_INFO("Key down %i", key)
         // handle not text keys   
 
         if (key == TYRO_KEY_LEFT){ 

@@ -99,4 +99,14 @@ TF = TI(F(L<=0,:));
 BF = BI(F(L>0,:));
 %BV = Vavg(BJ,:);
 
+for f = 1:size(VV,3);
+  [UU(:,:,f),mqwf] = min_quad_with_fixed(Q,-2*Q*VV(:,:,f),b,bc,[],[],mqwf);
+  writeOBJ(sprintf('faces-bottom/bottom-face_mesh_%06d.obj',f),UU(BJ,:,f),BF);
+  writeOBJ(sprintf('faces-top/top-face_mesh_%06d.obj',f),      UU(TJ,:,f),TF);
+  tsh.Vertices = UU(:,:,f)*R;
+  %tsh.CData = normrow(UU(:,:,f)-VV(:,:,f)).*(2*V2F*double(L)-1);
+  title(sprintf('%d/%d',f,size(VV,3)),'Fontsize',30);
+  drawnow;
+  %pause
+end
 }

@@ -26,6 +26,7 @@ namespace tyro
         
         int Launch();
 
+        //Commands
         void load_blobby();
         void load_oldman();
         void load_bunny();
@@ -43,6 +44,7 @@ namespace tyro
         void align_all_models();
         void align_all_models(int vid, Eigen::Vector3d offset);
         void stop_motion(int num_labels);
+        void frame(int frame);
 
         State m_state;
         SelectionPrimitive m_sel_primitive;

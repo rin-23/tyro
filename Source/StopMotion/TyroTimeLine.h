@@ -77,6 +77,16 @@ namespace tyro
             state = Paused;
         }
 
+        inline void SetFrame(int frame) 
+        {
+            if (state != Running) 
+            {
+                cur_frame = frame;
+                cur_frame = cur_frame % num_frames;
+                this->frameChanged(*this, cur_frame);
+            }
+        }
+
         inline void NextFrame() 
         {
             if (state != Running) 
