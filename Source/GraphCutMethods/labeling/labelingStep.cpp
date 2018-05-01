@@ -121,6 +121,7 @@ GCoptimization::EnergyTermType smoothFnTRUEVertex(int p1, int p2, int l1, int l2
 	double diff = ((l1Obj - l2Obj) - (p1Obj - p2Obj)).squaredNorm();
 	GCoptimization::EnergyTermType sum = (GCoptimization::EnergyTermType) (global_w * diff);
 	return sum;
+	
 }
 
 

@@ -81,13 +81,13 @@ namespace tyro
 			ES2Renderable* renderable = (ES2Renderable*)visualSet->GetVisible(i);
 			assert(renderable);
 			//        RA_LOG_INFO("Object name %s", renderable->GetName().data());
-			if (!renderable->GetVisualEffect()->GetAlphaState()->Enabled)
-			{
+			//if (!renderable->GetVisualEffect()->GetAlphaState()->Enabled)
+			//{
 				renderable->UpdateUniformsWithCamera(camera);
 				RenderPrimitive(renderable);
-			}
-			else
-			{
+			//}
+			//else
+			//{
 				/*
 				AlphaSceneNode* alphaNode = new AlphaSceneNode();
 				alphaNode->renderable = renderable;
@@ -95,7 +95,7 @@ namespace tyro
 				alphaNode->mScreenZ = cameraPos.Z();
 				mAlphaSceneNodes.push_back(alphaNode);
 				*/
-			}
+			//}
 		}
 
 		/*

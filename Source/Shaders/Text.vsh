@@ -1,9 +1,10 @@
-attribute vec4 aPosition;
-attribute vec2 aTexcoord;
-
-varying highp vec2 vTexcoord;
+#version 400
+in vec4 aPosition;
+in vec2 aTexcoord;
 
 uniform mat4 uNDCTransform;
+
+out vec2 vTexcoord;
 
 void main()
 {

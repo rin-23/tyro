@@ -1,9 +1,12 @@
-varying highp vec2 vTexcoord;
+#version 400
+
+in vec2 vTexcoord;
 
 uniform sampler2D uSampler;
-uniform lowp vec4 uColor;
+uniform vec4 uColor;
+out vec4 fFragColor;
 
 void main()
 {
-    gl_FragColor = vec4(1, 1, 1, texture2D(uSampler, vTexcoord).a) * uColor;
+    fFragColor = vec4(1, 1, 1, texture2D(uSampler, vTexcoord).a) * uColor;
 }

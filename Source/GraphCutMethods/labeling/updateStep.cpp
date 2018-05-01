@@ -209,8 +209,7 @@ double computeEnergyTRUEVertex(const Eigen::MatrixXd& F, const Eigen::MatrixXd& 
 }
 
 void updateStepTRUEVertex(const Eigen::MatrixXd& F, Eigen::MatrixXd& D, const Eigen::VectorXi& S_vec, double w_s, double& oldEnergy, double& newEnergy) 
-{
-	
+{	
 	int D_cols = D.cols(); //number of labels in dictionary
 	int F_cols = F.cols(); //number of frames
 	

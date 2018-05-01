@@ -5,13 +5,50 @@
 #include "updateStep.h"
 #include <chrono>
 #include "utils.h"
+#include "point.h"
+#include "kmeans.h"
 
 using namespace Eigen;
 using namespace std;
 using namespace std::chrono;
+
 namespace tyro 
 {
-void build_L_Matrix_Vertex(const MatrixXd& F, MatrixXd& L, int numLabels) 
+
+void build_dictionary_kmeans(MatrixXd& F, MatrixXd& L, int numLabels)
+{
+	std::vector<Point> points;
+	//KMeans::loadPoints(fpath, &points);
+	
+	int numFrames = F.cols();
+	for (int i = 0; i < numFrames; ++i) 
+	{
+		VectorXd mat = F.col(i);
+		vector<double> vec(mat.data(), mat.data() + mat.size());
+		Point p(vec);
+		points.push_back(p);
+	}
+	
+	KMeans kmeans(numLabels);
+	kmeans.init(points);
+	kmeans.run();
+	//kmeans.printMeans();
+
+	
+	int numVerticies= F.rows();
+	L.resize(numVerticies, numLabels);
+	L.setZero();
+
+	for (int i = 0; i < numLabels; ++i)
+	{
+		Point cluster = kmeans.means_[i];
+		double* cluster_data = cluster.data_.data();
+		Map<VectorXd> mapped(cluster_data, cluster.dimensions_);
+		L.col(i) = mapped;
+	}
+}
+
+void build_dictionary_random(const MatrixXd& F, MatrixXd& L, int numLabels) 
 {
 	int numFrames = F.cols();
 	int numVerticies = F.rows();
@@ -62,17 +99,18 @@ void flatten_frames(const std::vector<Eigen::MatrixXd>& v_data, MatrixXd& F)
 int stop_motion_vertex_distance(int num_labels, 
                             	const std::vector<Eigen::MatrixXd>& v_data,
                             	const Eigen::MatrixXi& f_data,
-								std::vector<Eigen::MatrixXd>& D, //dictionary
-								Eigen::VectorXi& S_vec, //labels 
+								std::vector<Eigen::MatrixXd>& d_data,
+								std::vector<int>& s_data,  
                             	double& result_energy)
 {
+	double w_s = 1.0f; //smooth weight
+	int num_steps = 100;// 150;
+	double tolerance = 0.0001;
+	int n_init = 3; // number of times the clustering algorithm will be run
+
+
 	MatrixXd F; //,  SAVED_FACES; //frame data
 	flatten_frames(v_data, F);
-	
-	double w_s = 1.0f; //smooth weight
-	int num_steps = 10;// 150;
-	double tolerance = 0.0001;
-	int n_init = 1; // number of times the clustering algorithm will be run
 
 	std::vector<Eigen::MatrixXd> n_init_D;
 	std::vector<Eigen::VectorXi> n_init_S;
@@ -85,9 +123,9 @@ int stop_motion_vertex_distance(int num_labels,
 		Eigen::MatrixXd D; //label blendshape data
 		
 #if D_USE_KMEANS_INITALIZATION
-		build_L_Matrix_Vertex_Kmeans(F, D, num_labels);
+		build_dictionary_kmeans(F, D, num_labels);
 #else
-		build_L_Matrix_Vertex(F, D, num_labels);
+		build_dictionary_random(F, D, num_labels);
 #endif
 
 		VectorXi S_vec;
@@ -132,10 +170,14 @@ int stop_motion_vertex_distance(int num_labels,
 	int min_idx = std::distance(std::begin(n_init_energy), result);
 
 	MatrixXd D_flat = n_init_D.at(min_idx);
-	unflatten_frames(D_flat, D);
+	unflatten_frames(D_flat, d_data);
 	//saveDictionary(labelOBJ, D, SAVED_FACES);
 	
-	S_vec = n_init_S.at(min_idx);
+	VectorXi S_vec = n_init_S.at(min_idx);
+	for (int i = 0; i < S_vec.size(); ++i) 
+	{
+		s_data.push_back(S_vec(i));
+	}
 	//saveMatrix(labelPath, S_vec, true);
 
 	result_energy = n_init_energy.at(min_idx);

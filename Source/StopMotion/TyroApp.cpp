@@ -25,6 +25,9 @@
 
 #include "stop_motion.h"
 
+#include "RAES2TextOverlay.h"
+#include "RAFont.h"
+
 using namespace Wm5;
 using namespace std;
 
@@ -215,7 +218,9 @@ namespace tyro
     m_computed_avg(false),
     m_sel_primitive(App::SelectionPrimitive::Vertex),
     m_sel_method(App::SelectionMethod::Square),
-    m_computed_stop_motion(false)
+    m_computed_stop_motion(false),
+    m_update_camera(false),
+    m_frame_overlay(nullptr)
     {}
 
     App::~App() 
@@ -255,6 +260,8 @@ namespace tyro
         {   
             RA_LOG_INFO("Frame Change BEGIN");
             m_frame = frame;
+            std::string fstr = std::string("Frame ") + std::to_string(frame) + std::string("/") + std::to_string(m_frame_data.v_data.size());
+            m_frame_overlay->SetText(fstr);
             m_need_rendering = true;
             glfwPostEmptyEvent();
             RA_LOG_INFO("Frame Change END");
@@ -325,6 +332,19 @@ namespace tyro
             //RA_LOG_INFO("Looping GLFW");
         //    m_tyro_window->Wait();
         //}
+        FontManager* fManager = FontManager::GetSingleton();
+        float scale = 1;
+        float ppi = 144;
+        fManager->Setup(ppi, scale);
+
+        ES2FontSPtr font = FontManager::GetSingleton()->GetSystemFontOfSize12();
+        std::string strrr("Frame 10/9000");
+        m_frame_overlay = ES2TextOverlay::Create(strrr, 
+                                                 Vector2f(0, 0), 
+                                                 font, 
+                                                 Vector4f(0,0,0,1), 
+                                                 viewport);
+        m_frame_overlay->SetTranslate(Wm5::Vector2i(20,20));
         
         while (!m_tyro_window->ShouldClose())
         {   
@@ -423,6 +443,15 @@ namespace tyro
                     {
                         vis_set.Insert(object_sptr.get());
                     }
+                    
+                    vis_set.Insert(m_frame_overlay.get());
+
+                    if (m_update_camera) 
+                    {
+                        update_camera();
+                        m_update_camera = false;
+                    }
+
 
                     m_gl_rend->RenderVisibleSet(&vis_set, m_camera);         
                 }
@@ -483,27 +512,30 @@ namespace tyro
     
     void App::stop_motion(int num_labels) 
     {
-
-        std::vector<Eigen::MatrixXd> D;
-        Eigen::VectorXi S_vec;
+        std::vector<Eigen::MatrixXd> d_data;
+        std::vector<int> s_data;
         double result_energy;
 
         tyro::stop_motion_vertex_distance(num_labels, 
                             	          m_frame_data.v_data,
                             	          m_frame_data.f_data,
-								          D, //dictionary
-								          S_vec, //labels 
+								          d_data, //dictionary
+								          s_data, //labels 
                             	          result_energy);
 
         m_sm_data.v_data.clear();
-        for (int i = 0; i < S_vec.size(); ++i) 
+        for (int i = 0; i < s_data.size(); ++i) 
         {
-            int l_indx = S_vec(i);
-            m_sm_data.v_data.push_back(D[l_indx]);
+            int l_indx = s_data[i];
+            m_sm_data.v_data.push_back(d_data[l_indx]);
         }
+
         m_sm_data.f_data = m_frame_data.f_data;
         m_sm_data.c_data = m_frame_data.c_data;
         m_computed_stop_motion = true;
+        
+        m_update_camera = true;
+
         render();
         glfwPostEmptyEvent();
     }
@@ -519,7 +551,9 @@ namespace tyro
                                                 m_frame_deformed_data.v_data,
                                                 m_frame_deformed_data.f_data);
         assert(result);
-        m_computed_deformation = true;    
+        m_computed_deformation = true;
+        m_update_camera = true;
+    
     }
     
     void App::compute_average()
@@ -557,11 +591,30 @@ namespace tyro
         render_data.avg_mesh_wire->Update(true);
 
         m_computed_avg = true;
+        m_update_camera = true;
+
     }
 
-    void App::update_camera(const AxisAlignedBBox& WorldBoundBox) 
+    void App::update_camera() 
     {
         //setup camera
+        AxisAlignedBBox WorldBoundBox = render_data.org_mesh->WorldBoundBox;
+
+        if (m_computed_avg) 
+        {
+            WorldBoundBox.Merge(render_data.avg_mesh->WorldBoundBox);
+        }
+
+        if (m_computed_deformation) 
+        {
+            WorldBoundBox.Merge(render_data.dfm_mesh->WorldBoundBox);
+        }
+
+        if (m_computed_stop_motion) 
+        {
+            WorldBoundBox.Merge(render_data.stop_motion_mesh->WorldBoundBox);
+        }
+
         APoint world_center = WorldBoundBox.GetCenter();
         float radius = std::abs(WorldBoundBox.GetRadius()*2.5);
         float aspect = 1.0;
@@ -667,17 +720,10 @@ namespace tyro
         tyro::obj_file_path_list(obj_list_folder1, "objlist2.txt", obj_paths);
         load_mesh_sequence(obj_paths, true); //use tiny obj loader
         //align_all_models(offset_vid, offset);
-        Eigen::Vector3d cr(0.5,0.5,0.5);
-
-        IGLMeshSPtr tmp = IGLMesh::Create(m_frame_data.v_data[0], 
-                                          m_frame_data.f_data, 
-                                          m_frame_data.n_data[0], 
-                                          cr);
-        tmp->Update(true);        
-        update_camera(tmp->WorldBoundBox);
+        
         //auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/02_rabbit/02/bunn_face/objlist.txt");
         //load_mesh_sequence(obj_list_file, true);
-
+        m_update_camera = true;
         m_state = App::State::LoadedModel;
         render();
     }
@@ -688,6 +734,8 @@ namespace tyro
         RA_LOG_INFO("LOAD_BLOBBY");
         auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/Claymation/data/hello/FramesOBJ/objlist2.txt");
         //load_mesh_sequence(obj_list_file);
+                m_update_camera = true;
+
         m_state = App::State::LoadedModel;
         render();
     }
@@ -698,6 +746,8 @@ namespace tyro
         RA_LOG_INFO("LOAD OLDMAN");
         auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/Claymation/data/oldman/gotolunch/FramesOBJ/FullFace/objlist2.txt");
         //load_mesh_sequence(obj_list_file);
+                m_update_camera = true;
+
         m_state = App::State::LoadedModel;
         render();
     }

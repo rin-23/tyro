@@ -27,6 +27,8 @@ namespace tyro
 
         static AxisAlignedBBox TransformAffine (const Wm5::Transform& transform, const AxisAlignedBBox& bound);
         
+        void Merge(const AxisAlignedBBox& box);
+
         virtual ~AxisAlignedBBox();
     };
 }

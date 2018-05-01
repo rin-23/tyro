@@ -129,7 +129,7 @@ void ES2TextOverlay::UpdateUniformsWithCamera(const Camera* camera)
     pCenter.Y() = pCenter.Y()/pCenter.W();
     Wm5::Transform tr;
     tr.SetTranslate(Wm5::Vector3f(pCenter.X(), pCenter.Y(), 0));
-
+    tr = ScreenTransform;
     GetVisualEffect()->GetUniforms()->UpdateFloatUniform(2, tr.Matrix().Transpose());
 }
 
@@ -177,11 +177,14 @@ void ES2TextOverlay::_UpdateGeometry()
     if (mText.length() != mAllocSize)
     {
         SetVertexBuffer(std::make_shared<ES2VertexHardwareBuffer>(sizeof(VertexTexture), numOfVerticies, coords, HardwareBuffer::BU_DYNAMIC));
+        ES2VertexArraySPtr varray = std::make_shared<ES2VertexArray>(this->GetVisualEffect(), this->GetVertexBuffer());
+	    SetVertexArray(varray);
     }
     else
     {
         GetVertexBuffer()->WriteData(0, numOfVerticies * sizeof(VertexTexture), coords);
     }
+    
 
     mAllocSize = mText.length();
     delete [] coords;

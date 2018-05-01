@@ -35,6 +35,30 @@ AxisAlignedBox3(min, max)
 AxisAlignedBBox::~AxisAlignedBBox()
 {}
 
+void AxisAlignedBBox::Merge(const AxisAlignedBBox& rhs) 
+{
+    // Do nothing if rhs null, or this is infinite
+    if (rhs.mExtent == EXTENT_NULL)
+    {
+        return;
+    }
+    // Otherwise if current null, just take rhs
+    else if (mExtent == EXTENT_NULL)
+    {
+        SetExtents(rhs.Min, rhs.Max);
+    }
+    // Otherwise merge
+    else
+    {
+        Vector3f min = Min;
+        Vector3f max = Max;
+        max.MakeCeil(rhs.Max);
+        min.MakeFloor(rhs.Min);
+        
+        SetExtents(min, max);
+    }
+}
+
 AxisAlignedBBox AxisAlignedBBox::TransformAffine (const Wm5::Transform& transform, const AxisAlignedBBox& bound)
 {
     assert(!bound.isNull());

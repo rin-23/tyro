@@ -10,8 +10,7 @@
 #include <atomic>
 
 namespace tyro
-{   
-    
+{       
     class App 
     {
     public:
@@ -48,11 +47,14 @@ namespace tyro
         State m_state;
         SelectionPrimitive m_sel_primitive;
         SelectionMethod m_sel_method;
+
     private:
+        
         Timeline* m_timeline;
         Window* m_tyro_window;
         ES2Renderer* m_gl_rend;
         iOSCamera* m_camera;
+        ES2TextOverlaySPtr m_frame_overlay;
         
         void mouse_down(Window& window, int button, int modifier);
         void mouse_up(Window& window, int button, int modifier);
@@ -73,7 +75,7 @@ namespace tyro
         bool m_computed_avg;
         bool m_computed_stop_motion;
         Console m_console;
-
+        bool m_update_camera;
         //square selection
         int m_square_sel_start_x;
         int m_square_sel_start_y;
@@ -109,7 +111,6 @@ namespace tyro
             Eigen::MatrixXd c_data; // Color data
             Eigen::MatrixXd avg_v_data; // average of v_data
         };
-
         MAnimation m_frame_data;
         MAnimation m_frame_deformed_data;
         MAnimation m_sm_data; //stop motion data
@@ -123,10 +124,10 @@ namespace tyro
         std::vector<int> fid_list;
 
         void register_console_function(const std::string& name,
-                                   const std::function<void(App*, const std::vector<std::string>&)>& con_fun,
-                                   const std::string& help_txt);
+                                       const std::function<void(App*, const std::vector<std::string>&)>& con_fun,
+                                       const std::string& help_txt);
         void load_mesh_sequence(const std::vector<std::string>& obj_list, bool use_igl_loader = true); 
-        void update_camera(const AxisAlignedBBox& WorldBoundBox);
+        void update_camera();
         void render();
         void addSphere(int vid);        
         void removeSpheres(std::vector<int> vids);

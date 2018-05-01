@@ -3,3 +3,4 @@ stop_motion
 stop_motion 4
 load_bunny 
 stop_motion 5
+load_bunny
