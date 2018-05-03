@@ -29,6 +29,7 @@
 #include "RAFont.h"
 #include "mesh_split.h"
 #include <igl/oriented_facets.h>
+#include <igl/is_edge_manifold.h>
 
 using namespace Wm5;
 using namespace std;
@@ -49,8 +50,7 @@ void tyro::convert_vertex_to_edge_selection(const std::vector<int>& vid_list, Ei
 namespace tyro
 {   
     namespace
-    {    
-        
+    {            
         void console_split_mesh(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("Cutting mesh");
@@ -60,17 +60,62 @@ namespace tyro
                 return;
             }
 
-            Eigen::MatrixXi F1, F2, E_sel;
-            Eigen::VectorXi E_seam;
+            if (!igl::is_edge_manifold(app->m_frame_data.f_data)) 
+            {
+                RA_LOG_ERROR_ASSERT("Mesh is not edge manifold");
+                return;
+            }
+
+            Eigen::MatrixXi E_sel;
             tyro::convert_vertex_to_edge_selection(app->vid_list, E_sel);
-            
-            for 
+            Eigen::VectorXi E_seam;
+            E_seam.resize(E_sel.rows());
 
+            Eigen::MatrixXi E;
+            igl::oriented_facets(app->m_frame_data.f_data, E); 
 
+            for (int i = 0; i < E_sel.rows(); ++i) 
+            {
+                Eigen::VectorXi e1 = E_sel.row(i);
+                for (int j = 0; j <E.rows(); ++j) 
+                {
+                    Eigen::VectorXi e2 = E.row(j);
+                    if (e1(0) == e2(0) && e1(1) == e2(1)) 
+                    {
+                        E_seam(i) = j;
+                        break;
+                    }
+                }
+            }
+
+            Eigen::MatrixXi F1, F2;
             tyro::mesh_cut(app->m_frame_data.f_data,
                            E_seam, 
                            F1, 
                            F2);
+
+
+            //Rendering stuff
+            app->render_data.part1_mesh = IGLMesh::Create(app->m_frame_data.v_data[app->m_frame], 
+                                                          F1, 
+                                                          app->m_frame_data.n_data[app->m_frame],
+                                                          app->m_frame_data.c_data);
+            app->render_data.part1_mesh->Update(true);
+            app->m_computed_parts = true;
+
+            Wm5::Transform tr;
+            tr.SetTranslate(APoint(2*app->render_data.org_mesh->WorldBoundBox.GetRadius(), 0, 0));
+            app->render_data.part1_mesh->LocalTransform = tr * app->render_data.part1_mesh->LocalTransform;
+            app->render_data.part1_mesh->Update(true);
+            
+            //create renderable for mesh wireframe
+            //Eigen::Vector3d cr2(0,0,0);
+            //render_data.org_mesh_wire = IGLMeshWireframe::Create(m_frame_data.v_data[m_frame], 
+            //                                                        m_frame_data.f_data,
+            //                                                        cr2);
+            //render_data.org_mesh_wire->Update(true);
+            //vis_set.Insert(render_data.org_mesh_wire.get());
+            
             
             return;
         }
@@ -270,7 +315,8 @@ namespace tyro
     m_sel_method(App::SelectionMethod::Square),
     m_computed_stop_motion(false),
     m_update_camera(false),
-    m_frame_overlay(nullptr)
+    m_frame_overlay(nullptr),
+    m_computed_parts(false)
     {}
 
     App::~App() 
@@ -489,6 +535,11 @@ namespace tyro
                     {
                         vis_set.Insert(render_data.avg_mesh.get());
                         vis_set.Insert(render_data.avg_mesh_wire.get());
+                    }
+
+                    if(m_computed_parts) 
+                    {
+                        vis_set.Insert(render_data.part1_mesh.get());
                     }
 
                     for (auto object_sptr : ball_list) 
@@ -1032,12 +1083,7 @@ namespace tyro
         m_timeline->SetFrame(frame);
     }
 
-    void App::split_mesh() 
-    {
-        Eigen::MatrixXd E;
-        convert_vertex_to_edge_selection(vid_list, E);
-
-    }
+  
 
     void App::mouse_down(Window& window, int button, int modifier) 
     {   

@@ -5,6 +5,8 @@ set(TYRO_INC_LOCAL
 "StopMotion/compute_deformation.h"
 "StopMotion/TyroTimeLine.h"
 "StopMotion/load_mesh_sequence.h"
+"StopMotion/mesh_split.h"
+
 )
 
 set(TYRO_SRC_LOCAL 
@@ -14,6 +16,7 @@ set(TYRO_SRC_LOCAL
 "StopMotion/compute_deformation.cpp"
 "StopMotion/TyroTimeLine.cpp"
 "StopMotion/load_mesh_sequence.cpp"
+"StopMotion/mesh_split.cpp"
 )
 
 set(TYRO_STOPMOTION_SRC

@@ -72,6 +72,7 @@ void tyro::mesh_cut(const Eigen::MatrixXi& F,
         {
             int ue_idx = edge_queue.back();
             edge_queue.pop();
+            edge_set.insert(ue_idx);
 
             //check both sides of the edges
             for (int j = 0 ; j < 2; ++j) 
@@ -94,9 +95,18 @@ void tyro::mesh_cut(const Eigen::MatrixXi& F,
                 face_set.insert(f);
             }
         }
+        printf("stop here");
     };
 
     //flood fill
     glambda(F, fEMAP, fEF, edge_queue[0], edge_set[0], face_set[0]); //one side
-    glambda(F, fEMAP, fEF, edge_queue[1], edge_set[1], face_set[1]); //another side
+    //glambda(F, fEMAP, fEF, edge_queue[1], edge_set[1], face_set[1]); //another side
+
+    F1.resize(face_set[0].size(), 3);
+
+    int rowid = 0;
+    for (auto& fid : face_set[0]) 
+    {
+        F1.row(rowid++) = F.row(fid);
+    }
 }

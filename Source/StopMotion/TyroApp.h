@@ -83,6 +83,7 @@ namespace tyro
         bool m_computed_deformation;
         bool m_computed_avg;
         bool m_computed_stop_motion;
+        bool m_computed_parts;
         Console m_console;
         bool m_update_camera;
         //square selection
@@ -109,6 +110,9 @@ namespace tyro
             IGLMeshSPtr stop_motion_mesh;
             IGLMeshWireframeSPtr stop_motion_mesh_wire;
             bool stop_motion_visible = true;
+
+            IGLMeshSPtr part1_mesh;
+
         };
         MRenderData render_data;
 
