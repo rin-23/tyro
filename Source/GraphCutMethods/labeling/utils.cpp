@@ -6,7 +6,7 @@
 #include <chrono>
 #include <string>
 #include <Eigen/Dense>
-#include <igl/write_triangle_mesh.h>
+//#include <igl/write_triangle_mesh.h>
 #include <igl/readPLY.h>
 #include <igl/read_triangle_mesh.h>
 
@@ -188,7 +188,7 @@ bool saveDictionary(const std::string& labelOBJ, Eigen::MatrixXd& D, Eigen::Matr
 		VectorXd objCol = D.col(i);
 		MatrixXd V = Map<Matrix<double,Dynamic, Dynamic,RowMajor>>(objCol.data(), D.rows()/3, 3);
 		std::string save_path = labelOBJ + std::string("/frame") + std::to_string(i) + std::string(".obj");
-		igl::write_triangle_mesh(save_path, V, SAVED_FACES);
+		//igl::write_triangle_mesh(save_path, V, SAVED_FACES);
 	}
 }
 
@@ -313,7 +313,7 @@ int convertOFFtoOBJ(std::string& objPath)
 		
 		//string saveto = folderPath + string("/") + getFileName(objPath) + string(".obj");
 
-		igl::write_triangle_mesh(line + string(".obj"), V, F, true);
+		//igl::write_triangle_mesh(line + string(".obj"), V, F, true);
 
 	}
 }

@@ -5,6 +5,7 @@
 #include <igl/list_to_matrix.h>
 #define TINYOBJLOADER_IMPLEMENTATION // define this in only *one* .cc
 #include "tiny_obj_loader.h"
+#include <igl/unique_edge_map.h>
 
 namespace tyro 
 {   
@@ -12,6 +13,9 @@ namespace tyro
                             std::vector<Eigen::MatrixXd>& v_data, 
                             std::vector<Eigen::MatrixXd>& n_data,  
                             Eigen::MatrixXi& f_data,
+                            Eigen::MatrixXi& e_data,
+                            Eigen::MatrixXi& ue_data,
+                            Eigen::VectorXi& EMAP,
                             bool use_igl_loader) 
     {   
         if (use_igl_loader) 
@@ -37,6 +41,9 @@ namespace tyro
                     f_data = F;
                     saved_faces = true;
                 }
+
+                std::vector<std::vector<int> > uE2E;
+                igl::unique_edge_map(F,e_data,ue_data,EMAP,uE2E);
             }
         } 
         else //use tinyobjloader
@@ -135,6 +142,9 @@ namespace tyro
                 v_data.push_back(V);
                 n_data.push_back(N);
                 
+
+                std::vector<std::vector<int> > uE2E;
+                igl::unique_edge_map(K,e_data,ue_data,EMAP,uE2E);
                 //all meshes in the sequence share same face data
                 if (!saved_faces) 
                 {   
@@ -144,7 +154,5 @@ namespace tyro
                 }
             }
         }
-    }
-
-   
+    }  
 }

@@ -6,10 +6,10 @@
 
 using namespace Eigen;
 
-void tyro::mesh_cut(const Eigen::MatrixXi& F, 
-                    const Eigen::VectorXi& E_seam,
-                    Eigen::MatrixXi& F1, 
-                    Eigen::MatrixXi& F2) 
+void tyro::mesh_split(const Eigen::MatrixXi& F, 
+                      const Eigen::VectorXi& E_seam,
+                      Eigen::MatrixXi& F1, 
+                      Eigen::MatrixXi& F2) 
 {   
     //MatrixXi E;
     //igl::oriented_facets(F, E);

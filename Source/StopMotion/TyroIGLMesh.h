@@ -38,8 +38,9 @@ public:
 
     virtual ~IGLMeshWireframe() {}
     
-    static IGLMeshWireframeSPtr Create(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& C);
-    static IGLMeshWireframeSPtr Create(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::Vector3d& color);
+    //Generate wireframe from unique edges
+    static IGLMeshWireframeSPtr Create(Eigen::MatrixXd& V, Eigen::MatrixXi& uE, Eigen::MatrixXd& uC);
+    //static IGLMeshWireframeSPtr Create(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::Vector3d& color);
 
     virtual void UpdateUniformsWithCamera(const Camera* camera) override;
     

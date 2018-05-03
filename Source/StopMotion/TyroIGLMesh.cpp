@@ -158,21 +158,16 @@ namespace tyro
         //GetVisualEffect()->GetUniforms()->UpdateFloatUniform(2, mColor);
     }
         
-    void IGLMeshWireframe::Init(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& C)
+    void IGLMeshWireframe::Init(Eigen::MatrixXd& V, Eigen::MatrixXi& uE, Eigen::MatrixXd& uC)
     {   
         ES2Polyline::Init(false);
         SetVisualEffect(ES2CoreVisualEffects::WireframeColor());
 
         //Calculate unique edges
-        Eigen::MatrixXi E;
-        igl::edges(F, E);
         
-        int numVertices = V.rows();
-        int numTriangles = F.rows();
-        int numEdges = E.rows();
-
+        //int numVertices = V.rows();
+        int numEdges = uE.rows();
         int numPoints = numEdges * 2;
-        int numIndices = 3*numTriangles;
         int stride = sizeof(WireframeGeneral);
     
         //vertex buffer data
@@ -184,13 +179,13 @@ namespace tyro
         for (int i = 0; i < numEdges; ++i) 
         {   
             //RA_LOG_INFO("V: %f %f %f", V(i, 0), V(i, 1), V(i, 2));
-            int e1 = E(i,0);
-            int e2 = E(i,1);
+            int v1 = uE(i,0);
+            int v2 = uE(i,1);
             
-            vba.Position<Wm5::Float3>(vIndex) = Wm5::Float3(V(e1,0), V(e1,1), V(e1,2));
-            vba.Color<Wm5::Float3>(vIndex++) = Wm5::Float3(C(e1,0), C(e1,1), C(e1,2));
-            vba.Position<Wm5::Float3>(vIndex) = Wm5::Float3(V(e2,0), V(e2,1), V(e2,2));
-            vba.Color<Wm5::Float3>(vIndex++) = Wm5::Float3(C(e2,0), C(e2,1), C(e2,2));
+            vba.Position<Wm5::Float3>(vIndex) = Wm5::Float3(V(v1,0), V(v1,1), V(v1,2));
+            vba.Color<Wm5::Float3>(vIndex++) = Wm5::Float3(uC(i,0), uC(i,1), uC(i,2));
+            vba.Position<Wm5::Float3>(vIndex) = Wm5::Float3(V(v2,0), V(v2,1), V(v2,2));
+            vba.Color<Wm5::Float3>(vIndex++) = Wm5::Float3(uC(i,0), uC(i,1), uC(i,2));
         }                
         vba.Unmap();
         
@@ -211,7 +206,8 @@ namespace tyro
         sptr->Init(V,F,C);
         return sptr;
     }
-
+    
+    /*
     IGLMeshWireframeSPtr IGLMeshWireframe::Create(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::Vector3d& color)
     {
         Eigen::MatrixXd C;
@@ -225,7 +221,7 @@ namespace tyro
         sptr->Init(V,F,C);
         return sptr;
     }
-
+    */
  
     void IGLMeshWireframe::UpdateUniformsWithCamera(const Camera* camera)
     {

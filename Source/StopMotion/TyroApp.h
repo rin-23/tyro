@@ -9,14 +9,27 @@
 #include "TyroTimeLine.h"
 #include <atomic>
 
+
 namespace tyro
 {   
     //Convert vertex selection to edge selection.
     //in vid_list - list of vertex ids (ORDERED RIGHT NOW, ASSUME CLOSED LOOP)
     //out E - vid_list.size() by 2 matrix of edges
-    void convert_vertex_to_edge_selection(const std::vector<int>& vid_list, 
-                                          Eigen::MatrixXi& E);
- 
+    void convert_vertex_to_edge_selection(const std::vector<int>& vid_list,
+                                          const Eigen::MatrixXi& E, //all directed edges
+                                          const Eigen::MatrixXi& uE, //all unique edges
+                                          const Eigen::VectorXi& EMAP, // map from directed to unique edge index 
+                                          Eigen::MatrixXi& eid_list, // edges from vid_list
+                                          Eigen::VectorXi& EI, // indicies into directed edges matrix
+                                          Eigen::VectorXi& uEI); // indicies into undirected edges matrix
+
+    // Create color matrix for unique edges from color vector
+    //in rows - number of unique edges
+    //in cv - color vector
+    //out C - same size as uE. contains color per edge
+    void color_matrix(int rows, const Eigen::Vector3d& cv, Eigen::MatrixXd& uC);
+    void color_black_matrix(int rows, Eigen::MatrixXd& uC);
+
     class App 
     {
     public:
@@ -51,6 +64,7 @@ namespace tyro
         void align_all_models(int vid, Eigen::Vector3d offset);
         void stop_motion(int num_labels);
         void frame(int frame);
+        void show_edge_selection();
         //void split_mesh();
 
         State m_state;
@@ -120,8 +134,12 @@ namespace tyro
         {   
             std::vector<Eigen::MatrixXd> v_data; // Vertex data. 3*num_vert by num_frames. 
             std::vector<Eigen::MatrixXd> n_data; // Normal data. 3*num_vert by num_frames. 
-            Eigen::MatrixXi f_data; // Face data.  
-            Eigen::MatrixXd c_data; // Color data
+            Eigen::MatrixXi f_data; // Face data. 
+            Eigen::MatrixXi e_data; // Edge data.
+            Eigen::MatrixXi ue_data; // Uniqie edge data
+            Eigen::VectorXi EMAP; // Map directed edges to unique edges. 
+            Eigen::MatrixXd fc_data; // Face Color data
+            Eigen::MatrixXd ec_data; // Edge color data
             Eigen::MatrixXd avg_v_data; // average of v_data
         };
         MAnimation m_frame_data;

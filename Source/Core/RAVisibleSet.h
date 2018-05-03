@@ -41,7 +41,7 @@ namespace tyro
 
         // Set the number of elements to zero.
         inline void Clear ();
-    private:
+    public:
         int mNumVisible;
         std::vector<Spatial*> mVisible;
     };

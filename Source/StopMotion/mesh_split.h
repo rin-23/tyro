@@ -9,8 +9,8 @@ namespace tyro
 // in E_seam
 // out F1 indicies into V of the first part
 // out F2 indicies into V of the second part
-void mesh_cut(const Eigen::MatrixXi& F, 
-              const Eigen::VectorXi& E_seam,
-              Eigen::MatrixXi& F1, 
-              Eigen::MatrixXi& F2);
+void mesh_split(const Eigen::MatrixXi& F, 
+                const Eigen::VectorXi& E_seam,
+                Eigen::MatrixXi& F1, 
+                Eigen::MatrixXi& F2);
 }
