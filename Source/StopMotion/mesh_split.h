@@ -10,7 +10,8 @@ namespace tyro
 // out F1 indicies into V of the first part
 // out F2 indicies into V of the second part
 void mesh_split(const Eigen::MatrixXi& F, 
-                const Eigen::VectorXi& E_seam,
+                const Eigen::VectorXi& uEI, // indicies of seam edges into unique edges matrix
+                const Eigen::VectorXi& DMAP, // checks which directions where switched HACKY
                 Eigen::MatrixXi& F1, 
                 Eigen::MatrixXi& F2);
 }

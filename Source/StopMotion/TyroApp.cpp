@@ -30,6 +30,8 @@
 #include "mesh_split.h"
 #include <igl/oriented_facets.h>
 #include <igl/is_edge_manifold.h>
+#include <igl/edge_flaps.h>
+#include <igl/remove_unreferenced.h>
 
 using namespace Wm5;
 using namespace std;
@@ -55,7 +57,8 @@ void tyro::convert_vertex_to_edge_selection(const std::vector<int>& vid_list,
                                             const Eigen::VectorXi& EMAP, // map from directed to unique edge index 
                                             Eigen::MatrixXi& eid_list, // edges from vid_list
                                             Eigen::VectorXi& EI, // indicies into directed edges matrix
-                                            Eigen::VectorXi& uEI) // indicies into undirected edges matrix
+                                            Eigen::VectorXi& uEI, // indicies into undirected edges matrix
+                                            Eigen::VectorXi& DMAP) // checks which directions where switched HACKY
 {
     int num_edges = vid_list.size(); //assumes its a closed loop
     eid_list.resize(num_edges, 2);
@@ -69,6 +72,8 @@ void tyro::convert_vertex_to_edge_selection(const std::vector<int>& vid_list,
 
     EI.resize(num_edges);
     uEI.resize(num_edges);
+    DMAP.resize(num_edges);
+    DMAP.setZero();
     int num_found = 0;
     for (int i = 0; i < eid_list.rows(); ++i) 
     {
@@ -80,6 +85,13 @@ void tyro::convert_vertex_to_edge_selection(const std::vector<int>& vid_list,
             {
                 EI(i) = j; //directed edge index
                 uEI(i) = EMAP(j); //unique edge index
+                Eigen::Vector2i evec = uE.row(uEI(i));
+               
+                //if direction is switched after a mapping directed to undirected
+                if (!(evec(0)== e1(0) && evec(1) == e1(1))) 
+                {
+                    DMAP(i) = 1;
+                }
                 num_found++;
                 break;
             }
@@ -102,7 +114,7 @@ namespace tyro
 
         void console_split_mesh(App* app, const std::vector<std::string> & args) 
         {
-            RA_LOG_INFO("Cutting mesh");
+            RA_LOG_INFO("Splitting mesh");
             
             if (app->vid_list.size() == 0) 
             {
@@ -115,39 +127,64 @@ namespace tyro
                 return;
             }
 
-            Eigen::MatrixXi E_sel;
-            //tyro::convert_vertex_to_edge_selection(app->vid_list, E_sel);
-            Eigen::VectorXi E_seam;
-            E_seam.resize(E_sel.rows());
+            Eigen::MatrixXi eid_list;
+            Eigen::VectorXi EI, uEI, DMAP;
+            convert_vertex_to_edge_selection(app->vid_list, 
+                                             app->m_frame_data.e_data, 
+                                             app->m_frame_data.ue_data, 
+                                             app->m_frame_data.EMAP,
+                                             eid_list, 
+                                             EI, 
+                                             uEI, 
+                                             DMAP);
+        
 
             Eigen::MatrixXi F1, F2;
             tyro::mesh_split(app->m_frame_data.f_data,
-                             E_seam, 
+                             uEI,
+                             DMAP, 
                              F1, 
                              F2);
-
-
-            //Rendering stuff
-            app->render_data.part1_mesh = IGLMesh::Create(app->m_frame_data.v_data[app->m_frame], 
-                                                          F1, 
-                                                          app->m_frame_data.n_data[app->m_frame],
-                                                          app->m_frame_data.fc_data);
-            app->render_data.part1_mesh->Update(true);
-            app->m_computed_parts = true;
-
-            Wm5::Transform tr;
-            tr.SetTranslate(APoint(2*app->render_data.org_mesh->WorldBoundBox.GetRadius(), 0, 0));
-            app->render_data.part1_mesh->LocalTransform = tr * app->render_data.part1_mesh->LocalTransform;
-            app->render_data.part1_mesh->Update(true);
             
-            //create renderable for mesh wireframe
-            //Eigen::Vector3d cr2(0,0,0);
-            //render_data.org_mesh_wire = IGLMeshWireframe::Create(m_frame_data.v_data[m_frame], 
-            //                                                        m_frame_data.f_data,
-            //                                                        cr2);
-            //render_data.org_mesh_wire->Update(true);
-            //vis_set.Insert(render_data.org_mesh_wire.get());
+            app->m_pieces.resize(2);
+            auto& A1 = app->m_pieces[0];
+            auto& A2 = app->m_pieces[1];
+            A1.v_data.resize(app->m_frame_data.v_data.size());
+            A2.v_data.resize(app->m_frame_data.v_data.size());
+            A1.n_data.resize(app->m_frame_data.v_data.size());
+            A2.n_data.resize(app->m_frame_data.v_data.size());
             
+            for (int i = 0; i < app->m_frame_data.v_data.size(); ++i) 
+            {                   
+                Eigen::MatrixXi I1, I2;    
+                igl::remove_unreferenced(app->m_frame_data.v_data[i], 
+                                         F1, 
+                                         A1.v_data[i], 
+                                         A1.f_data, 
+                                         I1);
+
+                igl::per_vertex_normals(A1.v_data[i], A1.f_data, A1.n_data[i]);
+                std::vector<std::vector<int> > uE2E1;
+                igl::unique_edge_map(A1.f_data,A1.e_data,A1.ue_data,A1.EMAP,uE2E1);
+                tyro::color_matrix(A1.f_data.rows(), Eigen::Vector3d(0.3,0.3,0.3), A1.fc_data);
+                tyro::color_black_matrix(A1.e_data.rows(), A1.ec_data);
+
+                igl::remove_unreferenced(app->m_frame_data.v_data[i], 
+                                         F2, 
+                                         A2.v_data[i], 
+                                         A2.f_data, 
+                                         I2);
+                
+                igl::per_vertex_normals(A2.v_data[i], A2.f_data, A2.n_data[i]);
+                std::vector<std::vector<int> > uE2E2;
+                igl::unique_edge_map(A2.f_data,A2.e_data,A2.ue_data,A2.EMAP,uE2E2);
+                tyro::color_matrix(A2.f_data.rows(), Eigen::Vector3d(0.5,0.5,0.5), A2.fc_data);
+                tyro::color_black_matrix(A2.e_data.rows(), A2.ec_data);
+                
+            }
+
+                    
+            app->m_computed_parts = true;            
             
             return;
         }
@@ -533,14 +570,46 @@ namespace tyro
                         //vis_set.Insert(render_data.dfm_mesh_wire.get());
                     }
 
+                    if (m_computed_parts) 
+                    {
+                        //Rendering stuff
+                        render_data.part_meshes.clear();
+                        render_data.part_meshes_wire.clear();
+
+                        for (int i = 0; i < m_pieces.size(); ++i) 
+                        {                             
+                            auto mesh1 = IGLMesh::Create(m_pieces[i].v_data[m_frame], 
+                                                         m_pieces[i].f_data, 
+                                                         m_pieces[i].n_data[m_frame],
+                                                         m_pieces[i].fc_data);
+                            mesh1->Update(true);
+                        
+                            Wm5::Transform tr;
+                            tr.SetTranslate(APoint(render_data.org_mesh->WorldBoundBox.GetRadius(), 0, 0));
+                            mesh1->LocalTransform = tr * mesh1->LocalTransform;
+                            mesh1->Update(true);
+                            render_data.part_meshes.push_back(mesh1);
+                            vis_set.Insert(mesh1.get());
+                            
+                            //create renderable for mesh wireframe
+                            auto wire1 = IGLMeshWireframe::Create(m_pieces[i].v_data[m_frame], 
+                                                                  m_pieces[i].ue_data,
+                                                                  m_pieces[i].ec_data);
+                            wire1->Update(true);
+                            wire1->LocalTransform = tr * wire1->LocalTransform;                                                        
+                            wire1->Update(true);
+                            render_data.part_meshes_wire.push_back(wire1);
+                            vis_set.Insert(wire1.get());
+                        }
+                    }
 
                     //Stop motion mesh data
                     if (m_computed_stop_motion) 
                     {
-                        render_data.stop_motion_mesh = IGLMesh::Create(m_sm_data.v_data[m_frame], 
-                                                                       m_sm_data.f_data, 
-                                                                       m_frame_data.n_data[m_frame],
-                                                                       m_sm_data.fc_data);
+                        //render_data.stop_motion_mesh = IGLMesh::Create(m_sm_data.v_data[m_frame], 
+                        //                                               m_sm_data.f_data, 
+                        //                                               m_frame_data.n_data[m_frame],
+                        //                                               m_sm_data.fc_data);
                         Wm5::Transform tr;
                         render_data.stop_motion_mesh->Update(true);
                         tr.SetTranslate(APoint(render_data.stop_motion_mesh->WorldBoundBox.GetRadius(), 0, 0));
@@ -565,11 +634,6 @@ namespace tyro
                     {
                         vis_set.Insert(render_data.avg_mesh.get());
                         vis_set.Insert(render_data.avg_mesh_wire.get());
-                    }
-
-                    if(m_computed_parts) 
-                    {
-                        vis_set.Insert(render_data.part1_mesh.get());
                     }
 
                     for (auto object_sptr : ball_list) 
@@ -647,7 +711,8 @@ namespace tyro
     }
     
     void App::stop_motion(int num_labels) 
-    {
+    {   
+        /*
         std::vector<Eigen::MatrixXd> d_data;
         std::vector<int> s_data;
         double result_energy;
@@ -674,6 +739,7 @@ namespace tyro
 
         render();
         glfwPostEmptyEvent();
+        */
     }
         
 
@@ -1111,23 +1177,50 @@ namespace tyro
     void App::show_edge_selection() 
     {   
         Eigen::MatrixXi eid_list;
-        Eigen::VectorXi EI, uEI;
+        Eigen::VectorXi EI, uEI, DMAP;
         convert_vertex_to_edge_selection(vid_list, 
                                          m_frame_data.e_data, 
                                          m_frame_data.ue_data, 
                                          m_frame_data.EMAP,
                                          eid_list, 
                                          EI, 
-                                         uEI);
+                                         uEI, 
+                                         DMAP);
         
         for (int i = 0; i < uEI.size(); ++i) 
         {   
             m_frame_data.ec_data.row(uEI(i)) = Eigen::Vector3d(0,0.8,0);
         }
+        
+        debug_show_faces_near_edge_selection(uEI, DMAP);       
+                
         render();
         glfwPostEmptyEvent();
     }
-  
+    
+    void App::debug_show_faces_near_edge_selection(const Eigen::VectorXi& uEI, const Eigen::VectorXi& DMAP) 
+    {   
+        const auto & cE = m_frame_data.ue_data;
+        const auto & cEMAP = m_frame_data.EMAP;
+        Eigen::MatrixXi EF, EI;
+
+        igl::edge_flaps(m_frame_data.f_data, 
+                        cE, 
+                        cEMAP, 
+                        EF, 
+                        EI);
+        
+        for (int i = 0; i < uEI.size(); ++i) 
+        {               
+            int f1 = EF(uEI(i), 0);
+            int f2 = EF(uEI(i), 1);
+
+            if (DMAP(i) == 0)
+                setFaceColor(f1, true);
+            else 
+                setFaceColor(f2, true);
+        }        
+    }
 
     void App::mouse_down(Window& window, int button, int modifier) 
     {   

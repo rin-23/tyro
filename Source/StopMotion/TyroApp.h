@@ -21,7 +21,8 @@ namespace tyro
                                           const Eigen::VectorXi& EMAP, // map from directed to unique edge index 
                                           Eigen::MatrixXi& eid_list, // edges from vid_list
                                           Eigen::VectorXi& EI, // indicies into directed edges matrix
-                                          Eigen::VectorXi& uEI); // indicies into undirected edges matrix
+                                          Eigen::VectorXi& uEI, // indicies into undirected edges matrix
+                                          Eigen::VectorXi& DMAP); 
 
     // Create color matrix for unique edges from color vector
     //in rows - number of unique edges
@@ -65,13 +66,12 @@ namespace tyro
         void stop_motion(int num_labels);
         void frame(int frame);
         void show_edge_selection();
-        //void split_mesh();
+        void debug_show_faces_near_edge_selection(const Eigen::VectorXi& uEI, const Eigen::VectorXi& DMAP);
+        
 
         State m_state;
         SelectionPrimitive m_sel_primitive;
         SelectionMethod m_sel_method;
-
-    
         
         Timeline* m_timeline;
         Window* m_tyro_window;
@@ -125,13 +125,15 @@ namespace tyro
             IGLMeshWireframeSPtr stop_motion_mesh_wire;
             bool stop_motion_visible = true;
 
-            IGLMeshSPtr part1_mesh;
-
+            std::vector<IGLMeshSPtr> part_meshes;
+            std::vector<IGLMeshWireframeSPtr> part_meshes_wire;
+            bool parts_visible = true;
         };
         MRenderData render_data;
 
         struct MAnimation 
         {   
+            std::string unique_name;  // not unique in our implementation. used to search in array
             std::vector<Eigen::MatrixXd> v_data; // Vertex data. 3*num_vert by num_frames. 
             std::vector<Eigen::MatrixXd> n_data; // Normal data. 3*num_vert by num_frames. 
             Eigen::MatrixXi f_data; // Face data. 
@@ -142,14 +144,22 @@ namespace tyro
             Eigen::MatrixXd ec_data; // Edge color data
             Eigen::MatrixXd avg_v_data; // average of v_data
         };
-        MAnimation m_frame_data;
-        MAnimation m_frame_deformed_data;
-        MAnimation m_sm_data; //stop motion data
 
-        //struct MMovie 
-        //{   
-        //    std::vector<MAnimation> anim; // list of animations in the movie 
-        //};
+        struct MStopMotion 
+        {
+            MAnimation anim;
+            std::vector<Eigen::MatrixXd> D; //dictionary of faces
+            Eigen::VectorXi L; // Indicies into D to label frames in anim.v_data;
+        };
+
+        MAnimation m_frame_data; //Original animation data        
+        MAnimation m_frame_deformed_data; // Animation data after we smooth the seam(s)
+        std::vector<MAnimation> m_pieces; // Break deformed mesh into pieces along seam(s).
+        std::vector<MStopMotion> m_stop_motion; // Stop motion animate pieces
+
+        //using Shot = std::tuple<int, int>; // start and end frame
+        //using Movie = std::vector<Shot>;  // collection of shots. Each shot are indicies into m_frame_data.v_data
+        //Movie movie;            
         
         std::vector<int> vid_list;
         std::vector<int> fid_list;
