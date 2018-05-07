@@ -88,7 +88,9 @@ namespace tyro
         
         std::vector<SpatialSPtr> ball_list;
         std::atomic<int> m_frame;
-
+        
+        double m_model_offset;
+        
         struct MRenderData 
         {
             IGLMeshSPtr org_mesh;

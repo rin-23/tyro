@@ -13,9 +13,9 @@
 
 /*****LOGGING TO STDOUT AND STDERR*****/
 #if _DEBUG
-#define SHOULD_LOG 1
+#define SHOULD_LOG 0
 #else
-#define SHOULD_LOG 1
+#define SHOULD_LOG 0
 #endif
 
 #define SHOULD_LOG_INFO 1

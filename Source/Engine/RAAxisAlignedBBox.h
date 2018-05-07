@@ -22,8 +22,10 @@ namespace tyro
         
         AxisAlignedBBox(const float min[3], const float max[3]);
         
-        // Compute the axis-aligned bounding box of the points.
+        // Compute the axis-aligned bounding box of the points.zz
         void ComputeExtremes (int numVectors, size_t stride, const void* vectors);
+
+        void ComputeExtremesd (int numVectors, size_t stride, const void* vectors);
 
         static AxisAlignedBBox TransformAffine (const Wm5::Transform& transform, const AxisAlignedBBox& bound);
         

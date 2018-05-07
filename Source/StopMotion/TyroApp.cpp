@@ -32,6 +32,7 @@
 #include <igl/is_edge_manifold.h>
 #include <igl/edge_flaps.h>
 #include <igl/remove_unreferenced.h>
+#include "RAAxisAlignedBBox.h"
 
 using namespace Wm5;
 using namespace std;
@@ -82,10 +83,7 @@ void tyro::convert_vertex_to_edge_selection(const std::vector<int>& vid_list,
                                             Eigen::VectorXi& DMAP) // checks which directions where switched HACKY
 {
     //create a closed edge loop from vertex selection
-
-    int num_edges = vid_list.size(); //assumes its a closed loop
-    eid_list.resize(num_edges, 2);
-    
+  
     int num_edges = vid_list.size(); //assumes its a closed loop
     eid_list.resize(num_edges, 2);
     for (int i = 0; i < num_edges; ++i) 
@@ -147,7 +145,7 @@ namespace tyro
                 return;
             }
 
-            if (!igl::is_edge_manifold(app->m_frame_data.f_data)) 
+            if (!igl::is_edge_manifold(app->m_frame_deformed_data.f_data)) 
             {
                 RA_LOG_ERROR_ASSERT("Mesh is not edge manifold");
                 return;
@@ -156,9 +154,9 @@ namespace tyro
             Eigen::MatrixXi eid_list;
             Eigen::VectorXi EI, uEI, DMAP;
             convert_vertex_to_edge_selection(app->vid_list, 
-                                             app->m_frame_data.e_data, 
-                                             app->m_frame_data.ue_data, 
-                                             app->m_frame_data.EMAP,
+                                             app->m_frame_deformed_data.e_data, 
+                                             app->m_frame_deformed_data.ue_data, 
+                                             app->m_frame_deformed_data.EMAP,
                                              eid_list, 
                                              EI, 
                                              uEI, 
@@ -166,7 +164,7 @@ namespace tyro
         
 
             Eigen::MatrixXi F1, F2;
-            tyro::mesh_split(app->m_frame_data.f_data,
+            tyro::mesh_split(app->m_frame_deformed_data.f_data,
                              uEI,
                              DMAP, 
                              F1, 
@@ -175,15 +173,15 @@ namespace tyro
             app->m_pieces.resize(2);
             auto& A1 = app->m_pieces[0];
             auto& A2 = app->m_pieces[1];
-            A1.v_data.resize(app->m_frame_data.v_data.size());
-            A2.v_data.resize(app->m_frame_data.v_data.size());
-            A1.n_data.resize(app->m_frame_data.v_data.size());
-            A2.n_data.resize(app->m_frame_data.v_data.size());
+            A1.v_data.resize(app->m_frame_deformed_data.v_data.size());
+            A2.v_data.resize(app->m_frame_deformed_data.v_data.size());
+            A1.n_data.resize(app->m_frame_deformed_data.v_data.size());
+            A2.n_data.resize(app->m_frame_deformed_data.v_data.size());
             
             for (int i = 0; i < app->m_frame_data.v_data.size(); ++i) 
             {                   
                 Eigen::MatrixXi I1, I2;    
-                igl::remove_unreferenced(app->m_frame_data.v_data[i], 
+                igl::remove_unreferenced(app->m_frame_deformed_data.v_data[i], 
                                          F1, 
                                          A1.v_data[i], 
                                          A1.f_data, 
@@ -195,7 +193,7 @@ namespace tyro
                 tyro::color_matrix(A1.f_data.rows(), Eigen::Vector3d(0.3,0.3,0.3), A1.fc_data);
                 tyro::color_black_matrix(A1.e_data.rows(), A1.ec_data);
 
-                igl::remove_unreferenced(app->m_frame_data.v_data[i], 
+                igl::remove_unreferenced(app->m_frame_deformed_data.v_data[i], 
                                          F2, 
                                          A2.v_data[i], 
                                          A2.f_data, 
@@ -570,7 +568,7 @@ namespace tyro
                                                     m_frame_data.n_data[0],
                                                     Eigen::Vector3d(0.5, 0, 0));
                         Wm5::Transform tr;
-                        tr.SetTranslate(APoint(render_data.org_mesh->WorldBoundBox.GetRadius(), 0, 0));
+                        tr.SetTranslate(APoint(m_model_offset, 0, 0));
                         mesh->LocalTransform = tr * mesh->LocalTransform;
                         mesh->Update(true);
 
@@ -586,7 +584,7 @@ namespace tyro
                                                     m_frame_data.n_data[m_frame],
                                                     Eigen::Vector3d(0.5,0.5,0.5));
                         Wm5::Transform tr;
-                        tr.SetTranslate(APoint(2*render_data.org_mesh->WorldBoundBox.GetRadius(), 0, 0));
+                        tr.SetTranslate(APoint(2*m_model_offset, 0, 0));
                         mesh->LocalTransform = tr * mesh->LocalTransform;
                         mesh->Update(true);
                         render_data.dfm_mesh = mesh;
@@ -596,7 +594,7 @@ namespace tyro
                         auto wire = IGLMeshWireframe::Create(m_frame_deformed_data.v_data[m_frame], 
                                                              m_frame_deformed_data.ue_data,
                                                              m_frame_deformed_data.ec_data);
-                        wire->LocalTransform = tr * render_data.dfm_mesh_wire->LocalTransform;
+                        wire->LocalTransform = tr * wire->LocalTransform;
                         wire->Update(true);
                         render_data.dfm_mesh_wire = wire;
                         vis_set.Insert(render_data.dfm_mesh_wire.get());
@@ -616,7 +614,7 @@ namespace tyro
                                                          m_pieces[i].n_data[m_frame],
                                                          m_pieces[i].fc_data);
                             Wm5::Transform tr;
-                            tr.SetTranslate(APoint(3*render_data.org_mesh->WorldBoundBox.GetRadius(), 0, 0));
+                            tr.SetTranslate(APoint(3*m_model_offset, 0, 0));
                             mesh1->LocalTransform = tr * mesh1->LocalTransform;
                             mesh1->Update(true);
                             render_data.part_meshes.push_back(mesh1);
@@ -647,7 +645,7 @@ namespace tyro
                                                         sm.anim.n_data[m_frame],
                                                         sm.anim.fc_data);
                             Wm5::Transform tr;
-                            tr.SetTranslate(APoint(4*render_data.org_mesh->WorldBoundBox.GetRadius(), 0, 0));
+                            tr.SetTranslate(APoint(4*m_model_offset, 0, 0));
                             mesh->LocalTransform = tr * mesh->LocalTransform;
                             mesh->Update(true);
                             render_data.stop_motion_meshes.push_back(mesh);
@@ -954,12 +952,19 @@ namespace tyro
                                              //obj_list_file4,
                                              //obj_list_file5};
         std::vector<std::string> obj_paths;
-        tyro::obj_file_path_list(obj_list_folder1, "objlist2.txt", obj_paths);
+        tyro::obj_file_path_list(obj_list_folder1, "objlist.txt", obj_paths);
         load_mesh_sequence(obj_paths, true); //use tiny obj loader
         //align_all_models(offset_vid, offset);
         
         //auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/02_rabbit/02/bunn_face/objlist.txt");
         //load_mesh_sequence(obj_list_file, true);
+        
+        //Compute radius of the bounding box of the model
+        AxisAlignedBBox bbox;
+        Eigen::MatrixXd VT = m_frame_data.v_data[0].transpose();
+        bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
+        m_model_offset = bbox.GetRadius(); 
+
         m_update_camera = true;
         m_state = App::State::LoadedModel;
         render();
@@ -972,7 +977,7 @@ namespace tyro
         auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/Claymation/data/hello/FramesOBJ/objlist2.txt");
         //load_mesh_sequence(obj_list_file);
         m_update_camera = true;
-
+        
         m_state = App::State::LoadedModel;
         render();
     }

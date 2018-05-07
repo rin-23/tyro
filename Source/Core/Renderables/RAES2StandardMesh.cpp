@@ -17,6 +17,8 @@
 #include "RAVertexBufferAccessor.h"
 #include "Wm5Float2.h"
 #include "RAMath.h"
+#include "RAAxisAlignedBBox.h"
+
 
 using Wm5::Vector3f;
 

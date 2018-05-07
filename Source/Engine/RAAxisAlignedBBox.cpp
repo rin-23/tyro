@@ -9,6 +9,7 @@
 #include "RAAxisAlignedBBox.h"
 #include "Wm5Transform.h"
 
+using Wm5::Vector3d;
 using Wm5::Vector3f;
 using Wm5::HMatrix;
 using Wm5::APoint;
@@ -106,5 +107,35 @@ void AxisAlignedBBox::ComputeExtremes (int numVectors, size_t stride, const void
         }
     }
     SetExtents(vmin, vmax);
+}
+//----------------------------------------------------------------------------
+void AxisAlignedBBox::ComputeExtremesd (int numVectors, size_t stride, const void* vectors)
+{
+    assert(numVectors > 0 && vectors);
+    Wm5::Vector3d vmin, vmax;
+    
+    for (int j = 0; j < numVectors; ++j)
+    {
+        const Vector3d& vec = *(Vector3d*)((const char*)vectors + j*stride);
+        if (j == 0)
+        {
+            vmin = vec;
+            vmax = vmin;
+            continue;
+        }
+        
+        for (int i = 0; i < 3; ++i)
+        {
+            if (vec[i] < vmin[i])
+            {
+                vmin[i] = vec[i];
+            }
+            else if (vec[i] > vmax[i])
+            {
+                vmax[i] = vec[i];
+            }
+        }
+    }
+    SetExtents(Vector3f(vmin[0], vmin[1], vmin[2]),Vector3f(vmax[0], vmax[1], vmax[2]));
 }
 }
