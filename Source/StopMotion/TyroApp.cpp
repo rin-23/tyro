@@ -129,6 +129,35 @@ namespace tyro
 {   
     namespace
     {   
+        void console_show_wireframe(App* app, const std::vector<std::string> & args) 
+        {
+            if (args.size() == 1) 
+            {
+                int show = std::stoi(args[0]);
+                app->m_show_wireframe = show;
+                app->render();                
+            }
+        }
+
+        void console_deselect_faces(App* app, const std::vector<std::string> & args) 
+        {
+            for (auto fid : app->fid_list) 
+            {
+                app->setFaceColor(fid, false);
+            }
+            app->fid_list.clear();
+            app->render();
+            glfwPostEmptyEvent(); 
+        }
+
+        void console_deselect_verticies(App* app, const std::vector<std::string> & args) 
+        {
+            app->removeSpheres(app->vid_list);
+            app->vid_list.clear();
+            app->render();
+            glfwPostEmptyEvent();
+        }
+
         void console_show_edge_selection(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("Converting vertex to edge selection");
@@ -190,7 +219,7 @@ namespace tyro
                 igl::per_vertex_normals(A1.v_data[i], A1.f_data, A1.n_data[i]);
                 std::vector<std::vector<int> > uE2E1;
                 igl::unique_edge_map(A1.f_data,A1.e_data,A1.ue_data,A1.EMAP,uE2E1);
-                tyro::color_matrix(A1.f_data.rows(), Eigen::Vector3d(0.3,0.3,0.3), A1.fc_data);
+                tyro::color_matrix(A1.f_data.rows(), Eigen::Vector3d(0.2,0.2,0.2), A1.fc_data);
                 tyro::color_black_matrix(A1.e_data.rows(), A1.ec_data);
 
                 igl::remove_unreferenced(app->m_frame_deformed_data.v_data[i], 
@@ -202,7 +231,7 @@ namespace tyro
                 igl::per_vertex_normals(A2.v_data[i], A2.f_data, A2.n_data[i]);
                 std::vector<std::vector<int> > uE2E2;
                 igl::unique_edge_map(A2.f_data,A2.e_data,A2.ue_data,A2.EMAP,uE2E2);
-                tyro::color_matrix(A2.f_data.rows(), Eigen::Vector3d(0.5,0.5,0.5), A2.fc_data);
+                tyro::color_matrix(A2.f_data.rows(), Eigen::Vector3d(0.6,0.6,0.6), A2.fc_data);
                 tyro::color_black_matrix(A2.e_data.rows(), A2.ec_data);
                 
             }
@@ -230,7 +259,8 @@ namespace tyro
             RA_LOG_INFO("running stop motion");
 
             if (args.size() == 1)
-            {   int num_labels = std::stoi(args[0]);
+            {   
+                int num_labels = std::stoi(args[0]);
                 app->stop_motion(num_labels);
                 return;
             }
@@ -404,7 +434,8 @@ namespace tyro
     m_computed_stop_motion(false),
     m_update_camera(false),
     m_frame_overlay(nullptr),
-    m_computed_parts(false)
+    m_computed_parts(false),
+    m_show_wireframe(true)
     {}
 
     App::~App() 
@@ -506,6 +537,10 @@ namespace tyro
         register_console_function("frame", console_frame, "");
         register_console_function("split_mesh", console_split_mesh, "");
         register_console_function("show_edge_selection", console_show_edge_selection, "");
+
+        register_console_function("deselect_faces", console_deselect_faces, "");
+        register_console_function("deselect_verticies", console_deselect_verticies, "");
+        register_console_function("show_wireframe", console_show_wireframe, "");
         m_state = App::State::Launched;
         // Loop until the user closes the window
         m_tyro_window->GetGLContext()->swapBuffers();
@@ -554,13 +589,15 @@ namespace tyro
                                                            m_frame_data.fc_data);
                     render_data.org_mesh->Update(true);
                     vis_set.Insert(render_data.org_mesh.get());
-
-                    render_data.org_mesh_wire = IGLMeshWireframe::Create(m_frame_data.v_data[m_frame], 
-                                                                         m_frame_data.ue_data,
-                                                                         m_frame_data.ec_data);
-                    render_data.org_mesh_wire->Update(true);
-                    vis_set.Insert(render_data.org_mesh_wire.get());
                     
+                    if (m_show_wireframe)
+                    {
+                        render_data.org_mesh_wire = IGLMeshWireframe::Create(m_frame_data.v_data[m_frame], 
+                                                                            m_frame_data.ue_data,
+                                                                            m_frame_data.ec_data);
+                        render_data.org_mesh_wire->Update(true);
+                        vis_set.Insert(render_data.org_mesh_wire.get());
+                    }
                     if (m_computed_avg) 
                     {
                         auto mesh = IGLMesh::Create(m_frame_data.avg_v_data, 
@@ -568,7 +605,7 @@ namespace tyro
                                                     m_frame_data.n_data[0],
                                                     Eigen::Vector3d(0.5, 0, 0));
                         Wm5::Transform tr;
-                        tr.SetTranslate(APoint(m_model_offset, 0, 0));
+                        tr.SetTranslate(APoint(-2*m_model_offset, 0, 0));
                         mesh->LocalTransform = tr * mesh->LocalTransform;
                         mesh->Update(true);
 
@@ -584,20 +621,23 @@ namespace tyro
                                                     m_frame_data.n_data[m_frame],
                                                     Eigen::Vector3d(0.5,0.5,0.5));
                         Wm5::Transform tr;
-                        tr.SetTranslate(APoint(2*m_model_offset, 0, 0));
+                        tr.SetTranslate(APoint(-1*m_model_offset, 0, 0));
                         mesh->LocalTransform = tr * mesh->LocalTransform;
                         mesh->Update(true);
                         render_data.dfm_mesh = mesh;
                         vis_set.Insert(mesh.get());
 
                         //create renderable for mesh wireframe
-                        auto wire = IGLMeshWireframe::Create(m_frame_deformed_data.v_data[m_frame], 
-                                                             m_frame_deformed_data.ue_data,
-                                                             m_frame_deformed_data.ec_data);
-                        wire->LocalTransform = tr * wire->LocalTransform;
-                        wire->Update(true);
-                        render_data.dfm_mesh_wire = wire;
-                        vis_set.Insert(render_data.dfm_mesh_wire.get());
+                         if (m_show_wireframe)
+                        {
+                            auto wire = IGLMeshWireframe::Create(m_frame_deformed_data.v_data[m_frame], 
+                                                                m_frame_deformed_data.ue_data,
+                                                                m_frame_deformed_data.ec_data);
+                            wire->LocalTransform = tr * wire->LocalTransform;
+                            wire->Update(true);
+                            render_data.dfm_mesh_wire = wire;
+                            vis_set.Insert(render_data.dfm_mesh_wire.get());
+                        }
                     }
 
                     //Split Mesh
@@ -614,20 +654,23 @@ namespace tyro
                                                          m_pieces[i].n_data[m_frame],
                                                          m_pieces[i].fc_data);
                             Wm5::Transform tr;
-                            tr.SetTranslate(APoint(3*m_model_offset, 0, 0));
+                            tr.SetTranslate(APoint(m_model_offset, 0, 0));
                             mesh1->LocalTransform = tr * mesh1->LocalTransform;
                             mesh1->Update(true);
                             render_data.part_meshes.push_back(mesh1);
                             vis_set.Insert(mesh1.get());
 
                             //create renderable for mesh wireframe
-                            auto wire1 = IGLMeshWireframe::Create(m_pieces[i].v_data[m_frame], 
-                                                                  m_pieces[i].ue_data,
-                                                                  m_pieces[i].ec_data);
-                            wire1->LocalTransform = tr * wire1->LocalTransform;                                                        
-                            wire1->Update(true);
-                            render_data.part_meshes_wire.push_back(wire1);
-                            vis_set.Insert(wire1.get());
+                            if (m_show_wireframe)
+                            {
+                                auto wire1 = IGLMeshWireframe::Create(m_pieces[i].v_data[m_frame], 
+                                                                    m_pieces[i].ue_data,
+                                                                    m_pieces[i].ec_data);
+                                wire1->LocalTransform = tr * wire1->LocalTransform;                                                        
+                                wire1->Update(true);
+                                render_data.part_meshes_wire.push_back(wire1);
+                                vis_set.Insert(wire1.get());
+                            }
                         }
                     }
 
@@ -645,20 +688,23 @@ namespace tyro
                                                         sm.anim.n_data[m_frame],
                                                         sm.anim.fc_data);
                             Wm5::Transform tr;
-                            tr.SetTranslate(APoint(4*m_model_offset, 0, 0));
+                            tr.SetTranslate(APoint(2*m_model_offset, 0, 0));
                             mesh->LocalTransform = tr * mesh->LocalTransform;
                             mesh->Update(true);
                             render_data.stop_motion_meshes.push_back(mesh);
                             vis_set.Insert(mesh.get());
 
                             //create renderable for mesh wireframe
-                            auto wire  = IGLMeshWireframe::Create(sm.anim.v_data[m_frame], 
-                                                                  sm.anim.ue_data,
-                                                                  sm.anim.ec_data);
-                            wire->LocalTransform = tr * wire->LocalTransform;                                                        
-                            wire->Update(true);
-                            render_data.stop_motion_meshes_wire.push_back(wire);
-                            vis_set.Insert(wire.get());
+                            if (m_show_wireframe)
+                            {
+                                auto wire  = IGLMeshWireframe::Create(sm.anim.v_data[m_frame], 
+                                                                    sm.anim.ue_data,
+                                                                    sm.anim.ec_data);
+                                wire->LocalTransform = tr * wire->LocalTransform;                                                        
+                                wire->Update(true);
+                                render_data.stop_motion_meshes_wire.push_back(wire);
+                                vis_set.Insert(wire.get());
+                            }
                         }
                     }
 
@@ -881,7 +927,7 @@ namespace tyro
 
     void App::removeSpheres(std::vector<int> vids) 
     {   
-        assert(false);
+        ball_list.clear();
     }
     
     void App::setFaceColor(int fid, bool selected) 
@@ -1237,7 +1283,7 @@ namespace tyro
             m_frame_data.ec_data.row(uEI(i)) = Eigen::Vector3d(0,0.8,0);
         }
         
-        debug_show_faces_near_edge_selection(uEI, DMAP);       
+        //debug_show_faces_near_edge_selection(uEI, DMAP);       
                 
         render();
         glfwPostEmptyEvent();

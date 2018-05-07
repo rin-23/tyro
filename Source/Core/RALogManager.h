@@ -13,7 +13,7 @@
 
 /*****LOGGING TO STDOUT AND STDERR*****/
 #if _DEBUG
-#define SHOULD_LOG 0
+#define SHOULD_LOG 1
 #else
 #define SHOULD_LOG 0
 #endif

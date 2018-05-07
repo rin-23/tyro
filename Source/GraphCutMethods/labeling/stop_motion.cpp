@@ -104,9 +104,9 @@ int stop_motion_vertex_distance(int num_labels,
                             	double& result_energy)
 {
 	double w_s = 1.0f; //smooth weight
-	int num_steps = 100;// 150;
+	int num_steps = 50;// 150;
 	double tolerance = 0.0001;
-	int n_init = 3; // number of times the clustering algorithm will be run
+	int n_init = 4; // number of times the clustering algorithm will be run
 
 
 	MatrixXd F; //,  SAVED_FACES; //frame data

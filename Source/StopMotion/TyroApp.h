@@ -82,6 +82,7 @@ namespace tyro
         bool m_computed_parts;
         Console m_console;
         bool m_update_camera;
+        bool m_show_wireframe;
         //square selection
         int m_square_sel_start_x;
         int m_square_sel_start_y;
