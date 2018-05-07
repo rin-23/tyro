@@ -36,6 +36,27 @@
 using namespace Wm5;
 using namespace std;
 
+void tyro::copy_animation(const tyro::App::MAnimation& source, 
+                          tyro::App::MAnimation& dest, 
+                          bool topology, 
+                          bool face_color, 
+                          bool edge_color) 
+{
+    if (topology) 
+    {
+        dest.f_data = source.f_data;
+        dest.e_data = source.e_data;
+        dest.ue_data = source.ue_data;
+        dest.EMAP = source.EMAP;
+    }
+
+    if (face_color)
+        dest.fc_data = source.fc_data;
+    
+    if (edge_color)
+        dest.ec_data = source.ec_data;
+}
+
 void tyro::color_black_matrix(int rows, Eigen::MatrixXd& uC)
 {
     uC.resize(rows, 3);
@@ -60,6 +81,11 @@ void tyro::convert_vertex_to_edge_selection(const std::vector<int>& vid_list,
                                             Eigen::VectorXi& uEI, // indicies into undirected edges matrix
                                             Eigen::VectorXi& DMAP) // checks which directions where switched HACKY
 {
+    //create a closed edge loop from vertex selection
+
+    int num_edges = vid_list.size(); //assumes its a closed loop
+    eid_list.resize(num_edges, 2);
+    
     int num_edges = vid_list.size(); //assumes its a closed loop
     eid_list.resize(num_edges, 2);
     for (int i = 0; i < num_edges; ++i) 
@@ -183,9 +209,10 @@ namespace tyro
                 
             }
 
-                    
+                
             app->m_computed_parts = true;            
-            
+            app->m_update_camera = true;
+
             return;
         }
 
@@ -307,56 +334,50 @@ namespace tyro
         void console_load_oldman(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("Loading oldman obj sequence");
-
-            if (args.size() == 0)
-            {   
-                app->load_oldman();
-                return;
-            }
+            app->load_oldman();
+            return;
         }
         
         void console_load_bunny(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("Loading bunny obj sequence");
-
-            if (args.size() == 0)
-            {   
-                app->load_bunny();
-                return;
-            }
+            app->load_bunny();
+            return;
         }
 
         void console_load_blobby(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("Loading blobby obj sequence");
-
-            if (args.size() == 0)
-            {   
-                app->load_blobby();
-                return;
-            }
+            app->load_blobby();
         }
 
         void console_compute_average(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("compute_average");
-
-            if (args.size() == 0)
-            {   
-                app->compute_average();
-                return;
-            }
+            app->compute_average();
         }
 
         void console_compute_deformation(App* app, const std::vector<std::string> & args)
         {
-            RA_LOG_INFO("deform");
+            RA_LOG_INFO("computing deformation");
 
-            if (args.size() == 0)
-            {   
-                app->compute_deformation();
+            if (app->vid_list.empty() || app->fid_list.empty() || !app->m_computed_avg) 
+            { 
+                RA_LOG_WARN("Need vertex/face selection and average mesh to compute deformation")
                 return;
             }
+            
+            bool result = tyro::compute_deformation(app->vid_list, 
+                                                    app->fid_list,
+                                                    app->m_frame_data.v_data,
+                                                    app->m_frame_data.f_data,
+                                                    app->m_frame_data.avg_v_data,
+                                                    app->m_frame_deformed_data.v_data);
+            assert(result);
+            tyro::copy_animation(app->m_frame_data, app->m_frame_deformed_data, true, true, true);
+            app->m_computed_deformation = true;
+            app->m_update_camera = true;
+            //app->render();
         }
 
           void console_invert_face_selection(App* app, const std::vector<std::string> & args) 
@@ -423,11 +444,11 @@ namespace tyro
         m_timeline = new Timeline(24, 300);
         m_timeline->frameChanged = [&](Timeline& timeline, int frame)->void 
         {   
-            RA_LOG_INFO("Frame Change BEGIN");
+            //RA_LOG_INFO("Frame Change BEGIN");
             m_frame = frame;
             m_need_rendering = true;
             glfwPostEmptyEvent();
-            RA_LOG_INFO("Frame Change END");
+            //RA_LOG_INFO("Frame Change END");
         };
 
         //set up window callbacks
@@ -524,12 +545,11 @@ namespace tyro
                     m_gl_rend->ClearScreen();
                 }
                 else if (m_state == App::State::LoadedModel) 
-                {  
+                {   
                     //create renderable for mesh
                     VisibleSet vis_set;
 
                     //ORIGNAL MODEL
-                    //Eigen::Vector3d cr(0.5,0.5,0.5);
                     render_data.org_mesh = IGLMesh::Create(m_frame_data.v_data[m_frame], 
                                                            m_frame_data.f_data, 
                                                            m_frame_data.n_data[m_frame],
@@ -537,39 +557,52 @@ namespace tyro
                     render_data.org_mesh->Update(true);
                     vis_set.Insert(render_data.org_mesh.get());
 
-                    //create renderable for mesh wireframe
                     render_data.org_mesh_wire = IGLMeshWireframe::Create(m_frame_data.v_data[m_frame], 
                                                                          m_frame_data.ue_data,
                                                                          m_frame_data.ec_data);
                     render_data.org_mesh_wire->Update(true);
                     vis_set.Insert(render_data.org_mesh_wire.get());
                     
-                    //DEFORMED MODEL
-                    if (m_computed_deformation)
+                    if (m_computed_avg) 
                     {
-                        Eigen::Vector3d cr(0.5,0.5,0.5);
-                        render_data.dfm_mesh = IGLMesh::Create(m_frame_deformed_data.v_data[m_frame], 
-                                                               m_frame_deformed_data.f_data, 
-                                                               m_frame_data.n_data[m_frame],
-                                                               cr);
+                        auto mesh = IGLMesh::Create(m_frame_data.avg_v_data, 
+                                                    m_frame_data.f_data, 
+                                                    m_frame_data.n_data[0],
+                                                    Eigen::Vector3d(0.5, 0, 0));
                         Wm5::Transform tr;
-                        render_data.dfm_mesh->Update(true);
-                        tr.SetTranslate(APoint(2*render_data.org_mesh->WorldBoundBox.GetRadius(), 0, 0));
-                        render_data.dfm_mesh->LocalTransform = tr * render_data.dfm_mesh->LocalTransform;
-                        render_data.dfm_mesh->Update(true);
-                        
-                        vis_set.Insert(render_data.dfm_mesh.get());
+                        tr.SetTranslate(APoint(render_data.org_mesh->WorldBoundBox.GetRadius(), 0, 0));
+                        mesh->LocalTransform = tr * mesh->LocalTransform;
+                        mesh->Update(true);
 
-                        //create renderable for mesh wireframe
-                        //render_data.dfm_mesh_wire = IGLMeshWireframe::Create(m_frame_deformed_data.v_data[m_frame], 
-                        //                                                     m_frame_deformed_data.f_data,
-                        //                                                     m_frame_deformed_data.ec_data);
-                        //render_data.dfm_mesh_wire->Update(true);
-                        //render_data.dfm_mesh_wire->LocalTransform = tr * render_data.dfm_mesh_wire->LocalTransform;
-                        //render_data.dfm_mesh_wire->Update(true);
-                        //vis_set.Insert(render_data.dfm_mesh_wire.get());
+                        render_data.avg_mesh = mesh;
+                        vis_set.Insert(mesh.get());
                     }
 
+                    //DEFORMED MODEL
+                    if (m_computed_deformation)
+                    {                        
+                        auto mesh = IGLMesh::Create(m_frame_deformed_data.v_data[m_frame], 
+                                                    m_frame_deformed_data.f_data, 
+                                                    m_frame_data.n_data[m_frame],
+                                                    Eigen::Vector3d(0.5,0.5,0.5));
+                        Wm5::Transform tr;
+                        tr.SetTranslate(APoint(2*render_data.org_mesh->WorldBoundBox.GetRadius(), 0, 0));
+                        mesh->LocalTransform = tr * mesh->LocalTransform;
+                        mesh->Update(true);
+                        render_data.dfm_mesh = mesh;
+                        vis_set.Insert(mesh.get());
+
+                        //create renderable for mesh wireframe
+                        auto wire = IGLMeshWireframe::Create(m_frame_deformed_data.v_data[m_frame], 
+                                                             m_frame_deformed_data.ue_data,
+                                                             m_frame_deformed_data.ec_data);
+                        wire->LocalTransform = tr * render_data.dfm_mesh_wire->LocalTransform;
+                        wire->Update(true);
+                        render_data.dfm_mesh_wire = wire;
+                        vis_set.Insert(render_data.dfm_mesh_wire.get());
+                    }
+
+                    //Split Mesh
                     if (m_computed_parts) 
                     {
                         //Rendering stuff
@@ -582,20 +615,17 @@ namespace tyro
                                                          m_pieces[i].f_data, 
                                                          m_pieces[i].n_data[m_frame],
                                                          m_pieces[i].fc_data);
-                            mesh1->Update(true);
-                        
                             Wm5::Transform tr;
-                            tr.SetTranslate(APoint(render_data.org_mesh->WorldBoundBox.GetRadius(), 0, 0));
+                            tr.SetTranslate(APoint(3*render_data.org_mesh->WorldBoundBox.GetRadius(), 0, 0));
                             mesh1->LocalTransform = tr * mesh1->LocalTransform;
                             mesh1->Update(true);
                             render_data.part_meshes.push_back(mesh1);
                             vis_set.Insert(mesh1.get());
-                            
+
                             //create renderable for mesh wireframe
                             auto wire1 = IGLMeshWireframe::Create(m_pieces[i].v_data[m_frame], 
                                                                   m_pieces[i].ue_data,
                                                                   m_pieces[i].ec_data);
-                            wire1->Update(true);
                             wire1->LocalTransform = tr * wire1->LocalTransform;                                                        
                             wire1->Update(true);
                             render_data.part_meshes_wire.push_back(wire1);
@@ -603,37 +633,35 @@ namespace tyro
                         }
                     }
 
-                    //Stop motion mesh data
+                    //Stop motion
                     if (m_computed_stop_motion) 
-                    {
-                        //render_data.stop_motion_mesh = IGLMesh::Create(m_sm_data.v_data[m_frame], 
-                        //                                               m_sm_data.f_data, 
-                        //                                               m_frame_data.n_data[m_frame],
-                        //                                               m_sm_data.fc_data);
-                        Wm5::Transform tr;
-                        render_data.stop_motion_mesh->Update(true);
-                        tr.SetTranslate(APoint(render_data.stop_motion_mesh->WorldBoundBox.GetRadius(), 0, 0));
-                        render_data.stop_motion_mesh->LocalTransform = tr * render_data.stop_motion_mesh->LocalTransform;
-                        render_data.stop_motion_mesh->Update(true);
-                        vis_set.Insert(render_data.stop_motion_mesh.get());
+                    {   
+                        render_data.stop_motion_meshes.clear();
+                        render_data.stop_motion_meshes_wire.clear();
 
-                        //create renderable for mesh wireframe
-                        //Eigen::Vector3d cr2(0,0,0);
-                        //render_data.stop_motion_mesh_wire = IGLMeshWireframe::Create(m_sm_data.v_data[m_frame], 
-                        //                                                             m_sm_data.f_data,
-                        //                                                             cr2);
-                        //render_data.stop_motion_mesh_wire->Update(true);
-                        //render_data.stop_motion_mesh_wire->LocalTransform = tr * render_data.stop_motion_mesh_wire->LocalTransform;
-                        //render_data.stop_motion_mesh_wire->Update(true);
-                        
-                        //vis_set.Insert(render_data.stop_motion_mesh_wire.get());
-                    
-                    }
+                        for (int i = 0; i < m_stop_motion.size(); ++i) 
+                        {   
+                            auto& sm = m_stop_motion[i];
+                            auto mesh = IGLMesh::Create(sm.anim.v_data[m_frame], 
+                                                        sm.anim.f_data, 
+                                                        sm.anim.n_data[m_frame],
+                                                        sm.anim.fc_data);
+                            Wm5::Transform tr;
+                            tr.SetTranslate(APoint(4*render_data.org_mesh->WorldBoundBox.GetRadius(), 0, 0));
+                            mesh->LocalTransform = tr * mesh->LocalTransform;
+                            mesh->Update(true);
+                            render_data.stop_motion_meshes.push_back(mesh);
+                            vis_set.Insert(mesh.get());
 
-                    if (m_computed_avg) 
-                    {
-                        vis_set.Insert(render_data.avg_mesh.get());
-                        vis_set.Insert(render_data.avg_mesh_wire.get());
+                            //create renderable for mesh wireframe
+                            auto wire  = IGLMeshWireframe::Create(sm.anim.v_data[m_frame], 
+                                                                  sm.anim.ue_data,
+                                                                  sm.anim.ec_data);
+                            wire->LocalTransform = tr * wire->LocalTransform;                                                        
+                            wire->Update(true);
+                            render_data.stop_motion_meshes_wire.push_back(wire);
+                            vis_set.Insert(wire.get());
+                        }
                     }
 
                     for (auto object_sptr : ball_list) 
@@ -643,7 +671,6 @@ namespace tyro
                     
                     std::string fstr = std::string("Frame ") + std::to_string(m_frame) + std::string("/") + std::to_string(m_frame_data.v_data.size());
                     m_frame_overlay->SetText(fstr);
-
                     vis_set.Insert(m_frame_overlay.get());
 
                     if (m_update_camera) 
@@ -652,7 +679,6 @@ namespace tyro
                         m_update_camera = false;
                     }
                  
-
                     m_gl_rend->RenderVisibleSet(&vis_set, m_camera);         
                 }
                 
@@ -712,11 +738,54 @@ namespace tyro
     
     void App::stop_motion(int num_labels) 
     {   
+        m_stop_motion.clear();
+        m_stop_motion.resize(m_pieces.size());
+
+        for (int i = 0; i < m_stop_motion.size(); ++i) 
+        {
+            double result_energy;
+            auto& sm = m_stop_motion[i]; 
+            const auto& piece = m_pieces[i];
+            tyro::stop_motion_vertex_distance(num_labels, 
+                                              piece.v_data,
+                                              piece.f_data,
+                                              sm.D, //dictionary
+                                              sm.L, //labels 
+                                              result_energy);
+            
+            sm.anim.f_data = piece.f_data;
+            sm.anim.e_data = piece.e_data;
+            sm.anim.ue_data = piece.ue_data;
+            sm.anim.EMAP = piece.EMAP;
+            sm.anim.ec_data = piece.ec_data;
+            sm.anim.fc_data = piece.fc_data;
+            //precompute normals
+            std::vector<Eigen::MatrixXd> normals;
+            normals.resize(sm.D.size());
+            for (int j = 0; j < sm.D.size(); ++j) 
+            {   
+                igl::per_vertex_normals(sm.D[j], sm.anim.f_data, normals[j]);
+            }
+
+            for (int j = 0; j < sm.L.size(); ++j) 
+            {
+                int l_idx = sm.L(j);
+                sm.anim.v_data.push_back(sm.D[l_idx]);
+                sm.anim.n_data.push_back(normals[l_idx]);
+            }                   
+        }
+
+        m_computed_stop_motion = true;
+        m_update_camera = true;
+
+        render();
+        glfwPostEmptyEvent();
+
         /*
         std::vector<Eigen::MatrixXd> d_data;
         std::vector<int> s_data;
         double result_energy;
-
+        
         tyro::stop_motion_vertex_distance(num_labels, 
                             	          m_frame_data.v_data,
                             	          m_frame_data.f_data,
@@ -741,23 +810,7 @@ namespace tyro
         glfwPostEmptyEvent();
         */
     }
-        
 
-    void App::compute_deformation()
-    {     
-        bool result = tyro::compute_deformation(vid_list, 
-                                                fid_list,
-                                                m_frame_data.v_data,
-                                                m_frame_data.f_data,
-                                                m_frame_data.avg_v_data,
-                                                m_frame_deformed_data.v_data,
-                                                m_frame_deformed_data.f_data);
-        assert(result);
-        m_computed_deformation = true;
-        m_update_camera = true;
-    
-    }
-    
     void App::compute_average()
     {
         if (m_frame_data.v_data.size()==0)
@@ -772,29 +825,9 @@ namespace tyro
             m_frame_data.avg_v_data += mat;
         }
         m_frame_data.avg_v_data = (1.0/m_frame_data.v_data.size()) * m_frame_data.avg_v_data;
-        
-        Eigen::Vector3d cr(0.5,0,0);
-        render_data.avg_mesh = IGLMesh::Create(m_frame_data.avg_v_data, 
-                                               m_frame_data.f_data, 
-                                               m_frame_data.n_data[0],
-                                               cr);
-        render_data.avg_mesh->Update(true);
-
-        Wm5::Transform tr;
-        tr.SetTranslate(APoint(3*render_data.avg_mesh->WorldBoundBox.GetRadius(), 0, 0));
-        render_data.avg_mesh->LocalTransform = tr * render_data.avg_mesh->LocalTransform;
-        render_data.avg_mesh->Update(true);
-
-        //Eigen::Vector3d cr2(0,0,0);
-        //render_data.avg_mesh_wire = IGLMeshWireframe::Create(m_frame_data.avg_v_data, m_frame_data.f_data, cr2);
-        //render_data.avg_mesh_wire->Update(true);
-
-        //render_data.avg_mesh_wire->LocalTransform = tr * render_data.avg_mesh_wire->LocalTransform;
-        //render_data.avg_mesh_wire->Update(true);
 
         m_computed_avg = true;
         m_update_camera = true;
-
     }
 
     void App::update_camera() 
@@ -812,17 +845,24 @@ namespace tyro
             WorldBoundBox.Merge(render_data.dfm_mesh->WorldBoundBox);
         }
 
-        if (m_computed_stop_motion) 
+        if (m_computed_parts) 
         {
-            WorldBoundBox.Merge(render_data.stop_motion_mesh->WorldBoundBox);
+            for (auto& mesh : render_data.part_meshes)
+                WorldBoundBox.Merge(mesh->WorldBoundBox);
+        }
+
+        if (m_computed_stop_motion) 
+        {   
+            for (auto& mesh : render_data.stop_motion_meshes)
+                WorldBoundBox.Merge(mesh->WorldBoundBox);
         }
 
         APoint world_center = WorldBoundBox.GetCenter();
         float radius = std::abs(WorldBoundBox.GetRadius()*2.5);
-        float aspect = 1.0;
         int v_width, v_height;
         m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
         Vector4i viewport(0, 0, v_width, v_height);
+        float aspect = (float)v_width/v_height;
         
         if (m_camera)
             delete m_camera;
@@ -896,7 +936,7 @@ namespace tyro
 
     void App::load_bunny()
     {
-        RA_LOG_INFO("Load Bunny");
+        RA_LOG_INFO("load bunny");
         int offset_vid = 1222;
         auto offset = Eigen::Vector3d(0.613322, 2.613381, 2.238946);
         auto obj_list_folder1 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/just_face/");
@@ -928,7 +968,7 @@ namespace tyro
     //load mexican blobby guy
     void App::load_blobby() 
     {   
-        RA_LOG_INFO("LOAD_BLOBBY");
+        RA_LOG_INFO("load blobby");
         auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/Claymation/data/hello/FramesOBJ/objlist2.txt");
         //load_mesh_sequence(obj_list_file);
         m_update_camera = true;
@@ -940,7 +980,7 @@ namespace tyro
     //load oldman (will you go to lunch)
     void App::load_oldman() 
     {   
-        RA_LOG_INFO("LOAD OLDMAN");
+        RA_LOG_INFO("load oldman");
         auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/Claymation/data/oldman/gotolunch/FramesOBJ/FullFace/objlist2.txt");
         //load_mesh_sequence(obj_list_file);
         m_update_camera = true;

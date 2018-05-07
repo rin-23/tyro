@@ -5,13 +5,12 @@
 #include <igl/massmatrix.h>
 #include <igl/unique.h>
 
-bool tyro::compute_deformation(const std::vector<int>& vid_list, 
+bool tyro::compute_deformation( const std::vector<int>& vid_list, 
                                 const std::vector<int>& fid_list, 
                                 const std::vector<Eigen::MatrixXd>& v_data,
                                 const Eigen::MatrixXi& F,
                                 const Eigen::MatrixXd& AV, //average                       
-                                std::vector<Eigen::MatrixXd>& rv_data,
-                                Eigen::MatrixXi& RF)
+                                std::vector<Eigen::MatrixXd>& rv_data)
 {
     if (fid_list.size() == 0) 
     { 
@@ -20,8 +19,7 @@ bool tyro::compute_deformation(const std::vector<int>& vid_list,
     
     int num_frames = v_data.size();
     rv_data.reserve(num_frames);
-    RF = F;
-
+    
     //list of vids that can be deformed
     std::vector<int> vid_deform, vid_deform_dup; 
     for (auto fid : fid_list) 

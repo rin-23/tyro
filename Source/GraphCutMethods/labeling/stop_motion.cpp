@@ -100,13 +100,13 @@ int stop_motion_vertex_distance(int num_labels,
                             	const std::vector<Eigen::MatrixXd>& v_data,
                             	const Eigen::MatrixXi& f_data,
 								std::vector<Eigen::MatrixXd>& d_data,
-								std::vector<int>& s_data,  
+								Eigen::VectorXi& s_data,  
                             	double& result_energy)
 {
 	double w_s = 1.0f; //smooth weight
-	int num_steps = 100;// 150;
+	int num_steps = 2;// 150;
 	double tolerance = 0.0001;
-	int n_init = 3; // number of times the clustering algorithm will be run
+	int n_init = 1; // number of times the clustering algorithm will be run
 
 
 	MatrixXd F; //,  SAVED_FACES; //frame data
@@ -173,11 +173,12 @@ int stop_motion_vertex_distance(int num_labels,
 	unflatten_frames(D_flat, d_data);
 	//saveDictionary(labelOBJ, D, SAVED_FACES);
 	
-	VectorXi S_vec = n_init_S.at(min_idx);
-	for (int i = 0; i < S_vec.size(); ++i) 
-	{
-		s_data.push_back(S_vec(i));
-	}
+	s_data = n_init_S.at(min_idx);
+	//VectorXi S_vec = n_init_S.at(min_idx);
+	//for (int i = 0; i < S_vec.size(); ++i) 
+	//{
+	//	s_data.push_back(S_vec(i));
+	//}
 	//saveMatrix(labelPath, S_vec, true);
 
 	result_energy = n_init_energy.at(min_idx);

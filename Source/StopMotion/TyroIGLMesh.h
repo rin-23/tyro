@@ -14,8 +14,8 @@ public:
 
     virtual ~IGLMesh() {}
     
-    static IGLMeshSPtr Create(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& N, Eigen::MatrixXd& C);
-    static IGLMeshSPtr Create(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& N, Eigen::Vector3d& color);
+    static IGLMeshSPtr Create(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C);
+    static IGLMeshSPtr Create(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::Vector3d& color);
     
     Eigen::MatrixXd V; //position data
     Eigen::MatrixXi F; //face data
@@ -25,7 +25,7 @@ public:
     virtual void UpdateUniformsWithCamera(const Camera* camera) override;
 
 protected:
-    void Init(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& N, Eigen::MatrixXd& C);
+    void Init(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C);
 private:
     
 };
@@ -39,13 +39,13 @@ public:
     virtual ~IGLMeshWireframe() {}
     
     //Generate wireframe from unique edges
-    static IGLMeshWireframeSPtr Create(Eigen::MatrixXd& V, Eigen::MatrixXi& uE, Eigen::MatrixXd& uC);
-    //static IGLMeshWireframeSPtr Create(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::Vector3d& color);
+    static IGLMeshWireframeSPtr Create(const Eigen::MatrixXd& V, const Eigen::MatrixXi& uE, const Eigen::MatrixXd& uC);
+    //static IGLMeshWireframeSPtr Create(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::Vector3d& color);
 
     virtual void UpdateUniformsWithCamera(const Camera* camera) override;
     
 protected:
-    void Init(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& C);
+    void Init(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& C);
 private:
 
 };

@@ -10,7 +10,7 @@
 namespace tyro 
 {   
 
-     void IGLMesh::Init(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& N, Eigen::MatrixXd& C)
+     void IGLMesh::Init(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C)
     {
         ES2TriMesh::Init();
 
@@ -125,14 +125,14 @@ namespace tyro
     }
     */
 
-    IGLMeshSPtr IGLMesh::Create(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& N, Eigen::MatrixXd& C)
+    IGLMeshSPtr IGLMesh::Create(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C)
     {
         IGLMeshSPtr sptr = std::make_shared<IGLMesh>();
         sptr->Init(V,F,N,C);
         return sptr;
     }
     
-    IGLMeshSPtr IGLMesh::Create(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& N, Eigen::Vector3d& color) 
+    IGLMeshSPtr IGLMesh::Create(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::Vector3d& color) 
     {
         Eigen::MatrixXd C;
         C.resize(F.rows(), 3);
@@ -158,7 +158,7 @@ namespace tyro
         //GetVisualEffect()->GetUniforms()->UpdateFloatUniform(2, mColor);
     }
         
-    void IGLMeshWireframe::Init(Eigen::MatrixXd& V, Eigen::MatrixXi& uE, Eigen::MatrixXd& uC)
+    void IGLMeshWireframe::Init(const Eigen::MatrixXd& V, const Eigen::MatrixXi& uE, const Eigen::MatrixXd& uC)
     {   
         ES2Polyline::Init(false);
         SetVisualEffect(ES2CoreVisualEffects::WireframeColor());
@@ -200,7 +200,7 @@ namespace tyro
         GetVisualEffect()->GetCullState()->Enabled = false;    
     }
 
-    IGLMeshWireframeSPtr IGLMeshWireframe::Create(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& C)
+    IGLMeshWireframeSPtr IGLMeshWireframe::Create(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& C)
     {
         IGLMeshWireframeSPtr sptr = std::make_shared<IGLMeshWireframe>();
         sptr->Init(V,F,C);

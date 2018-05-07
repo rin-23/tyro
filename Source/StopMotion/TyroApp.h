@@ -12,25 +12,6 @@
 
 namespace tyro
 {   
-    //Convert vertex selection to edge selection.
-    //in vid_list - list of vertex ids (ORDERED RIGHT NOW, ASSUME CLOSED LOOP)
-    //out E - vid_list.size() by 2 matrix of edges
-    void convert_vertex_to_edge_selection(const std::vector<int>& vid_list,
-                                          const Eigen::MatrixXi& E, //all directed edges
-                                          const Eigen::MatrixXi& uE, //all unique edges
-                                          const Eigen::VectorXi& EMAP, // map from directed to unique edge index 
-                                          Eigen::MatrixXi& eid_list, // edges from vid_list
-                                          Eigen::VectorXi& EI, // indicies into directed edges matrix
-                                          Eigen::VectorXi& uEI, // indicies into undirected edges matrix
-                                          Eigen::VectorXi& DMAP); 
-
-    // Create color matrix for unique edges from color vector
-    //in rows - number of unique edges
-    //in cv - color vector
-    //out C - same size as uE. contains color per edge
-    void color_matrix(int rows, const Eigen::Vector3d& cv, Eigen::MatrixXd& uC);
-    void color_black_matrix(int rows, Eigen::MatrixXd& uC);
-
     class App 
     {
     public:
@@ -50,8 +31,10 @@ namespace tyro
         void load_blobby();
         void load_oldman();
         void load_bunny();
+        
         void compute_average();
-        void compute_deformation();
+        void stop_motion(int num_labels);
+        
         void save_selected_faces(const std::string& filename);
         void save_selected_verticies(const std::string& filename);
         void load_selected_faces(const std::string& filename);
@@ -63,7 +46,6 @@ namespace tyro
         void invert_face_selection();
         void align_all_models();
         void align_all_models(int vid, Eigen::Vector3d offset);
-        void stop_motion(int num_labels);
         void frame(int frame);
         void show_edge_selection();
         void debug_show_faces_near_edge_selection(const Eigen::VectorXi& uEI, const Eigen::VectorXi& DMAP);
@@ -121,8 +103,8 @@ namespace tyro
             IGLMeshWireframeSPtr dfm_mesh_wire;            
             bool dfm_visible;
 
-            IGLMeshSPtr stop_motion_mesh;
-            IGLMeshWireframeSPtr stop_motion_mesh_wire;
+            std::vector<IGLMeshSPtr> stop_motion_meshes;
+            std::vector<IGLMeshWireframeSPtr> stop_motion_meshes_wire;
             bool stop_motion_visible = true;
 
             std::vector<IGLMeshSPtr> part_meshes;
@@ -178,4 +160,30 @@ namespace tyro
         
         std::atomic<bool> m_need_rendering;
     };
+
+
+    //Convert vertex selection to edge selection.
+    //in vid_list - list of vertex ids (ORDERED RIGHT NOW, ASSUME CLOSED LOOP)
+    //out E - vid_list.size() by 2 matrix of edges
+    void convert_vertex_to_edge_selection(const std::vector<int>& vid_list,
+                                          const Eigen::MatrixXi& E, //all directed edges
+                                          const Eigen::MatrixXi& uE, //all unique edges
+                                          const Eigen::VectorXi& EMAP, // map from directed to unique edge index 
+                                          Eigen::MatrixXi& eid_list, // edges from vid_list
+                                          Eigen::VectorXi& EI, // indicies into directed edges matrix
+                                          Eigen::VectorXi& uEI, // indicies into undirected edges matrix
+                                          Eigen::VectorXi& DMAP); 
+
+    // Create color matrix for unique edges from color vector
+    //in rows - number of unique edges
+    //in cv - color vector
+    //out C - same size as uE. contains color per edge
+    void color_matrix(int rows, const Eigen::Vector3d& cv, Eigen::MatrixXd& uC);
+    void color_black_matrix(int rows, Eigen::MatrixXd& uC);
+        
+    void copy_animation(const App::MAnimation& source, 
+                        App::MAnimation& dest, 
+                        bool topology, 
+                        bool face_color, 
+                        bool edge_color);
 }
