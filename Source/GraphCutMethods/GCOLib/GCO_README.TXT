@@ -193,7 +193,7 @@ ________________________________________________________________________________
 
 Constructor B.
 
-GCoptimizationGeneralGraph(int num_sites,int num_labels);
+GCoptimizationGeneralGraph(int num_sites, int num_labels);
 
 
 Use this constructor for general graphs.  If you use this constructor, you must setup up

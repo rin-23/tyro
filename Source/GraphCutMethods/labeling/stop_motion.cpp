@@ -108,7 +108,6 @@ int stop_motion_vertex_distance(int num_labels,
 	double tolerance = 0.0001;
 	int n_init = 4; // number of times the clustering algorithm will be run
 
-
 	MatrixXd F; //,  SAVED_FACES; //frame data
 	flatten_frames(v_data, F);
 

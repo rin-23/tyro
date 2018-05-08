@@ -73,7 +73,8 @@
         "dense": "cpp",
         "future": "cpp",
         "*.tpp": "cpp",
-        "*.isph": "cpp"
+        "*.isph": "cpp",
+        "vector": "cpp"
     },
     "python.linting.enabled": false
 }
