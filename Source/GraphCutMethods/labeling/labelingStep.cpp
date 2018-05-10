@@ -124,7 +124,6 @@ GCoptimization::EnergyTermType smoothFnTRUEVertex(int p1, int p2, int l1, int l2
 	
 }
 
-
 void setNeighbours(GCoptimizationGeneralGraph *gc, int num_data)
 {
 	for (int i = 0; i < num_data; ++i)

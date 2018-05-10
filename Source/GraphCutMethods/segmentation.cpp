@@ -6,12 +6,17 @@
 #include "TyroAll.h"
 #include <igl/slice.h>
 #include "GCoptimization.h"
+#include <igl/barycenter.h>
+#include <igl/slice.h>
 
-using Eigen::MatrixXd;
+using Eigen::VectorXi;
 using Eigen::VectorXd;
 
 using Eigen::MatrixXi;
-using Eigen::VectorXi;
+using Eigen::MatrixXd;
+
+using Eigen::Vector3i;
+using Eigen::Vector3f;
 
 struct SegmentationData 
 {
@@ -35,6 +40,7 @@ void setNeighbours(GCoptimizationGeneralGraph *gc, const Eigen::MatrixXi& EF)
 }
 
 void prepareSmoothMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
+						const Eigne::MatrixXi& F,
                         const Eigen::MatrixXd& Vavg, //average of faces
                         const Eigen::MatrixXi& EF, //edge flaps 
                         const Eigen::MatrixXi& uE, //unique edges
@@ -69,6 +75,63 @@ void prepareSmoothMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex da
 		A.coeffRef(f1idx, f2idx) = cost;   
 		A.coeffRef(f2idx, f1idx) = cost;
 	}
+}
+
+void prepareDataMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
+					   const Eigen::MatrixXi& F,
+                       const Eigen::MatrixXd& Vavg, //average of faces
+                       const Eigen::MatrixXi& EF, //edge flaps 
+                       const Eigen::MatrixXi& uE, //unique edges
+					   const std::vector<Eigen::VectorXd>& uEL, //edge length
+					   const Eigen::VectorXi& S, //ids of seed faces into F
+					   Eigen::MatrixXd& A) 
+{	
+	MatrixXd& BC;
+	igl::barycenter(Vavg, F, BC);
+
+	MatrixXi& FS; //seed face  
+	igl::slice(F, S, 1, FS);
+	MatrixXd& BCS;
+	igl::barycenter(Vavg, FS, BCS);
+
+	A.resize(F.rows(), S.size());
+	
+	/*
+	for (int i = 0; i < BC.rows(); ++i) 
+	{	
+		for (int label = 0; label < S.size(); ++label) 
+		{
+			double dist = (BC.row(i) - BCS.row(label)).norm();
+			A(i, label) = dist;
+		}
+	}
+	*/
+	//normalize matrix to be between [0,1]
+	//AN = (A - A.minCoeff()) / (A.maxCoeff(A) - A.minCoeff());
+	//TODO: depends on the model
+	/*
+	%Z = barycenter(Vavg,F)*R*[0;0;1];
+%[~,imin] = min(Z);
+%[~,imax] = max(Z);
+%Thard = sparse([imax imax imin imin], [1 2 1 2], [1 0 0 1], size(F,1),2);
+%Tsoft = matrixnormalize(Z);
+%Tsoft = sparse([Tsoft 1-Tsoft]).^10;
+%  
+%w_smooth = 1024;
+%w_hard = 10000;
+%w_soft = 100;
+%[~,L] = maxflow(w_smooth * A, w_hard * Thard + w_soft * Tsoft);
+%L = double(L);
+%
+	*/
+	VectorXd Z = BC.col(2);
+	int imin, imax;
+	Z.minCoeff(imin);
+	Z.maxCoeff(imax);
+
+	SparseMatrix<double> Thard;
+	Thard.resize(F.rows(), 2);
+	Thard.
 }
 
 GCoptimization::EnergyTermType smoothFnVertex(int p1, int p2, int l1, int l2, void *extraData) 
@@ -123,7 +186,7 @@ void tyro::segmentation(const std::vector<Eigen::MatrixXd>& v_data, //vertex dat
 	//%EF = EF(int_man,:);
 	//%uE = uE(int_man,:);
 
-	assert(seeds.size() == 2); //only support 2 labels right now.
+	assert(seeds.size() == 2); //only support 2 labels right now
 
 	Eigen::VectorXi int_man;
 	tyro::all(inEF, 
@@ -192,7 +255,7 @@ void tyro::segmentation(const std::vector<Eigen::MatrixXd>& v_data, //vertex dat
 %Z = barycenter(Vavg,F)*R*[0;0;1];
 %[~,imin] = min(Z);
 %[~,imax] = max(Z);
-%Thard = sparse([imax imax imin imin],[1 2 1 2],[1 0 0 1],size(F,1),2);
+%Thard = sparse([imax imax imin imin], [1 2 1 2], [1 0 0 1], size(F,1),2);
 %Tsoft = matrixnormalize(Z);
 %Tsoft = sparse([Tsoft 1-Tsoft]).^10;
 %  
