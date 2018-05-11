@@ -25,7 +25,6 @@ ENDIF()
 #set(Qt5_DIR "/opt/Qt/5.9/gcc_64/lib/cmake/Qt5")
 
 # Find the QtWidgets library
-#find_package(Qt5 REQUIRED Widgets)
 find_package(PkgConfig REQUIRED)
 pkg_search_module(GLFW glfw3)
 find_package(OpenGL REQUIRED)
