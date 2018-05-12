@@ -109,17 +109,17 @@ set(TYRO_EXTERNAL_INC_EXE
     "./External"
     )
 
-set(TYRO_GRAPHCUT_INC_EXE
-    "./GraphCutMethods/GCOLib"
-    "./GraphCutMethods/kmeans"
-    "./GraphCutMethods/labeling"   
-    "./GraphCutMethods/segmentation" 
-    )
+#set(TYRO_GRAPHCUT_INC_EXE
+#    "./GraphCutMethods/GCOLib"
+#    "./GraphCutMethods/kmeans"
+#    "./GraphCutMethods/labeling"   
+#    "./GraphCutMethods/segmentation" 
+#    )
 set(TYRO_STOPMOTION_INC_EXE 
     "./StopMotion"
     )
 
-include_directories("./" ${TYRO_MATH_INC_EXE} ${TYRO_CORE_INC_EXE} ${TYRO_ENGINE_INC_EXE} ${TYRO_EXTERNAL_INC_EXE} ${TYRO_GRAPHCUT_INC_EXE} ${TYRO_STOPMOTION_INC_EXE})
+include_directories("./" ${TYRO_MATH_INC_EXE} ${TYRO_CORE_INC_EXE} ${TYRO_ENGINE_INC_EXE} ${TYRO_EXTERNAL_INC_EXE} ${TYRO_STOPMOTION_INC_EXE})
 include_directories(${GLFW_INCLUDE_DIRS})
 include_directories(${OPENGL_INCLUDE_DIR})
 include_directories(${GLEW_INCLUDE_DIR})

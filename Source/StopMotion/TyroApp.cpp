@@ -10,7 +10,8 @@
 #include <functional>
 
 #include "Wm5APoint.h"
-#include "Wm5Vector3.h"
+#include "Wm5Vector2.h"
+#include "Wm5Vector4.h"
 
 #include <igl/unproject_onto_mesh.h>
 #include <igl/readOBJ.h>
@@ -36,7 +37,6 @@
 #include "mesh_split.h"
 #include "segmentation.h"
 
-using namespace Wm5;
 using namespace std;
 
 using Eigen::VectorXi;
@@ -47,6 +47,9 @@ using Eigen::MatrixXd;
 
 using Eigen::Vector3i;
 using Eigen::Vector3f;
+using Eigen::RowVector3d;
+
+using Wm5::APoint;
 
 void tyro::copy_animation(const tyro::App::MAnimation& source, 
                           tyro::App::MAnimation& dest, 
@@ -112,10 +115,10 @@ void tyro::convert_vertex_to_edge_selection(const std::vector<int>& vid_list,
     int num_found = 0;
     for (int i = 0; i < eid_list.rows(); ++i) 
     {
-        Eigen::VectorXi e1 = eid_list.row(i);
+        VectorXi e1 = eid_list.row(i);
         for (int j = 0; j < E.rows(); ++j) 
         {
-            Eigen::VectorXi e2 = E.row(j);
+            VectorXi e2 = E.row(j);
             if (e1(0) == e2(0) && e1(1) == e2(1)) 
             {
                 EI(i) = j; //directed edge index
@@ -200,7 +203,28 @@ namespace tyro
         void console_show_edge_selection(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("Converting vertex to edge selection");
-            app->show_edge_selection();
+            
+            MatrixXi eid_list;
+            VectorXi EI, uEI, DMAP;
+            convert_vertex_to_edge_selection(app->vid_list, 
+                                             app->m_frame_data.e_data, 
+                                             app->m_frame_data.ue_data, 
+                                             app->m_frame_data.EMAP,
+                                             eid_list, 
+                                             EI, 
+                                             uEI, 
+                                             DMAP);
+        
+            for (int i = 0; i < uEI.size(); ++i) 
+            {   
+                app->m_frame_data.ec_data.row(uEI(i)) = Eigen::Vector3d(0,0.8,0);
+            }
+            
+            //debug_show_faces_near_edge_selection(uEI, DMAP);       
+                    
+            app->render();
+            glfwPostEmptyEvent();
+            
             return;
         }
 
@@ -219,8 +243,8 @@ namespace tyro
                 return;
             }
 
-            Eigen::MatrixXi eid_list;
-            Eigen::VectorXi EI, uEI, DMAP;
+            MatrixXi eid_list;
+            VectorXi EI, uEI, DMAP;
             convert_vertex_to_edge_selection(app->vid_list, 
                                              app->m_frame_deformed_data.e_data, 
                                              app->m_frame_deformed_data.ue_data, 
@@ -231,7 +255,7 @@ namespace tyro
                                              DMAP);
         
 
-            Eigen::MatrixXi F1, F2;
+            MatrixXi F1, F2;
             tyro::mesh_split(app->m_frame_deformed_data.f_data,
                              uEI,
                              DMAP, 
@@ -248,7 +272,7 @@ namespace tyro
             
             for (int i = 0; i < app->m_frame_data.v_data.size(); ++i) 
             {                   
-                Eigen::MatrixXi I1, I2;    
+                MatrixXi I1, I2;    
                 igl::remove_unreferenced(app->m_frame_deformed_data.v_data[i], 
                                          F1, 
                                          A1.v_data[i], 
@@ -288,7 +312,7 @@ namespace tyro
 
             if (args.size() == 1)
             {   int frame = std::stoi(args[0]);
-                app->frame(frame);
+                app->m_timeline->SetFrame(frame);
                 return;
             }
         }
@@ -502,12 +526,12 @@ namespace tyro
                 
         //setup renderer
         m_gl_rend = new ES2Renderer(m_tyro_window->GetGLContext());
-        m_gl_rend->SetClearColor(Vector4f(0.0, 153.0/255.0, 153.0/255.0, 1.0));
+        m_gl_rend->SetClearColor(Wm5::Vector4f(0.0, 153.0/255.0, 153.0/255.0, 1.0));
  
         int v_width, v_height;
         m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
-        Vector4i viewport(0, 0, v_width, v_height);
-        m_camera = new iOSCamera(APoint(0,0,0), 1.0, 1.0, 2, viewport, true);
+        Wm5::Vector4i viewport(0, 0, v_width, v_height);
+        m_camera = new iOSCamera(Wm5::APoint(0,0,0), 1.0, 1.0, 2, viewport, true);
         
         m_timeline = new Timeline(24, 300);
         m_timeline->frameChanged = [&](Timeline& timeline, int frame)->void 
@@ -599,9 +623,9 @@ namespace tyro
         ES2FontSPtr font = FontManager::GetSingleton()->GetSystemFontOfSize12();
         std::string strrr("Frame 0/9000");
         m_frame_overlay = ES2TextOverlay::Create(strrr, 
-                                                 Vector2f(0, 0), 
+                                                 Wm5::Vector2f(0, 0), 
                                                  font, 
-                                                 Vector4f(0,0,0,1), 
+                                                 Wm5::Vector4f(0,0,0,1), 
                                                  viewport);
         m_frame_overlay->SetTranslate(Wm5::Vector2i(-viewport[2]/2 + 50,-viewport[3]/2 + 50));
         
@@ -643,7 +667,7 @@ namespace tyro
                                                     m_frame_data.n_data[0],
                                                     Eigen::Vector3d(0.5, 0, 0));
                         Wm5::Transform tr;
-                        tr.SetTranslate(APoint(-2*m_model_offset, 0, 0));
+                        tr.SetTranslate(Wm5::APoint(-2*m_model_offset, 0, 0));
                         mesh->LocalTransform = tr * mesh->LocalTransform;
                         mesh->Update(true);
 
@@ -659,7 +683,7 @@ namespace tyro
                                                     m_frame_data.n_data[m_frame],
                                                     Eigen::Vector3d(0.5,0.5,0.5));
                         Wm5::Transform tr;
-                        tr.SetTranslate(APoint(-1*m_model_offset, 0, 0));
+                        tr.SetTranslate(Wm5::APoint(-1*m_model_offset, 0, 0));
                         mesh->LocalTransform = tr * mesh->LocalTransform;
                         mesh->Update(true);
                         render_data.dfm_mesh = mesh;
@@ -692,7 +716,7 @@ namespace tyro
                                                          m_pieces[i].n_data[m_frame],
                                                          m_pieces[i].fc_data);
                             Wm5::Transform tr;
-                            tr.SetTranslate(APoint(m_model_offset, 0, 0));
+                            tr.SetTranslate(Wm5::APoint(m_model_offset, 0, 0));
                             mesh1->LocalTransform = tr * mesh1->LocalTransform;
                             mesh1->Update(true);
                             render_data.part_meshes.push_back(mesh1);
@@ -726,7 +750,7 @@ namespace tyro
                                                         sm.anim.n_data[m_frame],
                                                         sm.anim.fc_data);
                             Wm5::Transform tr;
-                            tr.SetTranslate(APoint(2*m_model_offset, 0, 0));
+                            tr.SetTranslate(Wm5::APoint(2*m_model_offset, 0, 0));
                             mesh->LocalTransform = tr * mesh->LocalTransform;
                             mesh->Update(true);
                             render_data.stop_motion_meshes.push_back(mesh);
@@ -842,7 +866,7 @@ namespace tyro
             sm.anim.ec_data = piece.ec_data;
             sm.anim.fc_data = piece.fc_data;
             //precompute normals
-            std::vector<Eigen::MatrixXd> normals;
+            std::vector<MatrixXd> normals;
             normals.resize(sm.D.size());
             for (int j = 0; j < sm.D.size(); ++j) 
             {   
@@ -864,7 +888,7 @@ namespace tyro
         glfwPostEmptyEvent();
 
         /*
-        std::vector<Eigen::MatrixXd> d_data;
+        std::vector<MatrixXd> d_data;
         std::vector<int> s_data;
         double result_energy;
         
@@ -939,11 +963,11 @@ namespace tyro
                 WorldBoundBox.Merge(mesh->WorldBoundBox);
         }
 
-        APoint world_center = WorldBoundBox.GetCenter();
+        Wm5::APoint world_center = WorldBoundBox.GetCenter();
         float radius = std::abs(WorldBoundBox.GetRadius()*2.5);
         int v_width, v_height;
         m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
-        Vector4i viewport(0, 0, v_width, v_height);
+        Wm5::Vector4i viewport(0, 0, v_width, v_height);
         float aspect = (float)v_width/v_height;
         
         if (m_camera)
@@ -957,7 +981,7 @@ namespace tyro
         Eigen::RowVector3d new_c = m_frame_data.v_data[m_frame].row(vid);
         ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.001);
         Wm5::Transform tr;
-        tr.SetTranslate(APoint(new_c(0), new_c(1), new_c(2)));
+        tr.SetTranslate(Wm5::APoint(new_c(0), new_c(1), new_c(2)));
         object->LocalTransform = tr * object->LocalTransform;
         object->Update(true);
         ball_list.push_back(object);
@@ -1045,7 +1069,7 @@ namespace tyro
         
         //Compute radius of the bounding box of the model
         AxisAlignedBBox bbox;
-        Eigen::MatrixXd VT = m_frame_data.v_data[0].transpose();
+        MatrixXd VT = m_frame_data.v_data[0].transpose();
         bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
         m_model_offset = bbox.GetRadius(); 
 
@@ -1157,7 +1181,7 @@ namespace tyro
         {
                 Eigen::Vector3d new_vec = m_frame_data.v_data[frame].row(vid);
                 Eigen::Vector3d d = ref_vec - new_vec;
-                Eigen::RowVector3d diff(d(0), d(1), d(2)); 
+                RowVector3d diff(d(0), d(1), d(2)); 
                 m_frame_data.v_data[frame].rowwise() += diff;
         }
         render();
@@ -1200,8 +1224,8 @@ namespace tyro
             ofstream objlist_file;
             objlist_file.open (objlist_path);
             
-            Eigen::MatrixXi SVI, SVJ, nodp_F;
-            Eigen::MatrixXi newF;
+            MatrixXi SVI, SVJ, nodp_F;
+            MatrixXi newF;
             newF.resize(fid_list.size(), 3);
             int fidIdx = 0;
             for (auto fid : fid_list) newF.row(fidIdx++) = m_frame_data.f_data.row(fid);
@@ -1210,11 +1234,11 @@ namespace tyro
             {   
                 bool success = igl::writeSTL(tmp_path, m_frame_data.v_data[frame], newF, false);
                 assert(success);
-                Eigen::MatrixXd temp_V, temp_N;
-                Eigen::MatrixXi temp_F;
+                MatrixXd temp_V, temp_N;
+                MatrixXi temp_F;
                 success = igl::readSTL(tmp_path, temp_V, temp_F, temp_N);
                 assert(success);
-                Eigen::MatrixXd nodp_V;
+                MatrixXd nodp_V;
                 
                 if (frame == 0) 
                 {
@@ -1298,40 +1322,12 @@ namespace tyro
         }   
     }
     
-    void App::frame(int frame) 
-    {
-        m_timeline->SetFrame(frame);
-    }
-
-    void App::show_edge_selection() 
-    {   
-        Eigen::MatrixXi eid_list;
-        Eigen::VectorXi EI, uEI, DMAP;
-        convert_vertex_to_edge_selection(vid_list, 
-                                         m_frame_data.e_data, 
-                                         m_frame_data.ue_data, 
-                                         m_frame_data.EMAP,
-                                         eid_list, 
-                                         EI, 
-                                         uEI, 
-                                         DMAP);
-        
-        for (int i = 0; i < uEI.size(); ++i) 
-        {   
-            m_frame_data.ec_data.row(uEI(i)) = Eigen::Vector3d(0,0.8,0);
-        }
-        
-        //debug_show_faces_near_edge_selection(uEI, DMAP);       
-                
-        render();
-        glfwPostEmptyEvent();
-    }
     
     void App::debug_show_faces_near_edge_selection(const Eigen::VectorXi& uEI, const Eigen::VectorXi& DMAP) 
     {   
         const auto & cE = m_frame_data.ue_data;
         const auto & cEMAP = m_frame_data.EMAP;
-        Eigen::MatrixXi EF, EI;
+        MatrixXi EF, EI;
 
         igl::edge_flaps(m_frame_data.f_data, 
                         cE, 
@@ -1384,7 +1380,7 @@ namespace tyro
         if (mouse_is_down && m_modifier == TYRO_MOD_CONTROL) 
         {   
             gesture_state = 2;
-            m_camera->HandleOneFingerPanGesture(gesture_state, Vector2i(current_mouse_x, current_mouse_y));
+            m_camera->HandleOneFingerPanGesture(gesture_state, Wm5::Vector2i(current_mouse_x, current_mouse_y));
             render();
         }
         else if (mouse_is_down && m_modifier == TYRO_MOD_SHIFT && m_sel_method == App::SelectionMethod::Square) 
@@ -1409,7 +1405,7 @@ namespace tyro
                                                 m_camera->GetViewport()[3]);
 
 
-            Eigen::MatrixXd P;
+            MatrixXd P;
             igl::project(m_frame_data.v_data[m_frame],
                          e1.transpose(), 
                          e2.transpose(),
@@ -1483,7 +1479,7 @@ namespace tyro
         else if (mouse_is_down && m_mouse_btn_clicked == 2) 
         {
             gesture_state = 2;
-            m_camera->HandleTwoFingerPanGesture(gesture_state, Vector2i(current_mouse_x, -current_mouse_y));
+            m_camera->HandleTwoFingerPanGesture(gesture_state, Wm5::Vector2i(current_mouse_x, -current_mouse_y));
             render();
         }
         
@@ -1513,13 +1509,13 @@ namespace tyro
         }
         else if (mouse_is_down && m_modifier == TYRO_MOD_CONTROL) 
         {   
-            m_camera->HandleOneFingerPanGesture(gesture_state, Vector2i(mouse_x, mouse_y));
+            m_camera->HandleOneFingerPanGesture(gesture_state, Wm5::Vector2i(mouse_x, mouse_y));
             gesture_state = 1;
             render();
         } 
         else if (mouse_is_down && m_mouse_btn_clicked == 2) 
         {
-            m_camera->HandleTwoFingerPanGesture(gesture_state, Vector2i(mouse_x, -mouse_y));
+            m_camera->HandleTwoFingerPanGesture(gesture_state, Wm5::Vector2i(mouse_x, -mouse_y));
             gesture_state = 1;
             render();
         }
@@ -1530,7 +1526,7 @@ namespace tyro
         RA_LOG_INFO("mouse scroll delta %f", ydelta);
         if (m_state != App::State::LoadedModel) return;
         
-        m_camera->HandlePinchGesture(gesture_state, Vector2i(current_mouse_x, current_mouse_y), ydelta);
+        m_camera->HandlePinchGesture(gesture_state, Wm5::Vector2i(current_mouse_x, current_mouse_y), ydelta);
         render();
     } 
 

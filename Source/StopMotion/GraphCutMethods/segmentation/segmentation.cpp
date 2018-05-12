@@ -9,7 +9,7 @@
 #include <igl/barycenter.h>
 #include <igl/slice.h>
 
-#include "TyroAll.h"
+#include "all.h"
 #include "GCoptimization.h"
 
 using Eigen::VectorXi;

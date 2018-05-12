@@ -46,8 +46,8 @@ namespace tyro
         void invert_face_selection();
         void align_all_models();
         void align_all_models(int vid, Eigen::Vector3d offset);
-        void frame(int frame);
-        void show_edge_selection();
+        //void frame(int frame);
+        //void show_edge_selection();
         void debug_show_faces_near_edge_selection(const Eigen::VectorXi& uEI, const Eigen::VectorXi& DMAP);
         
 
