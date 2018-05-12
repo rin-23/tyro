@@ -41,8 +41,12 @@ using namespace std;
 
 using Eigen::VectorXi;
 using Eigen::VectorXd;
-using Eigen::MatrixXd;
+
 using Eigen::MatrixXi;
+using Eigen::MatrixXd;
+
+using Eigen::Vector3i;
+using Eigen::Vector3f;
 
 void tyro::copy_animation(const tyro::App::MAnimation& source, 
                           tyro::App::MAnimation& dest, 
@@ -136,10 +140,32 @@ namespace tyro
 {   
     namespace
     {   
-        void console_segment(App* app, const std::vector<std::string>& args) 
+        void console_segmentation(App* app, const std::vector<std::string>& args) 
         {   
-            VectorXi flist = Eigen::Map<VectorXi>(app->fid_list.data(), app->fid_list.size());
+            if (app->fid_list.size()>0) 
+            {
+                const auto& FD = app->m_frame_data;
 
+                const auto& cuE = FD.ue_data;
+                const auto& cEMAP = FD.EMAP;
+                MatrixXi EF, EI;
+                igl::edge_flaps(FD.f_data, 
+                                cuE, 
+                                cEMAP, 
+                                EF, 
+                                EI);
+
+                VectorXi L;
+                VectorXi flist = Eigen::Map<VectorXi>(app->fid_list.data(), 
+                                                      app->fid_list.size());
+                tyro::segmentation(FD.v_data, 
+                                   FD.f_data,
+                                   FD.avg_v_data,
+                                   EF,
+                                   cuE,
+                                   flist,
+                                   L);
+            }
         }
 
         void console_show_wireframe(App* app, const std::vector<std::string> & args) 
@@ -442,8 +468,8 @@ namespace tyro
     m_need_rendering(false),
     m_computed_deformation(false),
     m_computed_avg(false),
-    m_sel_primitive(App::SelectionPrimitive::Vertex),
-    m_sel_method(App::SelectionMethod::Square),
+    m_sel_primitive(App::SelectionPrimitive::Faces),
+    m_sel_method(App::SelectionMethod::OneClick),
     m_computed_stop_motion(false),
     m_update_camera(false),
     m_frame_overlay(nullptr),
@@ -535,13 +561,11 @@ namespace tyro
         register_console_function("load_bunny", console_load_bunny, "");
         register_console_function("compute_average", console_compute_average, "");
         register_console_function("compute_deformation", console_compute_deformation, "");
-
         register_console_function("save_selected_faces", console_save_selected_faces, "");
         register_console_function("load_selected_faces", console_load_selected_faces, "");
         register_console_function("save_selected_verticies", console_save_selected_verticies, "");
         register_console_function("load_selected_verticies", console_load_selected_verticies, "");
         register_console_function("invert_face_selection", console_invert_face_selection, "");
-
         register_console_function("set_sel_primitive", console_set_sel_primitive, "");
         register_console_function("set_sel_method", console_set_sel_method, "");
         register_console_function("save_mesh_sequence_with_selected_faces", console_save_mesh_sequence_with_selected_faces, "");
@@ -550,10 +574,11 @@ namespace tyro
         register_console_function("frame", console_frame, "");
         register_console_function("split_mesh", console_split_mesh, "");
         register_console_function("show_edge_selection", console_show_edge_selection, "");
-
         register_console_function("deselect_faces", console_deselect_faces, "");
         register_console_function("deselect_verticies", console_deselect_verticies, "");
         register_console_function("show_wireframe", console_show_wireframe, "");
+        register_console_function("segmentation", console_segmentation, "");
+
         m_state = App::State::Launched;
         // Loop until the user closes the window
         m_tyro_window->GetGLContext()->swapBuffers();
@@ -1011,7 +1036,7 @@ namespace tyro
                                              //obj_list_file4,
                                              //obj_list_file5};
         std::vector<std::string> obj_paths;
-        tyro::obj_file_path_list(obj_list_folder1, "objlist.txt", obj_paths);
+        tyro::obj_file_path_list(obj_list_folder1, "objlist2.txt", obj_paths);
         load_mesh_sequence(obj_paths, true); //use tiny obj loader
         //align_all_models(offset_vid, offset);
         

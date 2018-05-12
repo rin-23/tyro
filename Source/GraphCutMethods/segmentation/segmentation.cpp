@@ -20,6 +20,7 @@ using Eigen::MatrixXd;
 
 using Eigen::Vector3i;
 using Eigen::Vector3f;
+
 namespace tyro 
 {
 struct SegmentationData 
@@ -43,6 +44,21 @@ void setNeighbors(GCoptimizationGeneralGraph *gc, const Eigen::MatrixXi& EF)
 	}
 }
 
+/*
+GCoptimization::EnergyTermType smoothFnVertex(int p1, int p2, int l1, int l2, void *extraData) 
+{	
+	if (l1 == l2) 
+	{ 
+		return 0;
+	}
+
+	SegmentationData* data = (SegmentationData*)extraData;
+	auto& S = data->S;
+	assert(p1 < S.rows() && p2 < S.rows());
+	GCoptimization::EnergyTermType cost = S.coeffRef(p1, p2);
+	return cost;
+}
+
 void prepareSmoothMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 						const Eigen::MatrixXi& F,
                         const Eigen::MatrixXd& Vavg, //average of faces
@@ -64,14 +80,14 @@ void prepareSmoothMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex da
 		double cost = 0;
 		for (int frame = 0; frame < v_data.size(); ++frame) 
 		{
-			Vector3f v1 = v_data[frame].row(v1idx);
-			Vector3f v2 = v_data[frame].row(v2idx); 	
+			VectorXd v1 = v_data[frame].row(v1idx);
+			VectorXd v2 = v_data[frame].row(v2idx); 	
 			
-			Vector3f v1avg = v_data[frame].row(v1idx);
-			Vector3f v2avg = v_data[frame].row(v2idx);
+			VectorXd v1avg = v_data[frame].row(v1idx);
+			VectorXd v2avg = v_data[frame].row(v2idx);
 
-			Vector3f v1diff = v1 - v1avg;
-			Vector3f v2diff = v2 - v2avg;
+			VectorXd v1diff = v1 - v1avg;
+			VectorXd v2diff = v2 - v2avg;
 
 			cost += uEL[frame](e) * (v1diff.norm() + v2diff.norm() + 1);
 		}
@@ -80,6 +96,7 @@ void prepareSmoothMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex da
 		A.coeffRef(f2idx, f1idx) = cost;
 	}
 }
+*/
 
 void prepareDataMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 					   const Eigen::MatrixXi& F,
@@ -127,19 +144,6 @@ void prepareDataMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 	A = soft_w * Tsoft + hard_w * Thard;
 }
 
-GCoptimization::EnergyTermType smoothFnVertex(int p1, int p2, int l1, int l2, void *extraData) 
-{	
-	if (l1 == l2) 
-	{ 
-		return 0;
-	}
-
-	SegmentationData* data = (SegmentationData*)extraData;
-	const auto& A = data->A;
-	assert(p1 < A.rows() && p2 < A.rows());
-	GCoptimization::EnergyTermType cost = A.coeffRef(p1, p2);
-	return cost;
-}
 
 GCoptimization::EnergyTermType dataFnVertex(int p, int l, void* extraData) 
 {
@@ -210,7 +214,7 @@ void segmentation(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 		GCoptimizationGeneralGraph *gc = new GCoptimizationGeneralGraph(num_data, num_labels);
 
 		gc->setDataCost(&dataFnVertex, data);		
-		gc->setSmoothCost(&smoothFnVertex, data);
+		//gc->setSmoothCost(&smoothFnVertex, data);
 		tyro::setNeighbors(gc, EF);
 
 		double oldE = gc->compute_energy();
@@ -229,35 +233,37 @@ void segmentation(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 		e.Report();
 	}
 }
-	//R = axisangle2matrix([0 1 0],-pi/2)*axisangle2matrix([0 0 1],-pi/2);
-	//Vavg = mean(VV,3);
-	//Average onto faces
-	//F2V = sparse(F, repmat(1:size(F,1), 3, 1)',1/3,size(VV,1),size(F,1))';
-	//%allE = [F(:,[2 3]); F(:,[3 1]); F(:,[1 2])]; // non unique edges stacked together allE is (F*3, 2)
-	//%[sE, I] = sort(allE, 2); // sort each row so that [2 1; 3 0] turns into [1 2; 0 3]. sE = allE(I)
-	//%[uE,~,J] = unique(sE,'rows');  // treat each row of sE as a single entity and return the unique rows of sE in sorted order. uE(J) = sE
-	//%% face indices on either side of each edge
-	//%EF = full(sparse(J, 
-	//                  I(:,1), 
-	//                  repmat(1:size(F,1), 1, 3)', 
-	//                  size(uE,1), //uE.rows() // number of unique edges
-	//                  2)); 
-	//%% only keep interior manifold edges
-	//%int_man = all(EF>0,2);
-	//%EF = EF(int_man,:);
-	//%uE = uE(int_man,:);
+}
 
-	//%% Edge lengths
-	//%uEL = sqrt(sum((VV(uE(:,2),:,:)-VV(uE(:,1),:,:)).^2,2));
-	
-	//%% cost per-vertex, per-frame
-	//%C = sqrt(sum((VV-Vavg).^2, 2));
-	//%% For each interior edge add a penalty for cutting along it
-	//%A = sparse( ...
-	//%  EF(:,1), ...
-	//%  EF(:,2), ...
-	//%  sum(uEL.*(1+(C(uE(:,1),:,:) + C(uE(:,2),:,:))), 3), ...
-	//%  size(F,1),size(F,1));
+//R = axisangle2matrix([0 1 0],-pi/2)*axisangle2matrix([0 0 1],-pi/2);
+//Vavg = mean(VV,3);
+//Average onto faces
+//F2V = sparse(F, repmat(1:size(F,1), 3, 1)',1/3,size(VV,1),size(F,1))';
+//%allE = [F(:,[2 3]); F(:,[3 1]); F(:,[1 2])]; // non unique edges stacked together allE is (F*3, 2)
+//%[sE, I] = sort(allE, 2); // sort each row so that [2 1; 3 0] turns into [1 2; 0 3]. sE = allE(I)
+//%[uE,~,J] = unique(sE,'rows');  // treat each row of sE as a single entity and return the unique rows of sE in sorted order. uE(J) = sE
+//%% face indices on either side of each edge
+//%EF = full(sparse(J, 
+//                  I(:,1), 
+//                  repmat(1:size(F,1), 1, 3)', 
+//                  size(uE,1), //uE.rows() // number of unique edges
+//                  2)); 
+//%% only keep interior manifold edges
+//%int_man = all(EF>0,2);
+//%EF = EF(int_man,:);
+//%uE = uE(int_man,:);
+
+//%% Edge lengths
+//%uEL = sqrt(sum((VV(uE(:,2),:,:)-VV(uE(:,1),:,:)).^2,2));
+
+//%% cost per-vertex, per-frame
+//%C = sqrt(sum((VV-Vavg).^2, 2));
+//%% For each interior edge add a penalty for cutting along it
+//%A = sparse( ...
+//%  EF(:,1), ...
+//%  EF(:,2), ...
+//%  sum(uEL.*(1+(C(uE(:,1),:,:) + C(uE(:,2),:,:))), 3), ...
+//%  size(F,1),size(F,1));
 
 /*
 //%% Symmetrize
@@ -334,5 +340,3 @@ for f = 1:size(VV,3);
 end
 }
 */
-
-}

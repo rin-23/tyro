@@ -113,6 +113,7 @@ set(TYRO_GRAPHCUT_INC_EXE
     "./GraphCutMethods/GCOLib"
     "./GraphCutMethods/kmeans"
     "./GraphCutMethods/labeling"   
+    "./GraphCutMethods/segmentation" 
     )
 set(TYRO_STOPMOTION_INC_EXE 
     "./StopMotion"
