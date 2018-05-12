@@ -1,14 +1,16 @@
 #include "segmentation.h"
+
 #include <Eigen/SparseCore>
+
 #include <igl/all_edges.h>
 #include <igl/unique.h>
 #include <igl/edge_lengths.h>
-#include "TyroAll.h"
 #include <igl/slice.h>
-#include "GCoptimization.h"
 #include <igl/barycenter.h>
 #include <igl/slice.h>
-#include "maxtrixnormalize.h"
+
+#include "TyroAll.h"
+#include "GCoptimization.h"
 
 using Eigen::VectorXi;
 using Eigen::VectorXd;
@@ -18,14 +20,15 @@ using Eigen::MatrixXd;
 
 using Eigen::Vector3i;
 using Eigen::Vector3f;
-
+namespace tyro 
+{
 struct SegmentationData 
 {
 	Eigen::SparseMatrix<double> S; //smooth cost
 	Eigen::MatrixXd U; //data cost
-}
+};
 
-void setNeighbours(GCoptimizationGeneralGraph *gc, const Eigen::MatrixXi& EF)
+void setNeighbors(GCoptimizationGeneralGraph *gc, const Eigen::MatrixXi& EF)
 {
 	for (int i = 0; i < EF.rows(); ++i)
 	{	
@@ -41,7 +44,7 @@ void setNeighbours(GCoptimizationGeneralGraph *gc, const Eigen::MatrixXi& EF)
 }
 
 void prepareSmoothMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
-						const Eigne::MatrixXi& F,
+						const Eigen::MatrixXi& F,
                         const Eigen::MatrixXd& Vavg, //average of faces
                         const Eigen::MatrixXi& EF, //edge flaps 
                         const Eigen::MatrixXi& uE, //unique edges
@@ -56,7 +59,7 @@ void prepareSmoothMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex da
 		int f1idx = EF(e,0);
 		int f2idx = EF(e,1);
 		int v1idx = uE(e,0);
-		int v2idx = uE(e,1):
+		int v2idx = uE(e,1);
 		
 		double cost = 0;
 		for (int frame = 0; frame < v_data.size(); ++frame) 
@@ -87,18 +90,18 @@ void prepareDataMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 					   Eigen::MatrixXd& A) 
 {	
 	assert(S.size() == 2); //can only do 2 parts now
-	MatrixXd& BC;
+	MatrixXd BC;
 	igl::barycenter(Vavg, F, BC);
 
-	MatrixXi& FS; //seed face  
+	MatrixXi FS; //seed face  
 	igl::slice(F, S, 1, FS);
-	MatrixXd& BCS;
+	MatrixXd BCS;
 	igl::barycenter(Vavg, FS, BCS);
 
 	VectorXd Z = BC.col(2); // TODO assumes model is along Z axis.
 	int imin, imax;
-	double zmin = Z.minCoeff(imin);
-	double zmax = Z.maxCoeff(imax);
+	double zmin = Z.minCoeff(&imin);
+	double zmax = Z.maxCoeff(&imax);
 
 	MatrixXd Thard;
 	Thard.resize(F.rows(), 2);
@@ -107,17 +110,21 @@ void prepareDataMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 	Thard(imax, 0) = 0;
 	Thard(imax, 1) = 1;
 
-	MatrixXd Tsoft; //, Znorm;
+	MatrixXd Tsoft; 
+	//, Znorm;
 	//maxtrixnormalize(Z, Znorm);
-	VectorXd Znorm = (Z - zmin) / (zmax - zmin); //normalize
+	VectorXd ones;
+	ones.resize(Z.size());
+	ones.setOnes();
+	VectorXd Znorm = (Z - zmin*ones) / (zmax - zmin); //normalize
 	Tsoft.resize(F.rows(), 2);
 	Tsoft.col(0) = Znorm;
-	Tsoft.col(1) = (1 - Znorm);
-	Tsoft = Tsoft.array().pow(10).matrix()
+	Tsoft.col(1) = (ones - Znorm);
+	//Tsoft = Tsoft.array().pow(10).matrix()
 	
 	double soft_w = 1;
 	double hard_w = 1;
-	A = soft_w * T_soft + hard_w * T_hard;
+	A = soft_w * Tsoft + hard_w * Thard;
 }
 
 GCoptimization::EnergyTermType smoothFnVertex(int p1, int p2, int l1, int l2, void *extraData) 
@@ -143,56 +150,105 @@ GCoptimization::EnergyTermType dataFnVertex(int p, int l, void* extraData)
 	return cost;
 }
 
-void tyro::segmentation(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
-                        const Eigen::MatrixXi& F, //faces
-                        const Eigen::MatrixXd& Vavg, //average of faces
-                        const Eigen::MatrixXi& inEF, //edge flaps 
-                        const Eigen::MatrixXi& inuE, //unique edges
-						const Eigen::VectorXi& seeds)  //unique edges
+void segmentation(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
+                  const Eigen::MatrixXi& F, //faces
+                  const Eigen::MatrixXd& Vavg, //average of faces
+                  const Eigen::MatrixXi& inEF, //edge flaps 
+                  const Eigen::MatrixXi& inuE, //unique edges
+				  const Eigen::VectorXi& seeds,
+				  Eigen::VectorXi& L)  
 {
-	//R = axisangle2matrix([0 1 0],-pi/2)*axisangle2matrix([0 0 1],-pi/2);
-
-	//Vavg = mean(VV,3);
-	//Average onto faces
-	//F2V = sparse(F, repmat(1:size(F,1), 3, 1)',1/3,size(VV,1),size(F,1))';
-
-	//%allE = [F(:,[2 3]); F(:,[3 1]); F(:,[1 2])]; // non unique edges stacked together allE is (F*3, 2)
-	//%[sE, I] = sort(allE, 2); // sort each row so that [2 1; 3 0] turns into [1 2; 0 3]. sE = allE(I)
-	//%[uE,~,J] = unique(sE,'rows');  // treat each row of sE as a single entity and return the unique rows of sE in sorted order. uE(J) = sE
-
-	//%% face indices on either side of each edge
-	//%EF = full(sparse(J, 
-	//                  I(:,1), 
-	//                  repmat(1:size(F,1), 1, 3)', 
-	//                  size(uE,1), //uE.rows() // number of unique edges
-	//                  2)); 
-
-	//%% only keep interior manifold edges
-	//%int_man = all(EF>0,2);
-	//%EF = EF(int_man,:);
-	//%uE = uE(int_man,:);
-
 	assert(seeds.size() == 2); //only support 2 labels right now
 
+	//extract interior edges only
 	Eigen::VectorXi int_man;
 	tyro::all(inEF, 
               [](const Eigen::VectorXi& v) -> bool { return v(0) != -1 && v(1) != -1;},
               1,
               int_man);
 
+	//slice edge flaps and unique edge matrix to only contain info about interior edges
 	MatrixXi EF, uE;
 	igl::slice(inEF, int_man, 1, EF);
 	igl::slice(inuE, int_man, 1, uE);
-	//%% Edge lengths
-	//%uEL = sqrt(sum((VV(uE(:,2),:,:)-VV(uE(:,1),:,:)).^2,2));
+
+	//Compute edge length of the mesh for every frame
 	std::vector<VectorXd> uEL;
-	for (int f =0; f < v_data.size(); ++f) 
+	for (int i = 0; i < v_data.size(); ++i) 
 	{
-		const auto& V = v_data[f];
+		const auto& V = v_data[i];
 		Eigen::MatrixXd L;
 		igl::edge_lengths(V, uE, L);
 		uEL.push_back(L.col(0));
 	}
+
+	SegmentationData* data = new SegmentationData();
+
+	data->S.resize(F.rows(), F.rows());
+	data->S.setZero();
+	//prepareSmoothMatrix(v_data,   //vertex data
+	//					 F,		  //face data
+    //                   Vavg,     //average of faces
+    //                   EF,       //edge flaps 
+    //                   uE,       //unique edges
+    //        			uEL,      //edge length
+    //		 			data->S); // sparse matrix of smooth cost
+	
+	prepareDataMatrix(v_data,
+					  F, 
+					  Vavg,
+					  EF, 
+					  uE, 
+					  seeds,
+					  data->U);
+
+	int num_data = F.rows();
+	int num_labels = seeds.size();
+
+	try
+	{
+		GCoptimizationGeneralGraph *gc = new GCoptimizationGeneralGraph(num_data, num_labels);
+
+		gc->setDataCost(&dataFnVertex, data);		
+		gc->setSmoothCost(&smoothFnVertex, data);
+		tyro::setNeighbors(gc, EF);
+
+		double oldE = gc->compute_energy();
+		gc->swap(-1);
+		double newEnergy = gc->compute_energy();
+
+		for (int i = 0; i < num_data; i++)
+		{
+			L(i) = gc->whatLabel(i);
+		}
+
+		delete gc; 
+	}
+	catch(GCException e) 
+	{
+		e.Report();
+	}
+}
+	//R = axisangle2matrix([0 1 0],-pi/2)*axisangle2matrix([0 0 1],-pi/2);
+	//Vavg = mean(VV,3);
+	//Average onto faces
+	//F2V = sparse(F, repmat(1:size(F,1), 3, 1)',1/3,size(VV,1),size(F,1))';
+	//%allE = [F(:,[2 3]); F(:,[3 1]); F(:,[1 2])]; // non unique edges stacked together allE is (F*3, 2)
+	//%[sE, I] = sort(allE, 2); // sort each row so that [2 1; 3 0] turns into [1 2; 0 3]. sE = allE(I)
+	//%[uE,~,J] = unique(sE,'rows');  // treat each row of sE as a single entity and return the unique rows of sE in sorted order. uE(J) = sE
+	//%% face indices on either side of each edge
+	//%EF = full(sparse(J, 
+	//                  I(:,1), 
+	//                  repmat(1:size(F,1), 1, 3)', 
+	//                  size(uE,1), //uE.rows() // number of unique edges
+	//                  2)); 
+	//%% only keep interior manifold edges
+	//%int_man = all(EF>0,2);
+	//%EF = EF(int_man,:);
+	//%uE = uE(int_man,:);
+
+	//%% Edge lengths
+	//%uEL = sqrt(sum((VV(uE(:,2),:,:)-VV(uE(:,1),:,:)).^2,2));
 	
 	//%% cost per-vertex, per-frame
 	//%C = sqrt(sum((VV-Vavg).^2, 2));
@@ -202,60 +258,13 @@ void tyro::segmentation(const std::vector<Eigen::MatrixXd>& v_data, //vertex dat
 	//%  EF(:,2), ...
 	//%  sum(uEL.*(1+(C(uE(:,1),:,:) + C(uE(:,2),:,:))), 3), ...
 	//%  size(F,1),size(F,1));
-	SegmentationData* data = new SegmentationData();
 
-	prepareSmoothMatrix(v_data, //vertex data
-						F,
-                        Vavg, //average of faces
-                        EF, //edge flaps 
-                        uE, //unique edges
-						uEL, //edge length
-						data->S) // sparse matrix of smooth cost
-	prepareDataMatrix(v_data,
-					  F, 
-					  Vavg,
-					  EF, 
-					  uE, 
-					  seeds,
-					  data->U)
-	
-onst std::vector<Eigen::MatrixXd>& v_data, //vertex data
-					   const Eigen::MatrixXi& F,
-                       const Eigen::MatrixXd& Vavg, //average of faces
-                       const Eigen::MatrixXi& EF, //edge flaps 
-                       const Eigen::MatrixXi& uE, //unique edges
-					   const std::vector<Eigen::VectorXd>& uEL, //edge length
-					   const Eigen::VectorXi& S, //ids of seed faces into F
-					   Eigen::MatrixXd& A)
-
-	int num_data = F.rows();
-	int num_labels = 2;
-
-	try
-	{
-		GCoptimizationGeneralGraph *gc = new GCoptimizationGeneralGraph(num_data, num_labels);
-
-		gc->setDataCost(&dataFnVertex, data);
-		gc->setSmoothCost(&smoothFnVertex, data);
-		setNeighbors(gc, num_data);
-
-		double oldE = gc->compute_energy();
-		gc->swap(-1);
-		double newEnergy = gc->compute_energy();
-		
-		delete gc; 
-	}
-	catch(GCException e) 
-	{
-		e.Report();
-	}
-}
-
+/*
 //%% Symmetrize
 //%A = A + A';
-%% Normalize
-%A = A / max(abs(A(:)));
-%
+//%% Normalize
+//%A = A / max(abs(A(:)));
+//%
 %Z = barycenter(Vavg,F)*R*[0;0;1];
 %[~,imin] = min(Z);
 %[~,imax] = max(Z);
@@ -323,4 +332,7 @@ for f = 1:size(VV,3);
   drawnow;
   %pause
 end
+}
+*/
+
 }

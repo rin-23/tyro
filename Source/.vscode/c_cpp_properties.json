@@ -69,9 +69,10 @@
                 "${workspaceRoot}/Core/Scene",
                 "${workspaceRoot}/Core/Tools",
                 "${workspaceRoot}/StopMotion",
-                "${workspaceRoot}/GraphCutMethods/GCOLib",
+                "${workspaceRoot}/GraphCutMethods",
                 "${workspaceRoot}/GraphCutMethods/kmeans",
                 "${workspaceRoot}/GraphCutMethods/labeling",
+                "${workspaceRoot}/GraphCutMethods/segmentation",
                 "${workspaceRoot}/External/libigl/include",
                 "${workspaceRoot}/External/libigl/external/eigen",
                 "/home/rinat/Workspace/poco-1.9.0/Foundation/include",
@@ -120,5 +121,5 @@
             }
         }
     ],
-    "version": 4
+    "version": 3
 }

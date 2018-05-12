@@ -11,6 +11,8 @@ set(TYRO_SRC_LOCAL
 "GraphCutMethods/labeling/updateStep.cpp" 
 "GraphCutMethods/labeling/utils.cpp" 
 "GraphCutMethods/labeling/stop_motion.cpp" 
+
+"GraphCutMethods/segmentation/segmentation.cpp" 
 )
 
 set(TYRO_GCOLIB_SRC

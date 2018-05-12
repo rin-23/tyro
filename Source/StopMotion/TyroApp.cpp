@@ -1,41 +1,48 @@
 #include "TyroApp.h"
+
 #include "RAEnginePrerequisites.h"
-#include "Wm5APoint.h"
-#include "Wm5Vector3.h"
+#include "RAES2TextOverlay.h"
+#include "RAFont.h"
 #include "RAVisibleSet.h"
 #include "RAES2StandardMesh.h"
+#include "RAAxisAlignedBBox.h"
+
 #include <functional>
+
+#include "Wm5APoint.h"
+#include "Wm5Vector3.h"
+
+#include <igl/unproject_onto_mesh.h>
 #include <igl/readOBJ.h>
 #include <igl/per_vertex_normals.h>
-#include "TyroIGLMesh.h"
-#include <igl/unproject_onto_mesh.h>
-
 #include <igl/writeSTL.h>
 #include <igl/readSTL.h>
 #include <igl/writeOBJ.h>
 #include <igl/remove_duplicate_vertices.h>
-
-#include "TyroFileUtils.h"
-
-#include <igl/slice.h>
-#include <igl/project.h>
-#include "load_mesh_sequence.h"
-#include "compute_deformation.h"
-#include <igl/min_quad_with_fixed.h>
-
-#include "stop_motion.h"
-
-#include "RAES2TextOverlay.h"
-#include "RAFont.h"
-#include "mesh_split.h"
 #include <igl/oriented_facets.h>
 #include <igl/is_edge_manifold.h>
 #include <igl/edge_flaps.h>
 #include <igl/remove_unreferenced.h>
-#include "RAAxisAlignedBBox.h"
+#include <igl/slice.h>
+#include <igl/project.h>
+#include <igl/min_quad_with_fixed.h>
+
+#include "TyroIGLMesh.h"
+#include "TyroFileUtils.h"
+
+#include "load_mesh_sequence.h"
+#include "compute_deformation.h"
+#include "stop_motion.h"
+#include "mesh_split.h"
+#include "segmentation.h"
 
 using namespace Wm5;
 using namespace std;
+
+using Eigen::VectorXi;
+using Eigen::VectorXd;
+using Eigen::MatrixXd;
+using Eigen::MatrixXi;
 
 void tyro::copy_animation(const tyro::App::MAnimation& source, 
                           tyro::App::MAnimation& dest, 
@@ -129,6 +136,12 @@ namespace tyro
 {   
     namespace
     {   
+        void console_segment(App* app, const std::vector<std::string>& args) 
+        {   
+            VectorXi flist = Eigen::Map<VectorXi>(app->fid_list.data(), app->fid_list.size());
+
+        }
+
         void console_show_wireframe(App* app, const std::vector<std::string> & args) 
         {
             if (args.size() == 1) 
