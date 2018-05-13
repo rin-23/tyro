@@ -8,8 +8,10 @@
 #include <igl/slice.h>
 #include <igl/barycenter.h>
 #include <igl/slice.h>
+#include <igl/exact_geodesic.h>
 
 #include "all.h"
+#include "RALogManager.h"
 #include "GCoptimization.h"
 
 using Eigen::VectorXi;
@@ -44,11 +46,12 @@ void setNeighbors(GCoptimizationGeneralGraph *gc, const Eigen::MatrixXi& EF)
 	}
 }
 
-/*
+
 GCoptimization::EnergyTermType smoothFnVertex(int p1, int p2, int l1, int l2, void *extraData) 
 {	
 	if (l1 == l2) 
 	{ 
+		RA_LOG_INFO("LABELS ARE EQUAL");
 		return 0;
 	}
 
@@ -69,7 +72,7 @@ void prepareSmoothMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex da
 {		
 	A.resize(F.rows(), F.rows());
 	A.setZero();
-
+	double w_smooth = 20;
 	for (int e = 0; e < uE.rows(); ++e) 
 	{	
 		int f1idx = EF(e,0);
@@ -90,13 +93,15 @@ void prepareSmoothMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex da
 			VectorXd v2diff = v2 - v2avg;
 
 			cost += uEL[frame](e) * (v1diff.norm() + v2diff.norm() + 1);
+		    //cost += (v1diff.norm() + v2diff.norm() + 1);
 		}
 
+		cost *= w_smooth;
 		A.coeffRef(f1idx, f2idx) = cost;   
 		A.coeffRef(f2idx, f1idx) = cost;
 	}
 }
-*/
+
 
 void prepareDataMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 					   const Eigen::MatrixXi& F,
@@ -115,7 +120,7 @@ void prepareDataMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 	MatrixXd BCS;
 	igl::barycenter(Vavg, FS, BCS);
 
-	VectorXd Z = BC.col(2); // TODO assumes model is along Z axis.
+	VectorXd Z = BC.col(1); // TODO assumes model is along Z axis.
 	int imin, imax;
 	double zmin = Z.minCoeff(&imin);
 	double zmax = Z.maxCoeff(&imax);
@@ -137,10 +142,16 @@ void prepareDataMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 	Tsoft.resize(F.rows(), 2);
 	Tsoft.col(0) = Znorm;
 	Tsoft.col(1) = (ones - Znorm);
-	//Tsoft = Tsoft.array().pow(10).matrix()
+	Tsoft = Tsoft.array().pow(10).matrix();
 	
-	double soft_w = 1;
-	double hard_w = 1;
+	
+	//Tsoft.setZero();
+	
+//%w_hard = 10000;
+//%w_soft = 100;
+
+	double soft_w = 100;
+	double hard_w = 10000;
 	A = soft_w * Tsoft + hard_w * Thard;
 }
 
@@ -148,9 +159,7 @@ void prepareDataMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 GCoptimization::EnergyTermType dataFnVertex(int p, int l, void* extraData) 
 {
 	SegmentationData* data = (SegmentationData*)extraData;
-	const auto& U = data->U;
-	//assert(p1 < A.rows() && p2 < A.rows());
-	GCoptimization::EnergyTermType cost = U(p, l);
+	GCoptimization::EnergyTermType cost = data->U(p, l);
 	return cost;
 }
 
@@ -188,15 +197,15 @@ void segmentation(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 
 	SegmentationData* data = new SegmentationData();
 
-	data->S.resize(F.rows(), F.rows());
-	data->S.setZero();
-	//prepareSmoothMatrix(v_data,   //vertex data
-	//					 F,		  //face data
-    //                   Vavg,     //average of faces
-    //                   EF,       //edge flaps 
-    //                   uE,       //unique edges
-    //        			uEL,      //edge length
-    //		 			data->S); // sparse matrix of smooth cost
+	//data->S.resize(F.rows(), F.rows());
+	//data->S.setZero();
+	prepareSmoothMatrix(v_data,   //vertex data
+						 F,		  //face data
+                       Vavg,     //average of faces
+                       EF,       //edge flaps 
+                       uE,       //unique edges
+            			uEL,      //edge length
+    		 			data->S); // sparse matrix of smooth cost
 	
 	prepareDataMatrix(v_data,
 					  F, 
@@ -214,13 +223,14 @@ void segmentation(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 		GCoptimizationGeneralGraph *gc = new GCoptimizationGeneralGraph(num_data, num_labels);
 
 		gc->setDataCost(&dataFnVertex, data);		
-		//gc->setSmoothCost(&smoothFnVertex, data);
+		gc->setSmoothCost(&smoothFnVertex, data);
 		tyro::setNeighbors(gc, EF);
 
 		double oldE = gc->compute_energy();
 		gc->swap(-1);
 		double newEnergy = gc->compute_energy();
 
+		L.resize(num_data);
 		for (int i = 0; i < num_data; i++)
 		{
 			L(i) = gc->whatLabel(i);

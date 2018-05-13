@@ -168,6 +168,14 @@ namespace tyro
                                    cuE,
                                    flist,
                                    L);
+
+                for (int i = 0; i < L.size(); ++i) 
+                {
+                    if (L(i) == 1) 
+                    {
+                        app->setFaceColor(i, true);
+                    }
+                }
             }
         }
 
@@ -1075,6 +1083,7 @@ namespace tyro
 
         m_update_camera = true;
         m_state = App::State::LoadedModel;
+        compute_average();
         render();
     }
 

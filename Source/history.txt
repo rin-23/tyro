@@ -4,3 +4,8 @@ stop_motion 4
 load_bunny 
 stop_motion 5
 load_bunny
+load_bunny 
+segmentation 
+load_bunny 
+segmentation 
+load_bunny 
