@@ -2,10 +2,12 @@
 #include "utils.h"
 #include <algorithm>    // std::min
 #include "labelingStep.h"
+#include "RALogManager.h"
+#include <chrono>
 
 using namespace Eigen;
 using namespace std;
-
+using namespace std::chrono;
 double global_w = 1.0f;
 
 GCoptimization::EnergyTermType smoothFnBlendshapes(int p1, int p2, int l1, int l2, void *extraData)
@@ -94,42 +96,64 @@ GCoptimization::EnergyTermType smoothFnVertex(int p1, int p2, int l1, int l2, vo
 
 GCoptimization::EnergyTermType dataFnTRUEVertex(int p, int l, void *extraData)
 {
+	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	void** data = (void**)extraData;
 	MatrixXd* F = (MatrixXd*)data[0];
 	MatrixXd* D = (MatrixXd*)data[1];
 	
-	VectorXd pObj = F->col(p);
-	VectorXd lObj = D->col(l);
+	//VectorXd pObj = ;
+	//VectorXd lObj = ;
 
-	double diff = (pObj - lObj).squaredNorm();
+	double diff = (F->col(p) - D->col(l)).squaredNorm();
 	GCoptimization::EnergyTermType sum = (GCoptimization::EnergyTermType) diff;
+
+	high_resolution_clock::time_point t2 = high_resolution_clock::now();
+	auto duration = duration_cast<milliseconds>(t2 - t1).count();
+	RA_LOG_INFO("dataFnTRUEVertex %f sec", diff);
 	return sum;
 }
 
 GCoptimization::EnergyTermType smoothFnTRUEVertex(int p1, int p2, int l1, int l2, void *extraData)
-{
+{	
+	high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
 	void** data = (void**)extraData;
 	MatrixXd* F = (MatrixXd*)data[0];
 	MatrixXd* D = (MatrixXd*)data[1];
 
-	VectorXd l1Obj = D->col(l1);
-	VectorXd l2Obj = D->col(l2);
+	//VectorXd l1Obj = ;
+	//VectorXd l2Obj = ;
+	//VectorXd p1Obj = ;
+	//VectorXd p2Obj = ;
 
-	VectorXd p1Obj = F->col(p1);
-	VectorXd p2Obj = F->col(p2);
-
-	double diff = ((l1Obj - l2Obj) - (p1Obj - p2Obj)).squaredNorm();
+	double diff = (D->col(l1) - D->col(l2) - F->col(p1) + F->col(p2)).squaredNorm();
 	GCoptimization::EnergyTermType sum = (GCoptimization::EnergyTermType) (global_w * diff);
-	return sum;
-	
+	high_resolution_clock::time_point t2 = high_resolution_clock::now();
+	auto duration = duration_cast<milliseconds>(t2 - t1).count();
+	RA_LOG_INFO("smoothFnTRUEVertex %f sec", diff);
+	return sum;	
 }
 
-void setNeighbours(GCoptimizationGeneralGraph *gc, int num_data)
+//sequenceIdx contains info where scenes breaks
+void setNeighbours(GCoptimizationGeneralGraph *gc, int num_data) 
+{	
+	//should use one with sequenceIdx
+	assert(false);
+}
+
+void setNeighbours(GCoptimizationGeneralGraph *gc, int num_data, std::vector<int>& sequenceIdx)
 {
-	for (int i = 0; i < num_data; ++i)
-	{
-		if (i != num_data - 1) // create pairs
-			gc->setNeighbors(i, i + 1);
+	for (int i = 0; i < num_data - 1; ++i)
+	{	
+		auto it = std::find(sequenceIdx.begin(), sequenceIdx.end(), i + 1); //dont connect one scene to another
+		if (it == sequenceIdx.end()) 
+        { 
+			gc->setNeighbors(i, i + 1); 
+		}
+		else 
+		{
+			//RA_LOG_INFO("stop here");
+		}
 	}
 }
 
@@ -217,7 +241,7 @@ void labelFacesBShape(Eigen::MatrixXd& F, Eigen::MatrixXd& L, Eigen::MatrixXd& M
 }
 
 
-void labelFacesTRUEVertex(Eigen::MatrixXd& F, Eigen::MatrixXd& D, Eigen::VectorXi& S_vec, double w_s, double& energy) 
+void labelFacesTRUEVertex(Eigen::MatrixXd& F, Eigen::MatrixXd& D, Eigen::VectorXi& S_vec, std::vector<int>& sequenceIdx, double w_s, double& energy) 
 {
 	global_w = w_s;
 	int num_frames = F.cols();
@@ -231,7 +255,7 @@ void labelFacesTRUEVertex(Eigen::MatrixXd& F, Eigen::MatrixXd& D, Eigen::VectorX
 		gc->setDataCost(&dataFnTRUEVertex, extraData);
 		gc->setSmoothCost(&smoothFnTRUEVertex, extraData);
 
-		setNeighbours(gc, num_frames);
+		setNeighbours(gc, num_frames, sequenceIdx);
 
 		double oldE = gc->compute_energy();
 		gc->swap(-1);

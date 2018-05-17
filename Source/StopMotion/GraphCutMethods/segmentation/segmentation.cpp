@@ -9,6 +9,9 @@
 #include <igl/barycenter.h>
 #include <igl/slice.h>
 #include <igl/exact_geodesic.h>
+#include <igl/is_edge_manifold.h>
+#include <igl/edge_flaps.h>
+#include <igl/unique_edge_map.h>
 
 #include "all.h"
 #include "RALogManager.h"
@@ -46,19 +49,25 @@ void setNeighbors(GCoptimizationGeneralGraph *gc, const Eigen::MatrixXi& EF)
 	}
 }
 
+GCoptimization::EnergyTermType dataFnVertex(int p, int l, void* extraData) 
+{
+	SegmentationData* data = (SegmentationData*)extraData;
+	GCoptimization::EnergyTermType cost = data->U(p, l);
+	return cost;
+}
 
 GCoptimization::EnergyTermType smoothFnVertex(int p1, int p2, int l1, int l2, void *extraData) 
 {	
 	if (l1 == l2) 
 	{ 
-		RA_LOG_INFO("LABELS ARE EQUAL");
 		return 0;
 	}
 
 	SegmentationData* data = (SegmentationData*)extraData;
-	auto& S = data->S;
-	assert(p1 < S.rows() && p2 < S.rows());
-	GCoptimization::EnergyTermType cost = S.coeffRef(p1, p2);
+	GCoptimization::EnergyTermType cost = data->S.coeffRef(p1, p2);
+	if (cost > 0) {
+		RA_LOG_INFO("omegalul");
+	}
 	return cost;
 }
 
@@ -68,11 +77,12 @@ void prepareSmoothMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex da
                         const Eigen::MatrixXi& EF, //edge flaps 
                         const Eigen::MatrixXi& uE, //unique edges
 						const std::vector<Eigen::VectorXd>& uEL, //edge length
+						double smooth_weight,
 						Eigen::SparseMatrix<double>& A) // sparse matrix of smooth cost
 {		
 	A.resize(F.rows(), F.rows());
 	A.setZero();
-	double w_smooth = 20;
+	
 	for (int e = 0; e < uE.rows(); ++e) 
 	{	
 		int f1idx = EF(e,0);
@@ -86,17 +96,23 @@ void prepareSmoothMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex da
 			VectorXd v1 = v_data[frame].row(v1idx);
 			VectorXd v2 = v_data[frame].row(v2idx); 	
 			
-			VectorXd v1avg = v_data[frame].row(v1idx);
-			VectorXd v2avg = v_data[frame].row(v2idx);
+			VectorXd v1avg = Vavg.row(v1idx);
+			VectorXd v2avg = Vavg.row(v2idx);
 
 			VectorXd v1diff = v1 - v1avg;
 			VectorXd v2diff = v2 - v2avg;
 
-			cost += uEL[frame](e) * (v1diff.norm() + v2diff.norm() + 1);
+			cost += uEL[frame](e) * (v1diff.norm() + v2diff.norm());
 		    //cost += (v1diff.norm() + v2diff.norm() + 1);
 		}
 
-		cost *= w_smooth;
+		//double w_smooth = 9;
+		if (cost > 0) 
+		{
+			RA_LOG_INFO("lul");
+		}
+
+		cost *= smooth_weight;
 		A.coeffRef(f1idx, f2idx) = cost;   
 		A.coeffRef(f2idx, f1idx) = cost;
 	}
@@ -108,70 +124,95 @@ void prepareDataMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
                        const Eigen::MatrixXd& Vavg, //average of faces
                        const Eigen::MatrixXi& EF, //edge flaps 
                        const Eigen::MatrixXi& uE, //unique edges
-					   const Eigen::VectorXi& S, //ids of seed faces into F
+					   const Eigen::VectorXi& FS1, //ids of seed faces into F
+					   const Eigen::VectorXi& FS2, //ids of seed faces into F
 					   Eigen::MatrixXd& A) 
 {	
-	assert(S.size() == 2); //can only do 2 parts now
-	MatrixXd BC;
-	igl::barycenter(Vavg, F, BC);
+	//get geodesic distance data
+	VectorXi VS, VT, FT; //, FS1, FS2;
+	FT.setLinSpaced(F.rows(), 0, F.rows()-1);
+	
+	//int split = int(seeds.size()/2);
+	//FS1.resize(split);
+	//FS2.resize(seeds.size() - split);
 
-	MatrixXi FS; //seed face  
-	igl::slice(F, S, 1, FS);
-	MatrixXd BCS;
-	igl::barycenter(Vavg, FS, BCS);
+	//for (int i = 0; i < split; ++i) FS1(i) = seeds(i);
+	//for (int i = split; i < seeds.size(); ++i) FS2(i-split) = seeds(i);
+	
+	//Assume half of the seeds are one side and other hald is the other
+	//FS(0) = S(0);
+	
+	Eigen::VectorXd d1;
+	igl::exact_geodesic(Vavg, F, VS, FS1, VT, FT, d1);
+	
+	Eigen::VectorXd d2;
+	igl::exact_geodesic(Vavg, F, VS, FS2, VT, FT, d2);
 
-	VectorXd Z = BC.col(1); // TODO assumes model is along Z axis.
-	int imin, imax;
-	double zmin = Z.minCoeff(&imin);
-	double zmax = Z.maxCoeff(&imax);
+	//MatrixXd BC;
+	//igl::barycenter(Vavg, F, BC);
+	//MatrixXi FS; //seed face  
+	//igl::slice(F, S, 1, FS);
+	//MatrixXd BCS;
+	//igl::barycenter(Vavg, FS, BCS);
 
+	//VectorXd Z = BC.col(1); // TODO assumes model is along Z axis.
+	//int imin, imax;
+	//double zmin = Z.minCoeff(&imin);
+	//double zmax = Z.maxCoeff(&imax);
+	
+	/*
+	int imin = S(0);
+	int imax = S(1);
 	MatrixXd Thard;
 	Thard.resize(F.rows(), 2);
-	Thard(imin, 0) = 1;
-	Thard(imin, 1) = 0;
-	Thard(imax, 0) = 0;
-	Thard(imax, 1) = 1;
+	Thard.setZero();
+	Thard(imin, 0) = 0;
+	Thard(imin, 1) = 1;
+	Thard(imax, 0) = 1;
+	Thard(imax, 1) = 0;
+	*/
 
-	MatrixXd Tsoft; 
-	//, Znorm;
-	//maxtrixnormalize(Z, Znorm);
-	VectorXd ones;
-	ones.resize(Z.size());
-	ones.setOnes();
-	VectorXd Znorm = (Z - zmin*ones) / (zmax - zmin); //normalize
+	MatrixXd Tsoft;
 	Tsoft.resize(F.rows(), 2);
-	Tsoft.col(0) = Znorm;
-	Tsoft.col(1) = (ones - Znorm);
-	Tsoft = Tsoft.array().pow(10).matrix();
-	
-	
-	//Tsoft.setZero();
-	
-//%w_hard = 10000;
-//%w_soft = 100;
+	Tsoft.setZero(); 
+	Tsoft.col(0) = d1; //Znorm;
+	Tsoft.col(1) = d2; //(ones - Znorm);
+	//Tsoft = Tsoft.array().pow(10).matrix();
+	//double ll = d1(imin);
+	//double l2 = d2(imax);
 
 	double soft_w = 100;
-	double hard_w = 10000;
-	A = soft_w * Tsoft + hard_w * Thard;
+	//double hard_w = 0;
+	A = soft_w * Tsoft ;//+ hard_w * Thard;
 }
 
 
-GCoptimization::EnergyTermType dataFnVertex(int p, int l, void* extraData) 
-{
-	SegmentationData* data = (SegmentationData*)extraData;
-	GCoptimization::EnergyTermType cost = data->U(p, l);
-	return cost;
-}
+
 
 void segmentation(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
-                  const Eigen::MatrixXi& F, //faces
+                  const Eigen::MatrixXi& F, //faces, most likeley a subset of the original mesh
                   const Eigen::MatrixXd& Vavg, //average of faces
-                  const Eigen::MatrixXi& inEF, //edge flaps 
-                  const Eigen::MatrixXi& inuE, //unique edges
-				  const Eigen::VectorXi& seeds,
+                  //const Eigen::MatrixXi& inEF, //edge flaps 
+                  //const Eigen::MatrixXi& inuE, //unique edges
+				  const Eigen::VectorXi& seeds1,
+				  const Eigen::VectorXi& seeds2,
+				  //const Eigen::VectorXi& face_map,
+				  double smooth_weight,
 				  Eigen::VectorXi& L)  
 {
-	assert(seeds.size() == 2); //only support 2 labels right now
+	//assert(seeds.size() == 2); //only support 2 labels right now
+	assert(igl::is_edge_manifold(F));
+
+	MatrixXi E, inuE;
+	VectorXi EMAP;
+	std::vector<std::vector<int> > uE2E;
+	igl::unique_edge_map(F, E, inuE,EMAP,uE2E);
+
+	MatrixXi inEF, EI;
+	igl::edge_flaps(F, inuE, EMAP, inEF, EI);
+	
+	//igl::slice(FO, face_map, 1, F);
+
 
 	//extract interior edges only
 	Eigen::VectorXi int_man;
@@ -200,11 +241,12 @@ void segmentation(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 	//data->S.resize(F.rows(), F.rows());
 	//data->S.setZero();
 	prepareSmoothMatrix(v_data,   //vertex data
-						 F,		  //face data
-                       Vavg,     //average of faces
-                       EF,       //edge flaps 
-                       uE,       //unique edges
+						F,		  //face data
+                        Vavg,     //average of faces
+                        EF,       //edge flaps 
+                        uE,       //unique edges
             			uEL,      //edge length
+						smooth_weight,
     		 			data->S); // sparse matrix of smooth cost
 	
 	prepareDataMatrix(v_data,
@@ -212,11 +254,12 @@ void segmentation(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 					  Vavg,
 					  EF, 
 					  uE, 
-					  seeds,
+					  seeds1,
+					  seeds2,
 					  data->U);
 
 	int num_data = F.rows();
-	int num_labels = seeds.size();
+	int num_labels = 2;
 
 	try
 	{
@@ -243,6 +286,8 @@ void segmentation(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 		e.Report();
 	}
 }
+
+
 }
 
 //R = axisangle2matrix([0 1 0],-pi/2)*axisangle2matrix([0 0 1],-pi/2);

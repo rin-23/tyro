@@ -5,28 +5,43 @@
 #include <Eigen/Dense>
 #include <iostream>
 #include <string>
+#include <Eigen/Sparse>
 
 using namespace Eigen;
 
 void build_S_Matrix(MatrixXd& S, const VectorXi& S_vec)
 {		
+	assert(false);
+}
+
+void build_S_Matrix(SparseMatrix<double>& S, const VectorXi& S_vec)
+{		
 	int T = S.cols();
 	for (int j = 0; j < S_vec.size(); ++j)
 	{
 		int i = S_vec(j);
-		S(i, j) = 1.0f;
+		S.coeffRef(i, j) = 1.0;
 	}
 }
 
 void build_G_Matrix(MatrixXd& G) 
 {
+	assert(false);
+}
+
+void build_G_Matrix(SparseMatrix<double>& G, std::vector<int>& sequenceIdx) 
+{
 	int Tminus1 = G.cols();
 	int i = 1;
 	for (int j = 0; j < Tminus1; ++j)
-	{
-		G(i - 1, j) = -1;
-		G(i, j) = 1;
-		i += 1;
+	{	
+		auto it = std::find(sequenceIdx.begin(), sequenceIdx.end(), i); //dont connect one scene to another
+		if (it == sequenceIdx.end()) 
+        { 
+			G.coeffRef(i - 1, j) = -1;
+			G.coeffRef(i, j) = 1;
+		}
+		i += 1; 
 	}
 }
 
@@ -172,7 +187,7 @@ void updateStepVertex(const Eigen::DiagonalMatrix<double, Eigen::Dynamic>& M, co
 	D_T = new_D_T;
 }
 
-double computeEnergyTRUEVertex(const Eigen::MatrixXd& F, const Eigen::MatrixXd& D, const Eigen::MatrixXd& G, const Eigen::VectorXi& S_vec, double w_s)
+double computeEnergyTRUEVertex(const Eigen::MatrixXd& F, const Eigen::MatrixXd& D, const SparseMatrix<double>& G, const Eigen::VectorXi& S_vec, double w_s)
 {
 	/*
 	double E_data_trace =
@@ -208,20 +223,25 @@ double computeEnergyTRUEVertex(const Eigen::MatrixXd& F, const Eigen::MatrixXd& 
 	return totalenergy;
 }
 
-void updateStepTRUEVertex(const Eigen::MatrixXd& F, Eigen::MatrixXd& D, const Eigen::VectorXi& S_vec, double w_s, double& oldEnergy, double& newEnergy) 
+void updateStepTRUEVertex(const Eigen::MatrixXd& F, Eigen::MatrixXd& D, 
+					      const Eigen::VectorXi& S_vec, 
+						  std::vector<int>& sequenceIdx, 
+						  double w_s, 
+						  double& oldEnergy, 
+						  double& newEnergy) 
 {	
 	int D_cols = D.cols(); //number of labels in dictionary
 	int F_cols = F.cols(); //number of frames
-	
-	MatrixXd S;
+
+	SparseMatrix<double> S;
 	S.resize(D_cols, F_cols);
 	S.setZero();
 	build_S_Matrix(S, S_vec);
 	
-	MatrixXd G;
+	SparseMatrix<double> G;
 	G.resize(F_cols, F_cols - 1);
-	G.setZero();
-	build_G_Matrix(G);
+	//G.setZero();	
+	build_G_Matrix(G, sequenceIdx);
 	//printMatrix(G, std::string("Printing G"));
 
 	MatrixXd A = S*S.transpose() + w_s*S*G*G.transpose()*S.transpose();

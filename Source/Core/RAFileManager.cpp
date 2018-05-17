@@ -16,7 +16,7 @@ namespace tyro
 		//@TODO: Remove full path
 		std::string shaderFolder = "/home/rinat/Workspace/Tyro/Source/Shaders/";
 		std::string fullPath = shaderFolder + fileName + std::string(".") + extension;
-		RA_LOG_INFO(fullPath.data());
+		//RA_LOG_INFO(fullPath.data());
 		return fullPath;
 	}
 }
