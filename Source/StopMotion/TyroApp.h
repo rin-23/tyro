@@ -9,6 +9,9 @@
 #include "TyroTimeLine.h"
 #include <atomic>
 
+#include "eigen_cerealisation.h"
+#include <cereal/types/vector.hpp>
+#include <cereal/cereal.hpp>
 
 namespace tyro
 {   
@@ -30,7 +33,7 @@ namespace tyro
         //Commands
         void load_blobby();
         void load_oldman();
-        void load_bunny();
+        void load_bunny(bool serialized = true);
         
         void compute_average();
         void stop_motion(int num_labels);
@@ -41,13 +44,12 @@ namespace tyro
         void load_selected_verticies(const std::string& filename); 
         void set_sel_primitive(App::SelectionPrimitive sel_state);
         void set_sel_method(App::SelectionMethod sel_state);
-        void save_mesh_sequence_with_selected_faces(const std::string& folder, const std::string& filename);
         void clear_all_selection();
         void invert_face_selection();
         void align_all_models();
         void align_all_models(int vid, Eigen::Vector3d offset);
-        void frame(int frame);
-        void show_edge_selection();
+        //void frame(int frame);
+        //void show_edge_selection();
         void debug_show_faces_near_edge_selection(const Eigen::VectorXi& uEI, const Eigen::VectorXi& DMAP);
         
 
@@ -83,6 +85,7 @@ namespace tyro
         Console m_console;
         bool m_update_camera;
         bool m_show_wireframe;
+        bool add_seg_faces;
         //square selection
         int m_square_sel_start_x;
         int m_square_sel_start_y;
@@ -128,6 +131,37 @@ namespace tyro
             Eigen::MatrixXd fc_data; // Face Color data
             Eigen::MatrixXd ec_data; // Edge color data
             Eigen::MatrixXd avg_v_data; // average of v_data
+            std::vector<int> sequenceIdx; //
+
+            template<class Archive>
+            void save(Archive & archive) const
+            {
+                archive(v_data);
+                archive(n_data);
+                archive(f_data);
+                archive(e_data);
+                archive(ue_data);
+                archive(EMAP);
+                archive(fc_data);
+                archive(ec_data);
+                archive(avg_v_data);
+                archive(sequenceIdx);
+            }
+            
+            template<class Archive>
+            void load(Archive & archive)
+            {
+                archive(v_data);
+                archive(n_data);
+                archive(f_data);
+                archive(e_data);
+                archive(ue_data);
+                archive(EMAP);
+                archive(fc_data);
+                archive(ec_data);
+                archive(avg_v_data);
+                archive(sequenceIdx);            
+            }
         };
 
         struct MStopMotion 
@@ -135,19 +169,39 @@ namespace tyro
             MAnimation anim;
             std::vector<Eigen::MatrixXd> D; //dictionary of faces
             Eigen::VectorXi L; // Indicies into D to label frames in anim.v_data;
+
+             template<class Archive>
+            void save(Archive & archive) const
+            {
+                archive(anim);
+                archive(D);
+                archive(L);
+            }
+            
+            template<class Archive>
+            void load(Archive & archive)
+            {
+                archive(anim);
+                archive(D);
+                archive(L);
+            }
         };
 
         MAnimation m_frame_data; //Original animation data        
         MAnimation m_frame_deformed_data; // Animation data after we smooth the seam(s)
         std::vector<MAnimation> m_pieces; // Break deformed mesh into pieces along seam(s).
         std::vector<MStopMotion> m_stop_motion; // Stop motion animate pieces
-
+        std::vector<std::string> FOLDERS;
+        
         //using Shot = std::tuple<int, int>; // start and end frame
         //using Movie = std::vector<Shot>;  // collection of shots. Each shot are indicies into m_frame_data.v_data
         //Movie movie;            
         
         std::vector<int> vid_list;
-        std::vector<int> fid_list;
+        std::vector<int> fid_list; //fid added with left mouse click
+        std::vector<int> fid_list2; //fid added with right mouse click
+        std::vector<int> fid_list3; //fid added with right mouse click
+        
         std::vector<int> eid_list;
 
         void register_console_function(const std::string& name,
@@ -159,7 +213,8 @@ namespace tyro
         void addSphere(int vid);        
         void removeSpheres(std::vector<int> vids);
         void setFaceColor(int fid, bool selected);
-        void selectVertex(Eigen::Vector2f& mouse_pos);
+        void setFaceColor(int fid, const Eigen::Vector3d& clr);
+        void selectVertex(Eigen::Vector2f& mouse_pos, int mouse_button, int modifier);
         
         std::atomic<bool> m_need_rendering;
     };
@@ -189,4 +244,5 @@ namespace tyro
                         bool topology, 
                         bool face_color, 
                         bool edge_color);
+
 }

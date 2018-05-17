@@ -15,7 +15,7 @@
 #if _DEBUG
 #define SHOULD_LOG 1
 #else
-#define SHOULD_LOG 0
+#define SHOULD_LOG 1
 #endif
 
 #define SHOULD_LOG_INFO 1

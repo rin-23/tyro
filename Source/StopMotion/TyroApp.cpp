@@ -10,7 +10,8 @@
 #include <functional>
 
 #include "Wm5APoint.h"
-#include "Wm5Vector3.h"
+#include "Wm5Vector2.h"
+#include "Wm5Vector4.h"
 
 #include <igl/unproject_onto_mesh.h>
 #include <igl/readOBJ.h>
@@ -27,6 +28,8 @@
 #include <igl/project.h>
 #include <igl/min_quad_with_fixed.h>
 
+#include <filesystem/path.h>
+
 #include "TyroIGLMesh.h"
 #include "TyroFileUtils.h"
 
@@ -36,13 +39,21 @@
 #include "mesh_split.h"
 #include "segmentation.h"
 
-using namespace Wm5;
+
+
 using namespace std;
 
 using Eigen::VectorXi;
 using Eigen::VectorXd;
-using Eigen::MatrixXd;
+
 using Eigen::MatrixXi;
+using Eigen::MatrixXd;
+
+using Eigen::Vector3i;
+using Eigen::Vector3f;
+using Eigen::RowVector3d;
+
+using Wm5::APoint;
 
 void tyro::copy_animation(const tyro::App::MAnimation& source, 
                           tyro::App::MAnimation& dest, 
@@ -90,7 +101,6 @@ void tyro::convert_vertex_to_edge_selection(const std::vector<int>& vid_list,
                                             Eigen::VectorXi& DMAP) // checks which directions where switched HACKY
 {
     //create a closed edge loop from vertex selection
-  
     int num_edges = vid_list.size(); //assumes its a closed loop
     eid_list.resize(num_edges, 2);
     for (int i = 0; i < num_edges; ++i) 
@@ -108,10 +118,10 @@ void tyro::convert_vertex_to_edge_selection(const std::vector<int>& vid_list,
     int num_found = 0;
     for (int i = 0; i < eid_list.rows(); ++i) 
     {
-        Eigen::VectorXi e1 = eid_list.row(i);
+        VectorXi e1 = eid_list.row(i);
         for (int j = 0; j < E.rows(); ++j) 
         {
-            Eigen::VectorXi e2 = E.row(j);
+            VectorXi e2 = E.row(j);
             if (e1(0) == e2(0) && e1(1) == e2(1)) 
             {
                 EI(i) = j; //directed edge index
@@ -132,15 +142,182 @@ void tyro::convert_vertex_to_edge_selection(const std::vector<int>& vid_list,
     assert(num_found == num_edges);
 }
 
+
 namespace tyro
 {   
     namespace
     {   
-        void console_segment(App* app, const std::vector<std::string>& args) 
+        void console_save_serialised_data(App* app, const std::vector<std::string>& args) 
         {   
-            VectorXi flist = Eigen::Map<VectorXi>(app->fid_list.data(), app->fid_list.size());
+            if (args.size() != 2) 
+                return; 
 
+            auto type = args[0];
+            auto filename = args[1];
+
+            auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
+            auto p = f/filesystem::path(filename);
+            std::ofstream os(p.str(), std::ios::binary);
+            cereal::BinaryOutputArchive archive(os);
+            
+            if (type == "frames") 
+            {
+                archive(app->m_frame_data);
+            } 
+            else if (type == "deform") 
+            {
+                archive(app->m_frame_deformed_data);
+            }
+            else if (type == "split") 
+            {
+                archive(app->m_pieces);
+            }
+            else if (type == "stop") 
+            {
+                archive(app->m_stop_motion);
+            }
         }
+
+        void console_load_serialised_data(App* app, const std::vector<std::string>& args) 
+        {   
+            if (args.size() != 2) 
+                return; 
+            
+            auto type = args[0];
+            auto filename = args[1];
+
+            auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
+            auto p = f/filesystem::path(filename);
+
+            std::ifstream in = std::ifstream(p.str(), std::ios::binary);
+            cereal::BinaryInputArchive archive(in);
+            
+            if (type == "frames") 
+            {
+                archive(app->m_frame_data);
+
+                app->m_timeline->SetFrameRange(app->m_frame_data.v_data.size()-1);
+
+                //Compute radius of the bounding box of the model
+                AxisAlignedBBox bbox;
+                MatrixXd VT = app->m_frame_data.v_data[0].transpose();
+                bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
+                app->m_model_offset = bbox.GetRadius(); 
+
+                app->m_update_camera = true;
+                app->m_state = App::State::LoadedModel;
+            } 
+            else if (type == "deform") 
+            {
+                archive(app->m_frame_deformed_data);
+                app->m_computed_deformation = true;
+                app->m_update_camera = true;
+            }
+            else if (type == "split") 
+            {
+                archive(app->m_pieces);
+                app->m_computed_parts = true;            
+                app->m_update_camera = true;
+            }
+            else if (type == "stop") 
+            {
+                archive(app->m_stop_motion);
+                app->m_computed_stop_motion = true;
+                app->m_update_camera = true;
+            }
+            app->render();
+            glfwPostEmptyEvent();
+        }
+
+        void console_clear_selection(App* app, const std::vector<std::string>& args) 
+        {
+            app->clear_all_selection();
+        }
+
+        void console_segmentation(App* app, const std::vector<std::string>& args) 
+        {  
+            if (!(app->fid_list.size() > 0 && 
+                app->fid_list2.size() > 0 &&
+                app->fid_list3.size() > 0 &&
+                args.size() == 1)) 
+            { 
+                return;   
+            }   
+
+            double smooth_weight = (double)std::stoi(args[0]);
+            
+            const auto& FD = app->m_frame_data;
+
+            VectorXi L;
+            VectorXi flist1 = Eigen::Map<VectorXi>(app->fid_list.data(), 
+                                                   app->fid_list.size());
+            MatrixXi F;
+            igl::slice(FD.f_data, flist1, 1, F); 
+
+            VectorXi seeds2, seeds3; //foreground and background         
+            seeds2.resize(app->fid_list2.size());
+            seeds3.resize(app->fid_list3.size());
+            
+            for (int i = 0; i < app->fid_list2.size(); ++i)
+            {
+                for (int j = 0; j < app->fid_list.size(); ++j) 
+                {
+                    if (app->fid_list2[i] == app->fid_list[j]) 
+                    {
+                        seeds2(i) = j;
+                    }
+                }
+            }
+
+            for (int i = 0; i < app->fid_list3.size(); ++i)
+            {
+                for (int j = 0; j < app->fid_list.size(); ++j) 
+                {
+                    if (app->fid_list3[i] == app->fid_list[j]) 
+                    {
+                        seeds3(i) = j;
+                    }
+                }
+            }
+
+            assert(seeds2.maxCoeff() < F.rows());
+            assert(seeds3.maxCoeff() < F.rows());
+
+            std::vector<MatrixXd> v_data;
+            MatrixXi NF, I;
+            for (int i = 0; i < FD.v_data.size(); ++i) 
+            {   
+                MatrixXd NV;
+                igl::remove_unreferenced(FD.v_data[i], F, NV, NF, I);
+                v_data.push_back(NV);
+            }
+
+            MatrixXd Vavg;
+            igl::remove_unreferenced(FD.avg_v_data, F, Vavg, NF, I);
+                    
+            tyro::segmentation(v_data, 
+                               NF,
+                               Vavg,
+                               seeds2,
+                               seeds3,
+                               smooth_weight,
+                               L);
+            
+            for (int i = 0; i < L.size(); ++i) 
+            {
+                if (L(i) == 1) 
+                {
+                    app->setFaceColor(flist1[i], Eigen::Vector3d(0,0.5,0));
+                }
+                else 
+                {
+                    app->setFaceColor(flist1[i], Eigen::Vector3d(0.5,0,0));                
+                }
+            }
+
+            //TODO:find boundary
+        }
+        
 
         void console_show_wireframe(App* app, const std::vector<std::string> & args) 
         {
@@ -174,7 +351,28 @@ namespace tyro
         void console_show_edge_selection(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("Converting vertex to edge selection");
-            app->show_edge_selection();
+            
+            MatrixXi eid_list;
+            VectorXi EI, uEI, DMAP;
+            convert_vertex_to_edge_selection(app->vid_list, 
+                                             app->m_frame_data.e_data, 
+                                             app->m_frame_data.ue_data, 
+                                             app->m_frame_data.EMAP,
+                                             eid_list, 
+                                             EI, 
+                                             uEI, 
+                                             DMAP);
+        
+            for (int i = 0; i < uEI.size(); ++i) 
+            {   
+                app->m_frame_data.ec_data.row(uEI(i)) = Eigen::Vector3d(0,0.8,0);
+            }
+            
+            //debug_show_faces_near_edge_selection(uEI, DMAP);       
+                    
+            app->render();
+            glfwPostEmptyEvent();
+            
             return;
         }
 
@@ -193,8 +391,8 @@ namespace tyro
                 return;
             }
 
-            Eigen::MatrixXi eid_list;
-            Eigen::VectorXi EI, uEI, DMAP;
+            MatrixXi eid_list;
+            VectorXi EI, uEI, DMAP;
             convert_vertex_to_edge_selection(app->vid_list, 
                                              app->m_frame_deformed_data.e_data, 
                                              app->m_frame_deformed_data.ue_data, 
@@ -205,7 +403,7 @@ namespace tyro
                                              DMAP);
         
 
-            Eigen::MatrixXi F1, F2;
+            MatrixXi F1, F2;
             tyro::mesh_split(app->m_frame_deformed_data.f_data,
                              uEI,
                              DMAP, 
@@ -220,9 +418,12 @@ namespace tyro
             A1.n_data.resize(app->m_frame_deformed_data.v_data.size());
             A2.n_data.resize(app->m_frame_deformed_data.v_data.size());
             
+            A1.sequenceIdx = app->m_frame_data.sequenceIdx;
+            A2.sequenceIdx = app->m_frame_data.sequenceIdx;
+            
             for (int i = 0; i < app->m_frame_data.v_data.size(); ++i) 
             {                   
-                Eigen::MatrixXi I1, I2;    
+                MatrixXi I1, I2;    
                 igl::remove_unreferenced(app->m_frame_deformed_data.v_data[i], 
                                          F1, 
                                          A1.v_data[i], 
@@ -246,7 +447,6 @@ namespace tyro
                 igl::unique_edge_map(A2.f_data,A2.e_data,A2.ue_data,A2.EMAP,uE2E2);
                 tyro::color_matrix(A2.f_data.rows(), Eigen::Vector3d(0.6,0.6,0.6), A2.fc_data);
                 tyro::color_black_matrix(A2.e_data.rows(), A2.ec_data);
-                
             }
 
                 
@@ -262,7 +462,7 @@ namespace tyro
 
             if (args.size() == 1)
             {   int frame = std::stoi(args[0]);
-                app->frame(frame);
+                app->m_timeline->SetFrame(frame);
                 return;
             }
         }
@@ -289,12 +489,52 @@ namespace tyro
         void console_save_mesh_sequence_with_selected_faces(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("Saving mesh sequence with selected faces");
-
-            if (args.size() == 2)
+            
+            if (args.size() == 1 && app->fid_list.size() > 0) 
             {   
-                app->save_mesh_sequence_with_selected_faces(args[0], args[1]);
-                return;
+                auto wheretosave = filesystem::path(args[0]);
+
+                MatrixXi newF;
+                VectorXi slice_list = Eigen::Map<VectorXi>(app->fid_list.data(), app->fid_list.size());
+                igl::slice(app->m_frame_data.f_data, slice_list, 1, newF);
+                int start_frame = 0;
+                
+                for (int file = 0; file < app->m_frame_data.sequenceIdx.size(); ++file) 
+                {   
+                    auto folder = filesystem::path(app->FOLDERS[file])/wheretosave;
+
+                    if (!folder.exists()) 
+                    {
+                        filesystem::create_directory(folder);
+                    }
+                    
+                    auto objlist_path = folder/filesystem::path("objlist.txt");
+                    int num_frames = app->m_frame_data.sequenceIdx[file];
+                    
+                    ofstream objlist_file;
+                    objlist_file.open (objlist_path.str());
+                
+                    for (int frame = start_frame; frame < start_frame + num_frames; ++frame) 
+                    {   
+                        assert(frame < app->m_frame_data.v_data.size());
+                        MatrixXd temp_V;
+                        MatrixXi temp_F;
+                        VectorXi I;
+                        igl::remove_unreferenced(app->m_frame_data.v_data[frame], newF, temp_V, temp_F, I);
+                        auto file_name = filesystem::path(tyro::pad_zeros(frame) + std::string(".obj"));
+                        auto file_path = folder/file_name; 
+                        igl::writeOBJ(file_path.str(), temp_V, temp_F);
+                        objlist_file << file_name << "\n";
+                    }
+                    
+                    start_frame += num_frames;
+                    
+                    objlist_file.close();             
+                }
             }
+    
+            return;
+
         }
 
         void console_load_selected_faces(App* app, const std::vector<std::string> & args) 
@@ -380,9 +620,18 @@ namespace tyro
         }
         
         void console_load_bunny(App* app, const std::vector<std::string> & args) 
-        {
+        {   
             RA_LOG_INFO("Loading bunny obj sequence");
-            app->load_bunny();
+            
+            if (args.size() == 1) 
+            {
+                int a = std::stoi(args[0]);
+                app->load_bunny(a);
+            }
+            else 
+            {
+                app->load_bunny();
+            }
             return;
         }
 
@@ -442,13 +691,14 @@ namespace tyro
     m_need_rendering(false),
     m_computed_deformation(false),
     m_computed_avg(false),
-    m_sel_primitive(App::SelectionPrimitive::Vertex),
-    m_sel_method(App::SelectionMethod::Square),
+    m_sel_primitive(App::SelectionPrimitive::Faces),
+    m_sel_method(App::SelectionMethod::OneClick),
     m_computed_stop_motion(false),
     m_update_camera(false),
     m_frame_overlay(nullptr),
     m_computed_parts(false),
-    m_show_wireframe(true)
+    m_show_wireframe(true),
+    add_seg_faces(false)
     {}
 
     App::~App() 
@@ -476,12 +726,12 @@ namespace tyro
                 
         //setup renderer
         m_gl_rend = new ES2Renderer(m_tyro_window->GetGLContext());
-        m_gl_rend->SetClearColor(Vector4f(0.0, 153.0/255.0, 153.0/255.0, 1.0));
+        m_gl_rend->SetClearColor(Wm5::Vector4f(0.0, 153.0/255.0, 153.0/255.0, 1.0));
  
         int v_width, v_height;
         m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
-        Vector4i viewport(0, 0, v_width, v_height);
-        m_camera = new iOSCamera(APoint(0,0,0), 1.0, 1.0, 2, viewport, true);
+        Wm5::Vector4i viewport(0, 0, v_width, v_height);
+        m_camera = new iOSCamera(Wm5::APoint(0,0,0), 1.0, 1.0, 2, viewport, true);
         
         m_timeline = new Timeline(24, 300);
         m_timeline->frameChanged = [&](Timeline& timeline, int frame)->void 
@@ -535,13 +785,11 @@ namespace tyro
         register_console_function("load_bunny", console_load_bunny, "");
         register_console_function("compute_average", console_compute_average, "");
         register_console_function("compute_deformation", console_compute_deformation, "");
-
         register_console_function("save_selected_faces", console_save_selected_faces, "");
         register_console_function("load_selected_faces", console_load_selected_faces, "");
         register_console_function("save_selected_verticies", console_save_selected_verticies, "");
         register_console_function("load_selected_verticies", console_load_selected_verticies, "");
         register_console_function("invert_face_selection", console_invert_face_selection, "");
-
         register_console_function("set_sel_primitive", console_set_sel_primitive, "");
         register_console_function("set_sel_method", console_set_sel_method, "");
         register_console_function("save_mesh_sequence_with_selected_faces", console_save_mesh_sequence_with_selected_faces, "");
@@ -550,10 +798,15 @@ namespace tyro
         register_console_function("frame", console_frame, "");
         register_console_function("split_mesh", console_split_mesh, "");
         register_console_function("show_edge_selection", console_show_edge_selection, "");
-
         register_console_function("deselect_faces", console_deselect_faces, "");
         register_console_function("deselect_verticies", console_deselect_verticies, "");
         register_console_function("show_wireframe", console_show_wireframe, "");
+        register_console_function("segmentation", console_segmentation, "");
+        register_console_function("clear_selection", console_clear_selection, "");
+        register_console_function("save_serialised_data", console_save_serialised_data, "");
+        register_console_function("load_serialised_data", console_load_serialised_data, "");
+
+
         m_state = App::State::Launched;
         // Loop until the user closes the window
         m_tyro_window->GetGLContext()->swapBuffers();
@@ -574,9 +827,9 @@ namespace tyro
         ES2FontSPtr font = FontManager::GetSingleton()->GetSystemFontOfSize12();
         std::string strrr("Frame 0/9000");
         m_frame_overlay = ES2TextOverlay::Create(strrr, 
-                                                 Vector2f(0, 0), 
+                                                 Wm5::Vector2f(0, 0), 
                                                  font, 
-                                                 Vector4f(0,0,0,1), 
+                                                 Wm5::Vector4f(0,0,0,1), 
                                                  viewport);
         m_frame_overlay->SetTranslate(Wm5::Vector2i(-viewport[2]/2 + 50,-viewport[3]/2 + 50));
         
@@ -584,7 +837,7 @@ namespace tyro
         {   
             if (m_need_rendering) 
            {
-                RA_LOG_INFO("RENDER BEGIN");
+                //RA_LOG_INFO("RENDER BEGIN");
 
                 if (m_state == App::State::Launched) 
                 {
@@ -618,7 +871,7 @@ namespace tyro
                                                     m_frame_data.n_data[0],
                                                     Eigen::Vector3d(0.5, 0, 0));
                         Wm5::Transform tr;
-                        tr.SetTranslate(APoint(-2*m_model_offset, 0, 0));
+                        tr.SetTranslate(Wm5::APoint(-2*m_model_offset, 0, 0));
                         mesh->LocalTransform = tr * mesh->LocalTransform;
                         mesh->Update(true);
 
@@ -634,7 +887,7 @@ namespace tyro
                                                     m_frame_data.n_data[m_frame],
                                                     Eigen::Vector3d(0.5,0.5,0.5));
                         Wm5::Transform tr;
-                        tr.SetTranslate(APoint(-1*m_model_offset, 0, 0));
+                        tr.SetTranslate(Wm5::APoint(-1*m_model_offset, 0, 0));
                         mesh->LocalTransform = tr * mesh->LocalTransform;
                         mesh->Update(true);
                         render_data.dfm_mesh = mesh;
@@ -644,8 +897,8 @@ namespace tyro
                          if (m_show_wireframe)
                         {
                             auto wire = IGLMeshWireframe::Create(m_frame_deformed_data.v_data[m_frame], 
-                                                                m_frame_deformed_data.ue_data,
-                                                                m_frame_deformed_data.ec_data);
+                                                                 m_frame_deformed_data.ue_data,
+                                                                 m_frame_deformed_data.ec_data);
                             wire->LocalTransform = tr * wire->LocalTransform;
                             wire->Update(true);
                             render_data.dfm_mesh_wire = wire;
@@ -667,7 +920,7 @@ namespace tyro
                                                          m_pieces[i].n_data[m_frame],
                                                          m_pieces[i].fc_data);
                             Wm5::Transform tr;
-                            tr.SetTranslate(APoint(m_model_offset, 0, 0));
+                            tr.SetTranslate(Wm5::APoint(m_model_offset, 0, 0));
                             mesh1->LocalTransform = tr * mesh1->LocalTransform;
                             mesh1->Update(true);
                             render_data.part_meshes.push_back(mesh1);
@@ -701,7 +954,7 @@ namespace tyro
                                                         sm.anim.n_data[m_frame],
                                                         sm.anim.fc_data);
                             Wm5::Transform tr;
-                            tr.SetTranslate(APoint(2*m_model_offset, 0, 0));
+                            tr.SetTranslate(Wm5::APoint(2*m_model_offset, 0, 0));
                             mesh->LocalTransform = tr * mesh->LocalTransform;
                             mesh->Update(true);
                             render_data.stop_motion_meshes.push_back(mesh);
@@ -761,7 +1014,7 @@ namespace tyro
 
     void App::render() 
     {   
-        RA_LOG_INFO("NEED RENDERING");
+        //RA_LOG_INFO("NEED RENDERING");
         m_need_rendering = true;
     }
 
@@ -802,9 +1055,11 @@ namespace tyro
         {
             double result_energy;
             auto& sm = m_stop_motion[i]; 
-            const auto& piece = m_pieces[i];
+            auto& piece = m_pieces[i];
+            
             tyro::stop_motion_vertex_distance(num_labels, 
                                               piece.v_data,
+                                              piece.sequenceIdx,
                                               piece.f_data,
                                               sm.D, //dictionary
                                               sm.L, //labels 
@@ -817,7 +1072,7 @@ namespace tyro
             sm.anim.ec_data = piece.ec_data;
             sm.anim.fc_data = piece.fc_data;
             //precompute normals
-            std::vector<Eigen::MatrixXd> normals;
+            std::vector<MatrixXd> normals;
             normals.resize(sm.D.size());
             for (int j = 0; j < sm.D.size(); ++j) 
             {   
@@ -837,35 +1092,6 @@ namespace tyro
 
         render();
         glfwPostEmptyEvent();
-
-        /*
-        std::vector<Eigen::MatrixXd> d_data;
-        std::vector<int> s_data;
-        double result_energy;
-        
-        tyro::stop_motion_vertex_distance(num_labels, 
-                            	          m_frame_data.v_data,
-                            	          m_frame_data.f_data,
-								          d_data, //dictionary
-								          s_data, //labels 
-                            	          result_energy);
-
-        m_sm_data.v_data.clear();
-        for (int i = 0; i < s_data.size(); ++i) 
-        {
-            int l_indx = s_data[i];
-            m_sm_data.v_data.push_back(d_data[l_indx]);
-        }
-
-        m_sm_data.f_data = m_frame_data.f_data;
-        m_sm_data.fc_data = m_frame_data.fc_data;
-        m_computed_stop_motion = true;
-        
-        m_update_camera = true;
-
-        render();
-        glfwPostEmptyEvent();
-        */
     }
 
     void App::compute_average()
@@ -914,11 +1140,11 @@ namespace tyro
                 WorldBoundBox.Merge(mesh->WorldBoundBox);
         }
 
-        APoint world_center = WorldBoundBox.GetCenter();
+        Wm5::APoint world_center = WorldBoundBox.GetCenter();
         float radius = std::abs(WorldBoundBox.GetRadius()*2.5);
         int v_width, v_height;
         m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
-        Vector4i viewport(0, 0, v_width, v_height);
+        Wm5::Vector4i viewport(0, 0, v_width, v_height);
         float aspect = (float)v_width/v_height;
         
         if (m_camera)
@@ -932,7 +1158,7 @@ namespace tyro
         Eigen::RowVector3d new_c = m_frame_data.v_data[m_frame].row(vid);
         ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.001);
         Wm5::Transform tr;
-        tr.SetTranslate(APoint(new_c(0), new_c(1), new_c(2)));
+        tr.SetTranslate(Wm5::APoint(new_c(0), new_c(1), new_c(2)));
         object->LocalTransform = tr * object->LocalTransform;
         object->Update(true);
         ball_list.push_back(object);
@@ -943,6 +1169,11 @@ namespace tyro
         ball_list.clear();
     }
     
+     void App::setFaceColor(int fid, const Eigen::Vector3d& clr) 
+    {
+        m_frame_data.fc_data.row(fid) = clr;
+    }
+
     void App::setFaceColor(int fid, bool selected) 
     {
         Eigen::Vector3d clr;
@@ -959,12 +1190,13 @@ namespace tyro
         vid_list.clear();
         ball_list.clear();
         
-        for (auto fid : fid_list) 
+        for (int fid = 0; fid < m_frame_data.f_data.rows(); ++fid) 
         {
             setFaceColor(fid, false);
         }
         fid_list.clear();        
-        
+        fid_list2.clear();
+        fid_list3.clear();
         render();
     }
        
@@ -986,46 +1218,116 @@ namespace tyro
         Eigen::Vector3d face_color(0.5,0.5,0.5);
         tyro::color_matrix(m_frame_data.f_data.rows(), face_color, m_frame_data.fc_data);
         tyro::color_black_matrix(m_frame_data.ue_data.rows(), m_frame_data.ec_data);
-        m_timeline->SetFrameRange(m_frame_data.v_data.size()-1);
-
-        //compute_average();
     }
 
-    void App::load_bunny()
+    void App::load_bunny(bool serialized)
     {
         RA_LOG_INFO("load bunny");
-        int offset_vid = 1222;
-        auto offset = Eigen::Vector3d(0.613322, 2.613381, 2.238946);
-        auto obj_list_folder1 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/just_face/");
-        
-        //auto obj_list_file1 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/03_apple/01/noears/objlist.txt");
-        //auto obj_list_file2 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/03_apple/02/noears/objlist.txt");
-        //auto obj_list_file3 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/03_apple/03/noears/objlist.txt");
-        //auto obj_list_file4 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/03_apple/05/noears/objlist.txt");
-        //auto obj_list_file5 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/03_apple/06/noears/objlist.txt");
-        
-        //auto obj_list_file3 = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/02_rabbit/03/objlist.txt");
-        //std::vector<std::string> obj_list = {obj_list_file1};
-                                             //obj_list_file2, 
-                                             //obj_list_file3,  
-                                             //obj_list_file4,
-                                             //obj_list_file5};
+        int offset_vid = 1030; // 1222;
+        auto offset = Eigen::Vector3d(0.268563, 3.142050, 2.504273) ; //Eigen::Vector3d(0.613322, 2.613381, 2.238946);
+       
+        FOLDERS = 
+        {               
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/02/01/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/02/02/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/02/03/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/02/04/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/02/05/"),
+            
+            
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/03/01/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/03/02/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/03/03/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/03/05/"),
+            
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/03/06/"),
+            
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/04/01/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/04/02/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/04/03/"),
+
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/05/01/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/05/03/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/05/05/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/05/07/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/05/09/"),
+            
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/05/11/"),
+            
+            
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/07/01/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/07/02/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/07/05/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/07/06/"),
+
+
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/01/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/02B/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/03/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/05/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/07/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/07B/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/09/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/10/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/11/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/13/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/14/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/16/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/18/"),
+            
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/19/"),
+            
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/09/05/"),
+
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/11/10/"),
+
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/12/09/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/12/21/"),
+
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/13/03/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/13/04/")
+            
+        };
+
         std::vector<std::string> obj_paths;
-        tyro::obj_file_path_list(obj_list_folder1, "objlist.txt", obj_paths);
-        load_mesh_sequence(obj_paths, true); //use tiny obj loader
+        for (auto folder : FOLDERS) 
+        {
+            int num_files_read;
+
+            //Add smth
+            folder += std::string("no_mouth/");
+
+            RA_LOG_INFO("loading folder %s", folder.data());
+            tyro::obj_file_path_list(folder, "objlist.txt", obj_paths, num_files_read);
+            RA_LOG_INFO("frames read %i", num_files_read);
+            m_frame_data.sequenceIdx.push_back(num_files_read);
+        }
+
+        if (serialized) 
+        {   
+            auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
+            auto p = f/filesystem::path("bunny.cereal");
+            std::ifstream in = std::ifstream(p.str(), std::ios::binary);
+            cereal::BinaryInputArchive archive_i(in);
+            archive_i(m_frame_data);
+        }
+        else
+        {
+            load_mesh_sequence(obj_paths, true); //use IGL obj loader
+        }
+        m_timeline->SetFrameRange(m_frame_data.v_data.size()-1);
+
         //align_all_models(offset_vid, offset);
-        
-        //auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/02_rabbit/02/bunn_face/objlist.txt");
-        //load_mesh_sequence(obj_list_file, true);
-        
+               
         //Compute radius of the bounding box of the model
         AxisAlignedBBox bbox;
-        Eigen::MatrixXd VT = m_frame_data.v_data[0].transpose();
+        MatrixXd VT = m_frame_data.v_data[0].transpose();
         bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
         m_model_offset = bbox.GetRadius(); 
 
         m_update_camera = true;
         m_state = App::State::LoadedModel;
+        compute_average();
         render();
     }
 
@@ -1089,8 +1391,13 @@ namespace tyro
         while (myfile >> fid)
         {
             printf("%i ", fid);
-            fid_list.push_back(fid);            
-            setFaceColor(fid, true);
+            
+            auto it = std::find(fid_list.begin(), fid_list.end(), fid);
+            if (it == fid_list.end()) 
+            {
+                fid_list.push_back(fid);
+                setFaceColor(fid, true);
+            }              
         }
         render();
         glfwPostEmptyEvent();        
@@ -1130,10 +1437,10 @@ namespace tyro
     {
         for (int frame = 0; frame < m_frame_data.v_data.size(); ++frame) 
         {
-                Eigen::Vector3d new_vec = m_frame_data.v_data[frame].row(vid);
-                Eigen::Vector3d d = ref_vec - new_vec;
-                Eigen::RowVector3d diff(d(0), d(1), d(2)); 
-                m_frame_data.v_data[frame].rowwise() += diff;
+            Eigen::Vector3d new_vec = m_frame_data.v_data[frame].row(vid);
+            Eigen::Vector3d d = ref_vec - new_vec;
+            RowVector3d diff(d(0), d(1), d(2)); 
+            m_frame_data.v_data[frame].rowwise() += diff;
         }
         render();
     }
@@ -1164,51 +1471,8 @@ namespace tyro
         render();
         glfwPostEmptyEvent();
     }
-    
-    void App::save_mesh_sequence_with_selected_faces(const std::string& folder, const std::string& filename) 
-    {   
-        if (fid_list.size() > 0) 
-        {   
-            auto path = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/03_apple/") + folder + std::string("/") + filename;
-            auto tmp_path = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/03_apple/") + folder + std::string("/") + "tmp";
-            auto objlist_path = std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/03_apple/") + folder + std::string("/") + std::string("objlist.txt");
-            ofstream objlist_file;
-            objlist_file.open (objlist_path);
-            
-            Eigen::MatrixXi SVI, SVJ, nodp_F;
-            Eigen::MatrixXi newF;
-            newF.resize(fid_list.size(), 3);
-            int fidIdx = 0;
-            for (auto fid : fid_list) newF.row(fidIdx++) = m_frame_data.f_data.row(fid);
-            
-            for (int frame = 0; frame < m_frame_data.v_data.size();++frame) 
-            {   
-                bool success = igl::writeSTL(tmp_path, m_frame_data.v_data[frame], newF, false);
-                assert(success);
-                Eigen::MatrixXd temp_V, temp_N;
-                Eigen::MatrixXi temp_F;
-                success = igl::readSTL(tmp_path, temp_V, temp_F, temp_N);
-                assert(success);
-                Eigen::MatrixXd nodp_V;
-                
-                if (frame == 0) 
-                {
-                    igl::remove_duplicate_vertices(temp_V, temp_F, 0, nodp_V, SVI, SVJ, nodp_F);
-                }
-                else 
-                {
-                    igl::slice(temp_V, SVI, 1, nodp_V); 
-                }
-                auto frame_path = path + tyro::pad_zeros(frame) + std::string(".obj"); 
-                igl::writeOBJ(frame_path, nodp_V, nodp_F);
-                objlist_file << frame_path << "\n";
 
-            }
-            objlist_file.close();             
-        }
-    }
-
-    void App::selectVertex(Eigen::Vector2f& mouse_pos) 
+    void App::selectVertex(Eigen::Vector2f& mouse_pos, int mouse_button, int modifier) 
     {
         int fid;
         Eigen::Vector3f bc;
@@ -1253,60 +1517,63 @@ namespace tyro
                 render();
             } 
             else if (m_sel_primitive == App::SelectionPrimitive::Faces) 
-            {
-                auto it = std::find(fid_list.begin(), fid_list.end(), fid);
-                if (it == fid_list.end()) 
+            {   
+                if (mouse_button == 0) 
                 {
-                    RA_LOG_INFO("Picked face_id %i", fid);
-                    fid_list.push_back(fid);
-                    setFaceColor(fid, true);
-                }  
-                else
-                {   
-                    RA_LOG_INFO("remove face %i", fid);
-                    auto index = std::distance(fid_list.begin(), it);
-                    fid_list.erase(fid_list.begin() + index);
-                    setFaceColor(fid, false);
+                    auto it = std::find(fid_list.begin(), fid_list.end(), fid);
+                    if (it == fid_list.end()) 
+                    {
+                        fid_list.push_back(fid);
+                        setFaceColor(fid, true); 
+                    }  
+                    else
+                    {   
+                        auto index = std::distance(fid_list.begin(), it);
+                        fid_list.erase(fid_list.begin() + index);
+                        setFaceColor(fid, false);
+                    }
+                } 
+                else if (mouse_button == 1 && modifier == TYRO_MOD_NONE) 
+                {
+                    auto it = std::find(fid_list2.begin(), fid_list2.end(), fid);
+                    if (it == fid_list2.end()) 
+                    {
+                        fid_list2.push_back(fid);
+                        setFaceColor(fid, Eigen::Vector3d(0.5,0,0)); 
+                    }  
+                    else
+                    {   
+                        auto index = std::distance(fid_list2.begin(), it);
+                        fid_list2.erase(fid_list2.begin() + index);
+                        setFaceColor(fid, false);
+                    }
+                }
+                else if (mouse_button == 1 && modifier == TYRO_MOD_SHIFT) 
+                {
+                    auto it = std::find(fid_list3.begin(), fid_list3.end(), fid);
+                    if (it == fid_list3.end()) 
+                    {
+                        fid_list3.push_back(fid);
+                        setFaceColor(fid, Eigen::Vector3d(147/255.0, 112/255.0, 219/255.0)); 
+                    }  
+                    else
+                    {   
+                        auto index = std::distance(fid_list3.begin(), it);
+                        fid_list3.erase(fid_list3.begin() + index);
+                        setFaceColor(fid, false);
+                    }
                 }
                 render();
             }                  
         }   
     }
     
-    void App::frame(int frame) 
-    {
-        m_timeline->SetFrame(frame);
-    }
-
-    void App::show_edge_selection() 
-    {   
-        Eigen::MatrixXi eid_list;
-        Eigen::VectorXi EI, uEI, DMAP;
-        convert_vertex_to_edge_selection(vid_list, 
-                                         m_frame_data.e_data, 
-                                         m_frame_data.ue_data, 
-                                         m_frame_data.EMAP,
-                                         eid_list, 
-                                         EI, 
-                                         uEI, 
-                                         DMAP);
-        
-        for (int i = 0; i < uEI.size(); ++i) 
-        {   
-            m_frame_data.ec_data.row(uEI(i)) = Eigen::Vector3d(0,0.8,0);
-        }
-        
-        //debug_show_faces_near_edge_selection(uEI, DMAP);       
-                
-        render();
-        glfwPostEmptyEvent();
-    }
     
     void App::debug_show_faces_near_edge_selection(const Eigen::VectorXi& uEI, const Eigen::VectorXi& DMAP) 
     {   
         const auto & cE = m_frame_data.ue_data;
         const auto & cEMAP = m_frame_data.EMAP;
-        Eigen::MatrixXi EF, EI;
+        MatrixXi EF, EI;
 
         igl::edge_flaps(m_frame_data.f_data, 
                         cE, 
@@ -1328,7 +1595,7 @@ namespace tyro
 
     void App::mouse_down(Window& window, int button, int modifier) 
     {   
-        //RA_LOG_INFO("mouse down %i", button);
+        RA_LOG_INFO("mouse down %i", button);
 
         if (m_state != App::State::LoadedModel) return;
 
@@ -1337,7 +1604,7 @@ namespace tyro
         m_mouse_btn_clicked = button;
 
         if (m_modifier == TYRO_MOD_CONTROL) return; //rotating
-        if (m_modifier == TYRO_MOD_SHIFT) 
+        if (button == 0 && m_modifier == TYRO_MOD_SHIFT) 
         {   
             m_square_sel_start_x = current_mouse_x;
             m_square_sel_start_y = current_mouse_y;
@@ -1349,7 +1616,7 @@ namespace tyro
         double x = current_mouse_x;
         double y = m_camera->GetViewport()[3] - current_mouse_y;
         Eigen::Vector2f mouse_pos(x,y);
-        selectVertex(mouse_pos);     
+        selectVertex(mouse_pos, button, modifier);     
     }
 
     void App::mouse_up(Window& window, int button, int modifier) 
@@ -1359,7 +1626,7 @@ namespace tyro
         if (mouse_is_down && m_modifier == TYRO_MOD_CONTROL) 
         {   
             gesture_state = 2;
-            m_camera->HandleOneFingerPanGesture(gesture_state, Vector2i(current_mouse_x, current_mouse_y));
+            m_camera->HandleOneFingerPanGesture(gesture_state, Wm5::Vector2i(current_mouse_x, current_mouse_y));
             render();
         }
         else if (mouse_is_down && m_modifier == TYRO_MOD_SHIFT && m_sel_method == App::SelectionMethod::Square) 
@@ -1384,7 +1651,7 @@ namespace tyro
                                                 m_camera->GetViewport()[3]);
 
 
-            Eigen::MatrixXd P;
+            MatrixXd P;
             igl::project(m_frame_data.v_data[m_frame],
                          e1.transpose(), 
                          e2.transpose(),
@@ -1458,7 +1725,7 @@ namespace tyro
         else if (mouse_is_down && m_mouse_btn_clicked == 2) 
         {
             gesture_state = 2;
-            m_camera->HandleTwoFingerPanGesture(gesture_state, Vector2i(current_mouse_x, -current_mouse_y));
+            m_camera->HandleTwoFingerPanGesture(gesture_state, Wm5::Vector2i(current_mouse_x, -current_mouse_y));
             render();
         }
         
@@ -1480,7 +1747,7 @@ namespace tyro
             double x = current_mouse_x;
             double y = m_camera->GetViewport()[3] - current_mouse_y;
             Eigen::Vector2f mouse_pos(x,y);
-            selectVertex(mouse_pos);
+            selectVertex(mouse_pos, m_mouse_btn_clicked, m_modifier);
         }
         else if (mouse_is_down && m_modifier == TYRO_MOD_SHIFT && m_sel_method == App::SelectionMethod::Square) 
         {
@@ -1488,13 +1755,13 @@ namespace tyro
         }
         else if (mouse_is_down && m_modifier == TYRO_MOD_CONTROL) 
         {   
-            m_camera->HandleOneFingerPanGesture(gesture_state, Vector2i(mouse_x, mouse_y));
+            m_camera->HandleOneFingerPanGesture(gesture_state, Wm5::Vector2i(mouse_x, mouse_y));
             gesture_state = 1;
             render();
         } 
         else if (mouse_is_down && m_mouse_btn_clicked == 2) 
         {
-            m_camera->HandleTwoFingerPanGesture(gesture_state, Vector2i(mouse_x, -mouse_y));
+            m_camera->HandleTwoFingerPanGesture(gesture_state, Wm5::Vector2i(mouse_x, -mouse_y));
             gesture_state = 1;
             render();
         }
@@ -1505,7 +1772,7 @@ namespace tyro
         RA_LOG_INFO("mouse scroll delta %f", ydelta);
         if (m_state != App::State::LoadedModel) return;
         
-        m_camera->HandlePinchGesture(gesture_state, Vector2i(current_mouse_x, current_mouse_y), ydelta);
+        m_camera->HandlePinchGesture(gesture_state, Wm5::Vector2i(current_mouse_x, current_mouse_y), ydelta);
         render();
     } 
 

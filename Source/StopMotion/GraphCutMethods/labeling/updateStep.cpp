@@ -5,28 +5,51 @@
 #include <Eigen/Dense>
 #include <iostream>
 #include <string>
+#include <Eigen/Sparse>
 
 using namespace Eigen;
 
 void build_S_Matrix(MatrixXd& S, const VectorXi& S_vec)
 {		
+	assert(false);
+}
+
+void build_S_Matrix(SparseMatrix<double>& S, const VectorXi& S_vec)
+{		
 	int T = S.cols();
 	for (int j = 0; j < S_vec.size(); ++j)
 	{
 		int i = S_vec(j);
-		S(i, j) = 1.0f;
+		S.coeffRef(i, j) = 1.0;
 	}
 }
 
 void build_G_Matrix(MatrixXd& G) 
 {
+	assert(false);
+}
+
+void build_G_Matrix(SparseMatrix<double>& G, std::vector<int>& sequenceIdx) 
+{	
+	std::vector<int> ff;
+	int sofar = 0;
+	for (int i = 0; i < sequenceIdx.size(); ++i) 
+	{
+		sofar += sequenceIdx[i];
+		ff.push_back(sofar);
+	}
+
 	int Tminus1 = G.cols();
 	int i = 1;
 	for (int j = 0; j < Tminus1; ++j)
-	{
-		G(i - 1, j) = -1;
-		G(i, j) = 1;
-		i += 1;
+	{	
+		auto it = std::find(ff.begin(), ff.end(), j+1); //dont connect one scene to another
+		if (it == ff.end()) 
+        { 
+			G.coeffRef(i - 1, j) = -1;
+			G.coeffRef(i, j) = 1;
+		}
+		i += 1; 
 	}
 }
 
@@ -172,7 +195,12 @@ void updateStepVertex(const Eigen::DiagonalMatrix<double, Eigen::Dynamic>& M, co
 	D_T = new_D_T;
 }
 
-double computeEnergyTRUEVertex(const Eigen::MatrixXd& F, const Eigen::MatrixXd& D, const Eigen::MatrixXd& G, const Eigen::VectorXi& S_vec, double w_s)
+double computeEnergyTRUEVertex(const Eigen::MatrixXd& F, 
+							   const Eigen::MatrixXd& D, 
+							   const SparseMatrix<double>& G, 
+							   std::vector<int>& sequenceIdx, 
+							   const Eigen::VectorXi& S_vec, 
+							   double w_s)
 {
 	/*
 	double E_data_trace =
@@ -184,6 +212,7 @@ double computeEnergyTRUEVertex(const Eigen::MatrixXd& F, const Eigen::MatrixXd& 
 	*/
 
 	//Computer data energy term
+	
 	int numFrames = F.cols();	
 	double dataenergy = 0;
 	for (int p = 0; p < numFrames; ++p) 
@@ -193,14 +222,26 @@ double computeEnergyTRUEVertex(const Eigen::MatrixXd& F, const Eigen::MatrixXd& 
 		dataenergy += diff;
 	}
 
+	std::vector<int> ff;
+	int sofar = 0;
+	for (int i = 0; i < sequenceIdx.size(); ++i) 
+	{
+		sofar += sequenceIdx[i];
+		ff.push_back(sofar);
+	}
+
 	double smoothEnergy = 0;
 	for (int p = 1; p < numFrames; ++p)
-	{
-		int l1 =  S_vec(p);
-		int l2 = S_vec(p - 1);
+	{	
+		auto it = std::find(ff.begin(), ff.end(), p); //dont connect one scene to another
+		if (it == ff.end()) 
+        {
+			int l1 =  S_vec(p);
+			int l2 = S_vec(p - 1);
 
-		double diff = ((D.col(l1) - D.col(l2)) - (F.col(p)- F.col(p-1))).squaredNorm();
-		smoothEnergy += diff;
+			double diff = ((D.col(l1) - D.col(l2)) - (F.col(p)- F.col(p-1))).squaredNorm();
+			smoothEnergy += diff;
+		}
 	}
 
 	double totalenergy = dataenergy  + w_s*smoothEnergy;
@@ -208,20 +249,25 @@ double computeEnergyTRUEVertex(const Eigen::MatrixXd& F, const Eigen::MatrixXd& 
 	return totalenergy;
 }
 
-void updateStepTRUEVertex(const Eigen::MatrixXd& F, Eigen::MatrixXd& D, const Eigen::VectorXi& S_vec, double w_s, double& oldEnergy, double& newEnergy) 
+void updateStepTRUEVertex(const Eigen::MatrixXd& F, Eigen::MatrixXd& D, 
+					      const Eigen::VectorXi& S_vec, 
+						  std::vector<int>& sequenceIdx, 
+						  double w_s, 
+						  double& oldEnergy, 
+						  double& newEnergy) 
 {	
 	int D_cols = D.cols(); //number of labels in dictionary
 	int F_cols = F.cols(); //number of frames
-	
-	MatrixXd S;
+
+	SparseMatrix<double> S;
 	S.resize(D_cols, F_cols);
 	S.setZero();
 	build_S_Matrix(S, S_vec);
 	
-	MatrixXd G;
+	SparseMatrix<double> G;
 	G.resize(F_cols, F_cols - 1);
-	G.setZero();
-	build_G_Matrix(G);
+	//G.setZero();	
+	build_G_Matrix(G, sequenceIdx);
 	//printMatrix(G, std::string("Printing G"));
 
 	MatrixXd A = S*S.transpose() + w_s*S*G*G.transpose()*S.transpose();
@@ -229,10 +275,10 @@ void updateStepTRUEVertex(const Eigen::MatrixXd& F, Eigen::MatrixXd& D, const Ei
 	MatrixXd C = 2 * A;
 	MatrixXd K = 2 * (F*S.transpose() + w_s*F*G*G.transpose()*S.transpose());
 	MatrixXd b = K.transpose();
-	oldEnergy = computeEnergyTRUEVertex(F, D, G, S_vec, w_s);
+	oldEnergy = computeEnergyTRUEVertex(F, D, G, sequenceIdx,S_vec, w_s);
 	MatrixXd new_D_t = C.jacobiSvd(ComputeThinU | ComputeThinV).solve(b);
 	D = new_D_t.transpose();
-	newEnergy = computeEnergyTRUEVertex(F, D, G, S_vec, w_s);
+	newEnergy = computeEnergyTRUEVertex(F, D, G, sequenceIdx,S_vec, w_s);
 	assert(D.cols() == D_cols);
 }
 

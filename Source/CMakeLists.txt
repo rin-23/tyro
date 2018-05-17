@@ -4,7 +4,7 @@ project(Tyro)
 # Set OS-specific things here
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
 message(STATUS "Compiling on Unix")
 
@@ -59,7 +59,6 @@ endif()
 add_subdirectory(Math)
 include(Core/CMakeSources.cmake)
 include(Engine/CMakeSources.cmake)
-include(GraphCutMethods/CMakeSources.cmake)
 include(StopMotion/CMakeSources.cmake)
 
 #include(External/CMakeSources.cmake)
@@ -109,16 +108,15 @@ set(TYRO_EXTERNAL_INC_EXE
     "./External"
     )
 
-set(TYRO_GRAPHCUT_INC_EXE
-    "./GraphCutMethods/GCOLib"
-    "./GraphCutMethods/kmeans"
-    "./GraphCutMethods/labeling"   
-    )
 set(TYRO_STOPMOTION_INC_EXE 
     "./StopMotion"
+    "./StopMotion/GraphCutMethods/GCOLib"
+    "./StopMotion/GraphCutMethods/kmeans"
+    "./StopMotion/GraphCutMethods/labeling"   
+    "./StopMotion/GraphCutMethods/segmentation" 
     )
 
-include_directories("./" ${TYRO_MATH_INC_EXE} ${TYRO_CORE_INC_EXE} ${TYRO_ENGINE_INC_EXE} ${TYRO_EXTERNAL_INC_EXE} ${TYRO_GRAPHCUT_INC_EXE} ${TYRO_STOPMOTION_INC_EXE})
+include_directories("./" ${TYRO_MATH_INC_EXE} ${TYRO_CORE_INC_EXE} ${TYRO_ENGINE_INC_EXE} ${TYRO_EXTERNAL_INC_EXE} ${TYRO_STOPMOTION_INC_EXE})
 include_directories(${GLFW_INCLUDE_DIRS})
 include_directories(${OPENGL_INCLUDE_DIR})
 include_directories(${GLEW_INCLUDE_DIR})

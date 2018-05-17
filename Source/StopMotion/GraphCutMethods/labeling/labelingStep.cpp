@@ -2,10 +2,13 @@
 #include "utils.h"
 #include <algorithm>    // std::min
 #include "labelingStep.h"
+#include "RALogManager.h"
+#include <chrono>
+#include <omp.h>
 
 using namespace Eigen;
 using namespace std;
-
+using namespace std::chrono;
 double global_w = 1.0f;
 
 GCoptimization::EnergyTermType smoothFnBlendshapes(int p1, int p2, int l1, int l2, void *extraData)
@@ -94,42 +97,85 @@ GCoptimization::EnergyTermType smoothFnVertex(int p1, int p2, int l1, int l2, vo
 
 GCoptimization::EnergyTermType dataFnTRUEVertex(int p, int l, void *extraData)
 {
+	//high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	void** data = (void**)extraData;
 	MatrixXd* F = (MatrixXd*)data[0];
 	MatrixXd* D = (MatrixXd*)data[1];
 	
-	VectorXd pObj = F->col(p);
-	VectorXd lObj = D->col(l);
+	//VectorXd pObj = ;
+	//VectorXd lObj = ;
 
-	double diff = (pObj - lObj).squaredNorm();
+	double diff = 0;
+	for (int i = 0; i < D->rows(); ++i) 
+	{
+		double a = (*F)(i, p) - (*D)(i, l);
+		diff += a*a;
+	}
+
+	//double diff = (F->col(p) - D->col(l)).squaredNorm();
 	GCoptimization::EnergyTermType sum = (GCoptimization::EnergyTermType) diff;
+
+	//high_resolution_clock::time_point t2 = high_resolution_clock::now();
+	//auto duration = duration_cast<milliseconds>(t2 - t1).count();
+	//RA_LOG_INFO("dataFnTRUEVertex %f sec", diff);
 	return sum;
 }
 
 GCoptimization::EnergyTermType smoothFnTRUEVertex(int p1, int p2, int l1, int l2, void *extraData)
-{
+{	
+	//high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
 	void** data = (void**)extraData;
 	MatrixXd* F = (MatrixXd*)data[0];
 	MatrixXd* D = (MatrixXd*)data[1];
 
-	VectorXd l1Obj = D->col(l1);
-	VectorXd l2Obj = D->col(l2);
+	//VectorXd l1Obj = ;
+	//VectorXd l2Obj = ;
+	//VectorXd p1Obj = ;
+	//VectorXd p2Obj = ;
 
-	VectorXd p1Obj = F->col(p1);
-	VectorXd p2Obj = F->col(p2);
-
-	double diff = ((l1Obj - l2Obj) - (p1Obj - p2Obj)).squaredNorm();
-	GCoptimization::EnergyTermType sum = (GCoptimization::EnergyTermType) (global_w * diff);
-	return sum;
 	
+	double diff = 0;
+	for (int i = 0; i < D->rows(); ++i) 
+	{
+		double a = (*D)(i, l1) - (*D)(i, l2) - (*F)(i, p1) + (*F)(i, p2);
+		diff += a*a;
+	}
+	
+
+	//double diff = (D->col(l1) - D->col(l2) - F->col(p1) + F->col(p2)).squaredNorm();
+	GCoptimization::EnergyTermType sum = (GCoptimization::EnergyTermType) (global_w * diff);
+	//high_resolution_clock::time_point t2 = high_resolution_clock::now();
+	//auto duration = duration_cast<milliseconds>(t2 - t1).count();
+	//RA_LOG_INFO("smoothFnTRUEVertex %i milisec", duration);
+	return sum;	
 }
 
-void setNeighbours(GCoptimizationGeneralGraph *gc, int num_data)
-{
-	for (int i = 0; i < num_data; ++i)
+//sequenceIdx contains info where scenes breaks
+void setNeighbours(GCoptimizationGeneralGraph *gc, int num_data) 
+{	
+	//should use one with sequenceIdx
+	assert(false);
+}
+
+void setNeighbours(GCoptimizationGeneralGraph *gc, int num_data, std::vector<int>& sequenceIdx)
+{	
+
+	std::vector<int> ff;
+	int sofar = 0;
+	for (int i = 0; i < sequenceIdx.size(); ++i) 
 	{
-		if (i != num_data - 1) // create pairs
-			gc->setNeighbors(i, i + 1);
+		sofar += sequenceIdx[i];
+		ff.push_back(sofar);
+	}
+
+	for (int i = 0; i < num_data - 1; ++i)
+	{	
+		auto it = std::find(ff.begin(), ff.end(), i + 1); //dont connect one scene to another
+		if (it == ff.end()) 
+        { 
+			gc->setNeighbors(i, i + 1); 
+		}
 	}
 }
 
@@ -216,8 +262,32 @@ void labelFacesBShape(Eigen::MatrixXd& F, Eigen::MatrixXd& L, Eigen::MatrixXd& M
 	}
 }
 
+void prepareDataMatrixTRUEVertex(Eigen::MatrixXd& F, Eigen::MatrixXd& D, double*& dataArray) 
+{	
+	int num_frames = F.cols();
+	int num_labels = D.cols();
+	int num_vertex = F.rows();
 
-void labelFacesTRUEVertex(Eigen::MatrixXd& F, Eigen::MatrixXd& D, Eigen::VectorXi& S_vec, double w_s, double& energy) 
+	dataArray = new double[num_frames*num_labels];
+			
+	#pragma omp parallel for collapse(2)
+	for (int i = 0; i < num_frames; ++i) 
+	{	
+		//#pragma omp parallel for
+		for (int j = 0; j < num_labels; ++j) 
+		{	
+			double diff = 0;
+			for (int v = 0; v < num_vertex; ++v) 
+			{
+				double a = F(v, i) - D(v, j);
+				diff += a*a;
+			}
+			dataArray[i*num_labels+j] = diff;
+		}
+	}
+}
+
+void labelFacesTRUEVertex(Eigen::MatrixXd& F, Eigen::MatrixXd& D, Eigen::VectorXi& S_vec, std::vector<int>& sequenceIdx, double w_s, double& energy) 
 {
 	global_w = w_s;
 	int num_frames = F.cols();
@@ -228,10 +298,19 @@ void labelFacesTRUEVertex(Eigen::MatrixXd& F, Eigen::MatrixXd& D, Eigen::VectorX
 	{
 		GCoptimizationGeneralGraph *gc = new GCoptimizationGeneralGraph(num_frames, num_labels);
 		void* extraData[2] = {&F, &D};
-		gc->setDataCost(&dataFnTRUEVertex, extraData);
+		double* dataArray;
+		high_resolution_clock::time_point t1 = high_resolution_clock::now();
+		prepareDataMatrixTRUEVertex(F,D, dataArray);
+		high_resolution_clock::time_point t2 = high_resolution_clock::now();
+		auto duration = duration_cast<milliseconds>(t2 - t1).count();
+		RA_LOG_INFO("data matrix computation %i msec", duration);
+		
+		//gc->setDataCost(&dataFnTRUEVertex, extraData);
+		gc->setDataCost(dataArray);
+		
 		gc->setSmoothCost(&smoothFnTRUEVertex, extraData);
 
-		setNeighbours(gc, num_frames);
+		setNeighbours(gc, num_frames, sequenceIdx);
 
 		double oldE = gc->compute_energy();
 		gc->swap(-1);

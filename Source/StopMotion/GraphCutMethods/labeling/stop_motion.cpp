@@ -32,7 +32,7 @@ void build_dictionary_kmeans(MatrixXd& F, MatrixXd& L, int numLabels)
 	KMeans kmeans(numLabels);
 	kmeans.init(points);
 	kmeans.run();
-	//kmeans.printMeans();
+	kmeans.printMeans();
 
 	
 	int numVerticies= F.rows();
@@ -98,15 +98,16 @@ void flatten_frames(const std::vector<Eigen::MatrixXd>& v_data, MatrixXd& F)
 
 int stop_motion_vertex_distance(int num_labels, 
                             	const std::vector<Eigen::MatrixXd>& v_data,
+								std::vector<int>& sequenceIdx,
                             	const Eigen::MatrixXi& f_data,
 								std::vector<Eigen::MatrixXd>& d_data,
 								Eigen::VectorXi& s_data,  
                             	double& result_energy)
 {
-	double w_s = 1.0f; //smooth weight
+	double w_s = 5.0f; //smooth weight
 	int num_steps = 50;// 150;
-	double tolerance = 0.0001;
-	int n_init = 4; // number of times the clustering algorithm will be run
+	double tolerance = 0.001;
+	int n_init = 10; // number of times the clustering algorithm will be run
 
 	MatrixXd F; //,  SAVED_FACES; //frame data
 	flatten_frames(v_data, F);
@@ -120,7 +121,9 @@ int stop_motion_vertex_distance(int num_labels,
 	for (int j = 0; j < n_init; ++j)
 	{
 		Eigen::MatrixXd D; //label blendshape data
-		
+
+#define D_USE_KMEANS_INITALIZATION 0
+
 #if D_USE_KMEANS_INITALIZATION
 		build_dictionary_kmeans(F, D, num_labels);
 #else
@@ -139,15 +142,15 @@ int stop_motion_vertex_distance(int num_labels,
 			std::cout << "Iteration " << i << "\n";
 
 			high_resolution_clock::time_point t1 = high_resolution_clock::now();
-			labelFacesTRUEVertex(F, D, S_vec, w_s, graphEnergy);
+			labelFacesTRUEVertex(F, D, S_vec, sequenceIdx, w_s, graphEnergy);
 			high_resolution_clock::time_point t2 = high_resolution_clock::now();
 			auto duration = duration_cast<microseconds>(t2 - t1).count();
 			cout << "label time " << duration << "\n";
 			
 			t1 = high_resolution_clock::now();
-			updateStepTRUEVertex(F, D, S_vec, w_s, oldEnergy, newEnergy);
+			updateStepTRUEVertex(F, D, S_vec, sequenceIdx, w_s, oldEnergy, newEnergy);
 			t2 = high_resolution_clock::now();
-			duration = duration_cast<microseconds>(t2 - t1).count();
+			duration = duration_cast<milliseconds>(t2 - t1).count();
 			cout << "updte time " << duration << "\n";
 			
 			std::cout << "Energy after graph cuts " << graphEnergy << "\nEnergy before update step " << oldEnergy << "\nEnergy after update step " << newEnergy << "\n\n";

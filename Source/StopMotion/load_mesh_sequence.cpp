@@ -81,7 +81,7 @@ namespace tyro
                 {
                     // Loop over faces(polygon)
                     size_t index_offset = 0;
-                    RA_LOG_INFO("Shape name %s", shapes[s].name.data());
+                    //RA_LOG_INFO("Shape name %s", shapes[s].name.data());
                     
                     if (shapes[s].name != shape_name)
                         continue;

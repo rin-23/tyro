@@ -1,0 +1,10 @@
+-----Rabbit-----
+To show hidden skeletons go to Buttons Window->(choose) Editing-> Armature and check all Display options
+
+1. Use blender v2.46 (requires python 2.5. Make sure its installed on your system)
+2. Select Rabbit_proxy (its skeleton)
+3. Show Action Editor. Choose Channel->Show Group-Hidden Channels
+4. Click on eyes to disable all body motions except for face. However in blender v2.46 need to delete them.
+5. Switch to Pose mode. Selecte all (ctrl-A). Press W and choose clear user transforms.
+
+
