@@ -147,8 +147,6 @@ namespace tyro
 {   
     namespace
     {   
-        
-
         void console_save_serialised_data(App* app, const std::vector<std::string>& args) 
         {   
             if (args.size() != 2) 
@@ -1094,35 +1092,6 @@ namespace tyro
 
         render();
         glfwPostEmptyEvent();
-
-        /*
-        std::vector<MatrixXd> d_data;
-        std::vector<int> s_data;
-        double result_energy;
-        
-        tyro::stop_motion_vertex_distance(num_labels, 
-                            	          m_frame_data.v_data,
-                            	          m_frame_data.f_data,
-								          d_data, //dictionary
-								          s_data, //labels 
-                            	          result_energy);
-
-        m_sm_data.v_data.clear();
-        for (int i = 0; i < s_data.size(); ++i) 
-        {
-            int l_indx = s_data[i];
-            m_sm_data.v_data.push_back(d_data[l_indx]);
-        }
-
-        m_sm_data.f_data = m_frame_data.f_data;
-        m_sm_data.fc_data = m_frame_data.fc_data;
-        m_computed_stop_motion = true;
-        
-        m_update_camera = true;
-
-        render();
-        glfwPostEmptyEvent();
-        */
     }
 
     void App::compute_average()

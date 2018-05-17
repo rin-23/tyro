@@ -32,7 +32,7 @@ void build_dictionary_kmeans(MatrixXd& F, MatrixXd& L, int numLabels)
 	KMeans kmeans(numLabels);
 	kmeans.init(points);
 	kmeans.run();
-	//kmeans.printMeans();
+	kmeans.printMeans();
 
 	
 	int numVerticies= F.rows();
@@ -104,10 +104,10 @@ int stop_motion_vertex_distance(int num_labels,
 								Eigen::VectorXi& s_data,  
                             	double& result_energy)
 {
-	double w_s = 1.0f; //smooth weight
-	int num_steps = 20;// 150;
+	double w_s = 5.0f; //smooth weight
+	int num_steps = 50;// 150;
 	double tolerance = 0.001;
-	int n_init = 4; // number of times the clustering algorithm will be run
+	int n_init = 10; // number of times the clustering algorithm will be run
 
 	MatrixXd F; //,  SAVED_FACES; //frame data
 	flatten_frames(v_data, F);
@@ -121,7 +121,9 @@ int stop_motion_vertex_distance(int num_labels,
 	for (int j = 0; j < n_init; ++j)
 	{
 		Eigen::MatrixXd D; //label blendshape data
-		
+
+#define D_USE_KMEANS_INITALIZATION 0
+
 #if D_USE_KMEANS_INITALIZATION
 		build_dictionary_kmeans(F, D, num_labels);
 #else
