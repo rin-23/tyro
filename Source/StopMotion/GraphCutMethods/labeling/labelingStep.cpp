@@ -270,12 +270,12 @@ void prepareDataMatrixTRUEVertex(Eigen::MatrixXd& F, Eigen::MatrixXd& D, double*
 
 	dataArray = new double[num_frames*num_labels];
 			
-	#pragma omp parallel for
+	#pragma omp parallel for collapse(2)
 	for (int i = 0; i < num_frames; ++i) 
 	{	
-		#pragma omp parallel for
+		//#pragma omp parallel for
 		for (int j = 0; j < num_labels; ++j) 
-		{
+		{	
 			double diff = 0;
 			for (int v = 0; v < num_vertex; ++v) 
 			{
@@ -303,7 +303,7 @@ void labelFacesTRUEVertex(Eigen::MatrixXd& F, Eigen::MatrixXd& D, Eigen::VectorX
 		prepareDataMatrixTRUEVertex(F,D, dataArray);
 		high_resolution_clock::time_point t2 = high_resolution_clock::now();
 		auto duration = duration_cast<milliseconds>(t2 - t1).count();
-		RA_LOG_INFO("data matrix computation %i sec", duration);
+		RA_LOG_INFO("data matrix computation %i msec", duration);
 		
 		//gc->setDataCost(&dataFnTRUEVertex, extraData);
 		gc->setDataCost(dataArray);
