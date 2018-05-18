@@ -7,6 +7,7 @@
 #include "utils.h"
 #include "point.h"
 #include "kmeans.h"
+#include <limits>
 
 using namespace Eigen;
 using namespace std;
@@ -136,7 +137,9 @@ int stop_motion_vertex_distance(int num_labels,
 		double graphEnergy = 0;
 
 		std::cout << "#### Trial " << j << " ####\n";
-
+		VectorXd nrg;
+		nrg.resize(num_steps);
+		nrg.setConstant(std::numeric_limits<double>::max());
 		for (int i = 0; i < num_steps; ++i)
 		{
 			std::cout << "Iteration " << i << "\n";
@@ -146,7 +149,7 @@ int stop_motion_vertex_distance(int num_labels,
 			high_resolution_clock::time_point t2 = high_resolution_clock::now();
 			auto duration = duration_cast<microseconds>(t2 - t1).count();
 			cout << "label time " << duration << "\n";
-			
+
 			t1 = high_resolution_clock::now();
 			updateStepTRUEVertex(F, D, S_vec, sequenceIdx, w_s, oldEnergy, newEnergy);
 			t2 = high_resolution_clock::now();
@@ -155,6 +158,7 @@ int stop_motion_vertex_distance(int num_labels,
 			
 			std::cout << "Energy after graph cuts " << graphEnergy << "\nEnergy before update step " << oldEnergy << "\nEnergy after update step " << newEnergy << "\n\n";
 			double diff = abs(newEnergy - oldEnergy);
+						
 			if (oldEnergy >= newEnergy && diff < tolerance)
 			{
 				std::cout << "Difference diff " << diff << " between old and new energies is lower than tolerance of " << tolerance << "\n\n";

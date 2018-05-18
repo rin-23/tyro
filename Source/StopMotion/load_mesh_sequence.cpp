@@ -6,6 +6,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION // define this in only *one* .cc
 #include "tiny_obj_loader.h"
 #include <igl/unique_edge_map.h>
+#include "RALogManager.h"
 
 namespace tyro 
 {   
@@ -22,7 +23,8 @@ namespace tyro
         {            
             bool saved_faces = false;
             for (auto& line : obj_paths)
-            {
+            {  
+                RA_LOG_INFO("Reading file %s", line.data());
                 if (line[0] == '#') //skip comments
                     continue;
 
@@ -49,11 +51,12 @@ namespace tyro
         else //use tinyobjloader
         {   
             bool saved_faces = false;
-            std::string shape_name("rabbit");
+            std::string shape_name("monkey_Plane.002");
 
             for (auto& line : obj_paths)
             {
                 //std::string inputfile = line;
+                RA_LOG_INFO("Reading file %s", line.data());
                 tinyobj::attrib_t attrib;
                 std::vector<tinyobj::shape_t> shapes;
                 std::vector<tinyobj::material_t> materials;

@@ -36,7 +36,6 @@ namespace tyro
         void load_bunny(bool serialized = true);
         
         void compute_average();
-        void stop_motion(int num_labels);
         
         void save_selected_faces(const std::string& filename);
         void save_selected_verticies(const std::string& filename);
@@ -165,12 +164,13 @@ namespace tyro
         };
 
         struct MStopMotion 
-        {
+        {   
+            bool computed = false;
             MAnimation anim;
             std::vector<Eigen::MatrixXd> D; //dictionary of faces
             Eigen::VectorXi L; // Indicies into D to label frames in anim.v_data;
 
-             template<class Archive>
+            template<class Archive>
             void save(Archive & archive) const
             {
                 archive(anim);
@@ -192,6 +192,7 @@ namespace tyro
         std::vector<MAnimation> m_pieces; // Break deformed mesh into pieces along seam(s).
         std::vector<MStopMotion> m_stop_motion; // Stop motion animate pieces
         std::vector<std::string> FOLDERS;
+        //std::vector<std::string> FOLDERS_MONKA;
         
         //using Shot = std::tuple<int, int>; // start and end frame
         //using Movie = std::vector<Shot>;  // collection of shots. Each shot are indicies into m_frame_data.v_data

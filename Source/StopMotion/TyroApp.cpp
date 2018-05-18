@@ -39,8 +39,6 @@
 #include "mesh_split.h"
 #include "segmentation.h"
 
-
-
 using namespace std;
 
 using Eigen::VectorXi;
@@ -471,11 +469,70 @@ namespace tyro
         {
             RA_LOG_INFO("running stop motion");
 
-            if (args.size() == 1)
+            if (args.size() == 2)
             {   
                 int num_labels = std::stoi(args[0]);
-                app->stop_motion(num_labels);
-                return;
+                int part_id = std::stoi(args[1]);
+                
+                if (app->m_stop_motion.empty())
+                //app->m_stop_motion.clear();
+                    app->m_stop_motion.resize(app->m_pieces.size());
+
+                int start, end;
+                if (part_id == -1) 
+                {
+                    start = 0;
+                    end = app->m_stop_motion.size();
+                }
+                else
+                {   
+                    //just do one part
+                    start = part_id;
+                    end = part_id+1;
+                }
+                
+                for (int i = start; i < end; ++i) 
+                {   
+                    double result_energy;
+                    auto& sm = app->m_stop_motion[i]; 
+                    auto& piece = app->m_pieces[i];
+                    
+                    tyro::stop_motion_vertex_distance(num_labels, 
+                                                      piece.v_data,
+                                                      piece.sequenceIdx,
+                                                      piece.f_data,
+                                                      sm.D, //dictionary
+                                                      sm.L, //labels 
+                                                      result_energy);
+                    
+                    sm.anim.f_data = piece.f_data;
+                    sm.anim.e_data = piece.e_data;
+                    sm.anim.ue_data = piece.ue_data;
+                    sm.anim.EMAP = piece.EMAP;
+                    sm.anim.ec_data = piece.ec_data;
+                    sm.anim.fc_data = piece.fc_data;
+                    //precompute normals
+                    std::vector<MatrixXd> normals;
+                    normals.resize(sm.D.size());
+                    for (int j = 0; j < sm.D.size(); ++j) 
+                    {   
+                        igl::per_vertex_normals(sm.D[j], sm.anim.f_data, normals[j]);
+                    }
+
+                    for (int j = 0; j < sm.L.size(); ++j) 
+                    {
+                        int l_idx = sm.L(j);
+                        sm.anim.v_data.push_back(sm.D[l_idx]);
+                        sm.anim.n_data.push_back(normals[l_idx]);
+                    }
+                    sm.computed = true;                   
+                }
+
+                app->m_computed_stop_motion = true;
+                app->m_update_camera = true;
+
+                app->render();
+                glfwPostEmptyEvent();
             }
         }
 
@@ -619,6 +676,66 @@ namespace tyro
             return;
         }
         
+        void console_load_monka(App* app, const std::vector<std::string> & args) 
+        {
+            RA_LOG_INFO("load monka");
+            //Picked face_id 26093 vertex_id 13681 coord 11.950990 2.934150 16.501955
+            int offset_vid = 13681; // 1222;
+            auto offset = Eigen::Vector3d(11.950990, 2.934150, 16.501955) ; //Eigen::Vector3d(0.613322, 2.613381, 2.238946);
+        
+            app->FOLDERS = 
+            {   
+                            
+                std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/data/production/obj/01/02/"),
+                std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/data/production/obj/01/03/"),
+                std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/data/production/obj/01/06/"),
+                std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/data/production/obj/01/08/"),
+                std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/data/production/obj/01/09/"),
+                std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/data/production/obj/01/10/"),
+                std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/data/production/obj/01/11/"),
+                std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/data/production/obj/01/12/"),
+                //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/data/production/obj/01/13/"),
+                
+                std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/data/production/obj/03/01/"),
+                
+                std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/data/production/obj/05/03/"),
+                std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/data/production/obj/05/04/"),
+                std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/data/production/obj/05/06/"),
+         
+                std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/data/production/obj/06/01/")
+            };
+
+            std::vector<std::string> obj_paths;
+            for (auto folder : app->FOLDERS_MONKA) 
+            {
+                int num_files_read;
+
+                //Add smth
+                //folder += std::string("no_mouth/");
+
+                RA_LOG_INFO("loading folder %s", folder.data());
+                tyro::obj_file_path_list(folder, "objlist.txt", obj_paths, num_files_read);
+                RA_LOG_INFO("frames read %i", num_files_read);
+                app->m_frame_data.sequenceIdx.push_back(num_files_read);
+            }
+
+            app->load_mesh_sequence(obj_paths, true); //use IGL obj loader
+            app->m_timeline->SetFrameRange(app->m_frame_data.v_data.size()-1);
+
+            //app->align_all_models(offset_vid, offset);
+                
+            //Compute radius of the bounding box of the model
+            AxisAlignedBBox bbox;
+            MatrixXd VT = app->m_frame_data.v_data[0].transpose();
+            bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
+            app->m_model_offset = bbox.GetRadius(); 
+
+            app->m_update_camera = true;
+            app->m_state = App::State::LoadedModel;
+//            app->compute_average();
+            app->render();
+        }
+
         void console_load_bunny(App* app, const std::vector<std::string> & args) 
         {   
             RA_LOG_INFO("Loading bunny obj sequence");
@@ -805,7 +922,7 @@ namespace tyro
         register_console_function("clear_selection", console_clear_selection, "");
         register_console_function("save_serialised_data", console_save_serialised_data, "");
         register_console_function("load_serialised_data", console_load_serialised_data, "");
-
+        register_console_function("load_monka", console_load_monka, "");
 
         m_state = App::State::Launched;
         // Loop until the user closes the window
@@ -949,6 +1066,10 @@ namespace tyro
                         for (int i = 0; i < m_stop_motion.size(); ++i) 
                         {   
                             auto& sm = m_stop_motion[i];
+                            
+                            if (sm.computed == false) 
+                                continue;
+
                             auto mesh = IGLMesh::Create(sm.anim.v_data[m_frame], 
                                                         sm.anim.f_data, 
                                                         sm.anim.n_data[m_frame],
@@ -1046,53 +1167,6 @@ namespace tyro
         glfwPostEmptyEvent();
     }
     
-    void App::stop_motion(int num_labels) 
-    {   
-        m_stop_motion.clear();
-        m_stop_motion.resize(m_pieces.size());
-
-        for (int i = 0; i < m_stop_motion.size(); ++i) 
-        {
-            double result_energy;
-            auto& sm = m_stop_motion[i]; 
-            auto& piece = m_pieces[i];
-            
-            tyro::stop_motion_vertex_distance(num_labels, 
-                                              piece.v_data,
-                                              piece.sequenceIdx,
-                                              piece.f_data,
-                                              sm.D, //dictionary
-                                              sm.L, //labels 
-                                              result_energy);
-            
-            sm.anim.f_data = piece.f_data;
-            sm.anim.e_data = piece.e_data;
-            sm.anim.ue_data = piece.ue_data;
-            sm.anim.EMAP = piece.EMAP;
-            sm.anim.ec_data = piece.ec_data;
-            sm.anim.fc_data = piece.fc_data;
-            //precompute normals
-            std::vector<MatrixXd> normals;
-            normals.resize(sm.D.size());
-            for (int j = 0; j < sm.D.size(); ++j) 
-            {   
-                igl::per_vertex_normals(sm.D[j], sm.anim.f_data, normals[j]);
-            }
-
-            for (int j = 0; j < sm.L.size(); ++j) 
-            {
-                int l_idx = sm.L(j);
-                sm.anim.v_data.push_back(sm.D[l_idx]);
-                sm.anim.n_data.push_back(normals[l_idx]);
-            }                   
-        }
-
-        m_computed_stop_motion = true;
-        m_update_camera = true;
-
-        render();
-        glfwPostEmptyEvent();
-    }
 
     void App::compute_average()
     {
