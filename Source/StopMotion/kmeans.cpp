@@ -18,7 +18,7 @@ void kmeans(const Eigen::MatrixXd& F, //data. Every column is a feature
 
 	cv::Mat cv_labels;
 	cv::Mat cv_centers;
-	cv::TermCriteria criteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 400000, 0.0001);
+	cv::TermCriteria criteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 10000, 0.0001);
 	cv::kmeans(cv_F, num_labels, cv_labels, criteria, num_iter, cv::KMEANS_PP_CENTERS, cv_centers);
 
     int num_features = F.rows();
