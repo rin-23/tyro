@@ -47,10 +47,7 @@ namespace tyro
         void invert_face_selection();
         void align_all_models();
         void align_all_models(int vid, Eigen::Vector3d offset);
-        //void frame(int frame);
-        //void show_edge_selection();
         void debug_show_faces_near_edge_selection(const Eigen::VectorXi& uEI, const Eigen::VectorXi& DMAP);
-        
 
         State m_state;
         SelectionPrimitive m_sel_primitive;
@@ -189,6 +186,14 @@ namespace tyro
             }
         };
 
+        struct PrimitiveWeights 
+        {
+            //VectorXd V;
+            Eigen::VectorXd FW; //face weights same size as F.rows
+            Eigen::VectorXd VW; //vertex weights same size as V.rows
+        };
+        PrimitiveWeights m_weights;
+
         MAnimation m_frame_data; //Original animation data        
         MAnimation m_frame_deformed_data; // Animation data after we smooth the seam(s)
         std::vector<MAnimation> m_pieces; // Break deformed mesh into pieces along seam(s).
@@ -213,7 +218,7 @@ namespace tyro
         void load_mesh_sequence(const std::vector<std::string>& obj_list, bool use_igl_loader = true); 
         void update_camera();
         void render();
-        void addSphere(int vid);        
+        void addSphere(int vid, Wm5::Vector4f color = Wm5::Vector4f(1,0,0,1));        
         void removeSpheres(std::vector<int> vids);
         void setFaceColor(int fid, bool selected);
         void setFaceColor(int fid, const Eigen::Vector3d& clr);

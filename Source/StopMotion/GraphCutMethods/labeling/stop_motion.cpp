@@ -123,7 +123,8 @@ void flatten_frames(const std::vector<Eigen::MatrixXd>& v_data, MatrixXd& F)
 	}
 }
 
-int stop_motion_vertex_distance(int num_labels, 
+int stop_motion_vertex_distance(int num_labels,
+								double w_s,
                             	const std::vector<Eigen::MatrixXd>& v_data,
 								std::vector<int>& sequenceIdx,
                             	const Eigen::MatrixXi& f_data,
@@ -131,7 +132,7 @@ int stop_motion_vertex_distance(int num_labels,
 								Eigen::VectorXi& s_data,  
                             	double& result_energy)
 {
-	double w_s = 2.0f; //smooth weight
+	//double w_s = 2.0f; //smooth weight
 	int num_steps = 150;// 150;
 	double tolerance = 0.0001;
 	int n_init = 1; // number of times the clustering algorithm will be run
@@ -144,6 +145,7 @@ int stop_motion_vertex_distance(int num_labels,
 	std::vector<double> n_init_energy;
 
 	std::cout << "Energie for " << num_labels << " labels\n";
+	std::cout << "Smooth weight " << w_s << "\n";
 
 #define D_USE_KMEANS_INITALIZATION 1
 #if D_USE_KMEANS_INITALIZATION

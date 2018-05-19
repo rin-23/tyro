@@ -264,8 +264,94 @@ namespace tyro
 
         void console_clear_selection(App* app, const std::vector<std::string>& args) 
         {
-            app->clear_all_selection();
+            app->vid_list.clear();
+            app->ball_list.clear();
+            
+            for (int fid = 0; fid < app->m_frame_data.f_data.rows(); ++fid) 
+            {
+                app->setFaceColor(fid, false);
+            }
+            app->fid_list.clear();        
+            app->fid_list2.clear();
+            app->fid_list3.clear();
+            app->render();
         }
+
+        void console_clear_vertex_selection(App* app, const std::vector<std::string>& args) 
+        {
+            app->vid_list.clear();
+            app->ball_list.clear();
+            app->render();
+        }
+
+        void console_clear_face_selection(App* app, const std::vector<std::string>& args) 
+        {
+            for (int fid = 0; fid < app->m_frame_data.f_data.rows(); ++fid) 
+            {
+                app->setFaceColor(fid, false);
+            }
+            app->fid_list.clear();        
+            app->fid_list2.clear();
+            app->fid_list3.clear();
+            app->render();
+        }
+
+        void console_set_vertex_weight(App* app, const std::vector<std::string>& args) 
+        {
+            if (args.size()>0) 
+            {   
+                float w = std::stof(args[0]);
+                for (auto vid : app->vid_list) 
+                {
+                    app->m_weights.VW(vid) = w;
+                }
+            }
+        }
+
+        void console_set_face_weight(App* app, const std::vector<std::string>& args) 
+        {
+            if (args.size()>0) 
+            {   
+                float w = std::stof(args[0]);
+                for (auto fid : app->fid_list) 
+                {
+                    app->m_weights.FW(fid) = w;
+                }
+            }
+        }
+
+        void console_draw_vertex_weight_map(App* app, const std::vector<std::string>& args) 
+        {   
+            double maxC = app->m_weights.VW.maxCoeff();
+            double minC = app->m_weights.VW.minCoeff(); //should be 1
+            
+            for (int vid = 0; vid < app->m_weights.VW.size(); ++vid) 
+            {   
+                double w = app->m_weights.VW(vid); 
+                if (w > 1) 
+                {   
+                    double red = w / (maxC - minC); 
+                    app->addSphere(vid, Wm5::Vector4f(red, 0, 0, 1));
+                }
+            }
+        }
+
+        void console_draw_face_weight_map(App* app, const std::vector<std::string>& args) 
+        {   
+            double maxC = app->m_weights.FW.maxCoeff();
+            double minC = app->m_weights.FW.minCoeff(); //should be 1
+            
+            for (int fid = 0; fid < app->m_weights.FW.size(); ++fid) 
+            {   
+                double w = app->m_weights.FW(fid); 
+                //if (w > 1) 
+                //{   
+                    double green = w / (maxC - minC); 
+                    Eigen::Vector3d clr(0, green, 0);
+                    app->setFaceColor(fid, clr);
+                //}
+            }
+        } 
 
         void console_segmentation(App* app, const std::vector<std::string>& args) 
         {  
@@ -504,10 +590,11 @@ namespace tyro
         {
             RA_LOG_INFO("running stop motion");
 
-            if (args.size() == 2)
+            if (args.size() == 3)
             {   
                 int num_labels = std::stoi(args[0]);
-                int part_id = std::stoi(args[1]);
+                double smooth_weight = std::stof(args[1]);
+                int part_id = std::stoi(args[2]);
                 
                 if (app->m_stop_motion.empty())
                 //app->m_stop_motion.clear();
@@ -533,11 +620,12 @@ namespace tyro
                     auto& piece = app->m_pieces[i];
                     
                     tyro::stop_motion_vertex_distance(num_labels, 
+                                                      smooth_weight,
                                                       piece.v_data,
                                                       piece.sequenceIdx,
                                                       piece.f_data,
                                                       sm.D, //dictionary
-                                                      sm.L, //labels 
+                                                      sm.L, //labels,  
                                                       result_energy);
                     
                     sm.anim.f_data = piece.f_data;
@@ -768,6 +856,14 @@ namespace tyro
             app->m_update_camera = true;
             app->m_state = App::State::LoadedModel;
 //            app->compute_average();
+
+            app->m_weights.VW.resize(app->m_frame_data.v_data[0].rows());
+            app->m_weights.VW.setOnes();
+
+            app->m_weights.FW.resize(app->m_frame_data.f_data.rows());
+            app->m_weights.FW.setOnes();
+            
+
             app->render();
         }
 
@@ -955,10 +1051,19 @@ namespace tyro
         register_console_function("show_wireframe", console_show_wireframe, "");
         register_console_function("segmentation", console_segmentation, "");
         register_console_function("clear_selection", console_clear_selection, "");
+        register_console_function("clear_vertex_selection", console_clear_vertex_selection, "");
+        register_console_function("clear_face_selection", console_clear_face_selection, "");
+
         register_console_function("save_serialised_data", console_save_serialised_data, "");
         register_console_function("load_serialised_data", console_load_serialised_data, "");
         register_console_function("load_monka", console_load_monka, "");
-
+        
+        register_console_function("set_vertex_weight", console_set_vertex_weight, "");
+        register_console_function("set_face_weight", console_set_face_weight, "");
+        
+        register_console_function("draw_vertex_weight_map", console_draw_vertex_weight_map, "");
+        register_console_function("draw_face_weight_map", console_draw_face_weight_map, "");
+        
         m_state = App::State::Launched;
         // Loop until the user closes the window
         m_tyro_window->GetGLContext()->swapBuffers();
@@ -1262,7 +1367,7 @@ namespace tyro
         m_camera = new iOSCamera(world_center, radius, aspect, 2, viewport, true);
     }
 
-    void App::addSphere(int vid) 
+    void App::addSphere(int vid, Wm5::Vector4f color) 
     {   
         Eigen::RowVector3d new_c = m_frame_data.v_data[m_frame].row(vid);
         ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.001);
@@ -1270,6 +1375,7 @@ namespace tyro
         tr.SetTranslate(Wm5::APoint(new_c(0), new_c(1), new_c(2)));
         object->LocalTransform = tr * object->LocalTransform;
         object->Update(true);
+        object->SetColor(color);
         ball_list.push_back(object);
     }     
 
@@ -1293,23 +1399,7 @@ namespace tyro
         
         m_frame_data.fc_data.row(fid) = clr;
     }
-    
-    void App::clear_all_selection() 
-    {
-        vid_list.clear();
-        ball_list.clear();
-        
-        for (int fid = 0; fid < m_frame_data.f_data.rows(); ++fid) 
-        {
-            setFaceColor(fid, false);
-        }
-        fid_list.clear();        
-        fid_list2.clear();
-        fid_list3.clear();
-        render();
-    }
-       
-
+   
     void App::load_mesh_sequence(const std::vector<std::string>& obj_list, bool use_igl_loader) 
     {   
         RA_LOG_INFO("LOAD MESH SEQUENCE")
@@ -1435,6 +1525,13 @@ namespace tyro
 
         m_update_camera = true;
         m_state = App::State::LoadedModel;
+        
+        m_weights.VW.resize(m_frame_data.v_data[0].rows());
+        m_weights.VW.setOnes();
+
+        m_weights.FW.resize(m_frame_data.f_data.rows());
+        m_weights.FW.setOnes();
+
         compute_average();
         render();
     }
