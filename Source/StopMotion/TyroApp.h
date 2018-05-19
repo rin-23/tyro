@@ -172,7 +172,8 @@ namespace tyro
 
             template<class Archive>
             void save(Archive & archive) const
-            {
+            {   
+                //archive(computed);
                 archive(anim);
                 archive(D);
                 archive(L);
@@ -180,7 +181,8 @@ namespace tyro
             
             template<class Archive>
             void load(Archive & archive)
-            {
+            {   
+                //archive(computed);
                 archive(anim);
                 archive(D);
                 archive(L);

@@ -5,9 +5,12 @@
 #include "updateStep.h"
 #include <chrono>
 #include "utils.h"
-#include "point.h"
 #include "kmeans.h"
 #include <limits>
+#include <opencv2/opencv.hpp>
+//#include <opencv2/viz/vizcore.hpp>
+
+//#include "KMeansRexCore.cpp"
 
 using namespace Eigen;
 using namespace std;
@@ -16,8 +19,30 @@ using namespace std::chrono;
 namespace tyro 
 {
 
-void build_dictionary_kmeans(MatrixXd& F, MatrixXd& L, int numLabels)
+/*
+template<typename _Tp, int _rows, int _cols, int _options, int _maxRows, int _maxCols>
+void eigen2cv(const Eigen::Matrix<_Tp, _rows, _cols, _options, _maxRows, _maxCols>& src, cv::Mat& dst)
 {
+    if (!(src.Flags & Eigen::RowMajorBit))
+    {
+        cv::Mat _src(src.cols(), src.rows(), cv::DataType<_Tp>::type,
+            (void*)src.data(), src.stride() * sizeof(_Tp));
+        cv::transpose(_src, dst);
+    }
+    else
+    {
+        cv::Mat _src(src.rows(), src.cols(), cv::DataType<_Tp>::type,
+            (void*)src.data(), src.stride() * sizeof(_Tp));
+        _src.copyTo(dst);
+    }
+}
+*/
+
+
+/*
+void build_dictionary_kmeans(MatrixXd& F, MatrixXd& L, int numLabels)
+{	
+	
 	std::vector<Point> points;
 	//KMeans::loadPoints(fpath, &points);
 	
@@ -48,6 +73,7 @@ void build_dictionary_kmeans(MatrixXd& F, MatrixXd& L, int numLabels)
 		L.col(i) = mapped;
 	}
 }
+*/
 
 void build_dictionary_random(const MatrixXd& F, MatrixXd& L, int numLabels) 
 {
@@ -105,10 +131,10 @@ int stop_motion_vertex_distance(int num_labels,
 								Eigen::VectorXi& s_data,  
                             	double& result_energy)
 {
-	double w_s = 5.0f; //smooth weight
-	int num_steps = 50;// 150;
-	double tolerance = 0.001;
-	int n_init = 10; // number of times the clustering algorithm will be run
+	double w_s = 2.0f; //smooth weight
+	int num_steps = 150;// 150;
+	double tolerance = 0.0001;
+	int n_init = 1; // number of times the clustering algorithm will be run
 
 	MatrixXd F; //,  SAVED_FACES; //frame data
 	flatten_frames(v_data, F);
@@ -119,14 +145,20 @@ int stop_motion_vertex_distance(int num_labels,
 
 	std::cout << "Energie for " << num_labels << " labels\n";
 
+#define D_USE_KMEANS_INITALIZATION 1
+#if D_USE_KMEANS_INITALIZATION
+		VectorXi lbvec;
+		int num_iter = 100;
+		MatrixXd KMEANS;
+	    tyro::kmeans(F, num_labels, num_iter, KMEANS, lbvec);
+#endif
+
 	for (int j = 0; j < n_init; ++j)
 	{
 		Eigen::MatrixXd D; //label blendshape data
 
-#define D_USE_KMEANS_INITALIZATION 0
-
 #if D_USE_KMEANS_INITALIZATION
-		build_dictionary_kmeans(F, D, num_labels);
+		D = KMEANS;
 #else
 		build_dictionary_random(F, D, num_labels);
 #endif
@@ -136,10 +168,16 @@ int stop_motion_vertex_distance(int num_labels,
 		double newEnergy = 0;
 		double graphEnergy = 0;
 
-		std::cout << "#### Trial " << j << " ####\n";
-		VectorXd nrg;
-		nrg.resize(num_steps);
-		nrg.setConstant(std::numeric_limits<double>::max());
+		std::cout << "######################################################\n";
+		std::cout << "######################## Trial " << j << " #######################\n";
+		std::cout << "######################################################\n";
+
+		//VectorXd nrg;
+		//nrg.resize(num_steps);
+		//nrg.setConstant(std::numeric_limits<double>::max());
+		MatrixXd lastD;
+		VectorXi lastS_vec;
+		double lastEnergy = std::numeric_limits<double>::max();
 		for (int i = 0; i < num_steps; ++i)
 		{
 			std::cout << "Iteration " << i << "\n";
@@ -149,6 +187,20 @@ int stop_motion_vertex_distance(int num_labels,
 			high_resolution_clock::time_point t2 = high_resolution_clock::now();
 			auto duration = duration_cast<microseconds>(t2 - t1).count();
 			cout << "label time " << duration << "\n";
+			break;
+			if (graphEnergy > lastEnergy)
+			{	
+			    std::cout << "Energy after graph cuts " << graphEnergy << " is higher than previous energy " << lastEnergy << "\n\n";
+				D = lastD;
+				S_vec = lastS_vec;
+				break;
+			}
+			else 
+			{
+				lastD = D;
+				lastS_vec = S_vec;
+				lastEnergy = graphEnergy;
+			}
 
 			t1 = high_resolution_clock::now();
 			updateStepTRUEVertex(F, D, S_vec, sequenceIdx, w_s, oldEnergy, newEnergy);
@@ -168,7 +220,7 @@ int stop_motion_vertex_distance(int num_labels,
 		}
 		n_init_D.push_back(D);
 		n_init_S.push_back(S_vec);
-		n_init_energy.push_back(oldEnergy);
+		n_init_energy.push_back(graphEnergy);
 	}
 
 	//Choose best energy

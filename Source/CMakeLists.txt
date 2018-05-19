@@ -23,6 +23,8 @@ ENDIF()
 #set(CMAKE_INCLUDE_CURRENT_DIR ON)
 #set(CMAKE_AUTOMOC ON)
 #set(Qt5_DIR "/opt/Qt/5.9/gcc_64/lib/cmake/Qt5")
+set(OpenCV_DIR /usr/local/share/OpenCV)
+
 
 # Find the QtWidgets library
 find_package(PkgConfig REQUIRED)
@@ -31,6 +33,8 @@ find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(Threads REQUIRED)
+find_package(OpenCV REQUIRED)
+
 
 #find_library(PocoFoundation_LIB foo)
 
@@ -52,6 +56,10 @@ endif()
 
 if (NOT FREETYPE_FOUND)
     message(STATUS "NOT Found freetype")
+endif()
+
+if (NOT OpenCV_FOUND)
+    message(STATUS "NOT Found opencv")
 endif()
 #set(CMAKE_CXX_FLAGS "-Wall")
 
@@ -111,7 +119,7 @@ set(TYRO_EXTERNAL_INC_EXE
 set(TYRO_STOPMOTION_INC_EXE 
     "./StopMotion"
     "./StopMotion/GraphCutMethods/GCOLib"
-    "./StopMotion/GraphCutMethods/kmeans"
+    #"./StopMotion/GraphCutMethods/kmeans"
     "./StopMotion/GraphCutMethods/labeling"   
     "./StopMotion/GraphCutMethods/segmentation" 
     )
@@ -121,6 +129,7 @@ include_directories(${GLFW_INCLUDE_DIRS})
 include_directories(${OPENGL_INCLUDE_DIR})
 include_directories(${GLEW_INCLUDE_DIR})
 include_directories(${FREETYPE_INCLUDE_DIRS})
+include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(SYSTEM "External/libigl/include")
 include_directories(SYSTEM "External/libigl/external/eigen")
 include_directories(SYSTEM "/home/rinat/Workspace/poco-1.9.0/Foundation/include")
@@ -142,6 +151,7 @@ target_link_libraries(tyro ${GLFW_LIBRARIES})
 target_link_libraries(tyro ${GLEW_LIBRARIES})
 target_link_libraries(tyro ${FREETYPE_LIBRARIES})
 target_link_libraries(tyro ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(tyro ${OpenCV_LIBS})
 target_link_libraries(tyro TyroMath)
 target_link_libraries(tyro "/home/rinat/Workspace/poco-1.9.0/cmake-build/lib/libPocoFoundation.so")
 #target_link_libraries(tyro Qt5::Core)

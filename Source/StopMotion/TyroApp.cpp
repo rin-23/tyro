@@ -174,11 +174,19 @@ namespace tyro
             {
                 archive(app->m_stop_motion);
             }
+            else if (type == "stop_low") 
+            {
+                archive(app->m_stop_motion[1]);
+            }
+            else if (type == "stop_up") 
+            {
+                archive(app->m_stop_motion[0]);
+            }
         }
 
         void console_load_serialised_data(App* app, const std::vector<std::string>& args) 
         {   
-            if (args.size() != 2) 
+            if (args.size() < 2) 
                 return; 
             
             auto type = args[0];
@@ -220,6 +228,33 @@ namespace tyro
             else if (type == "stop") 
             {
                 archive(app->m_stop_motion);
+                for (int i = 0; i < app->m_stop_motion.size(); ++i)
+                    if (app->m_stop_motion[i].anim.v_data.size() > 0)
+                        app->m_stop_motion[i].computed = true;
+                
+                app->m_computed_stop_motion = true;
+                app->m_update_camera = true;
+
+            }
+            else if (type == "stop_low") 
+            {   
+                if (app->m_stop_motion.empty())
+                    app->m_stop_motion.resize(2);
+                
+                archive(app->m_stop_motion[1]);
+                app->m_stop_motion[1].computed = true;
+                
+                app->m_computed_stop_motion = true;
+                app->m_update_camera = true;
+            }
+            else if (type == "stop_up") 
+            {
+                if (app->m_stop_motion.empty())
+                    app->m_stop_motion.resize(2);
+                
+                archive(app->m_stop_motion[0]);
+                app->m_stop_motion[0].computed = true;
+                
                 app->m_computed_stop_motion = true;
                 app->m_update_camera = true;
             }
@@ -706,7 +741,7 @@ namespace tyro
             };
 
             std::vector<std::string> obj_paths;
-            for (auto folder : app->FOLDERS_MONKA) 
+            for (auto folder : app->FOLDERS) 
             {
                 int num_files_read;
 
@@ -1117,7 +1152,7 @@ namespace tyro
                 if (show_console) 
                 {
                     glUseProgram(0);
-                    m_console.display(1);
+                    m_console.display(2);
                 }
                 // Poll for and process events
                 m_tyro_window->GetGLContext()->swapBuffers();
@@ -1296,7 +1331,7 @@ namespace tyro
 
     void App::load_bunny(bool serialized)
     {
-        RA_LOG_INFO("load bunny");
+        RA_LOG_INFO("load bunny serialized %i",serialized);
         int offset_vid = 1030; // 1222;
         auto offset = Eigen::Vector3d(0.268563, 3.142050, 2.504273) ; //Eigen::Vector3d(0.613322, 2.613381, 2.238946);
        
@@ -1363,20 +1398,6 @@ namespace tyro
             
         };
 
-        std::vector<std::string> obj_paths;
-        for (auto folder : FOLDERS) 
-        {
-            int num_files_read;
-
-            //Add smth
-            folder += std::string("no_mouth/");
-
-            RA_LOG_INFO("loading folder %s", folder.data());
-            tyro::obj_file_path_list(folder, "objlist.txt", obj_paths, num_files_read);
-            RA_LOG_INFO("frames read %i", num_files_read);
-            m_frame_data.sequenceIdx.push_back(num_files_read);
-        }
-
         if (serialized) 
         {   
             auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
@@ -1386,7 +1407,20 @@ namespace tyro
             archive_i(m_frame_data);
         }
         else
-        {
+        {   
+            std::vector<std::string> obj_paths;
+            for (auto folder : FOLDERS) 
+            {
+                int num_files_read;
+
+                //Add smth
+                folder += std::string("no_mouth/");
+
+                RA_LOG_INFO("loading folder %s", folder.data());
+                tyro::obj_file_path_list(folder, "objlist.txt", obj_paths, num_files_read);
+                RA_LOG_INFO("frames read %i", num_files_read);
+                m_frame_data.sequenceIdx.push_back(num_files_read);
+            }
             load_mesh_sequence(obj_paths, true); //use IGL obj loader
         }
         m_timeline->SetFrameRange(m_frame_data.v_data.size()-1);
@@ -1669,7 +1703,7 @@ namespace tyro
 
     void App::mouse_down(Window& window, int button, int modifier) 
     {   
-        RA_LOG_INFO("mouse down %i", button);
+        //RA_LOG_INFO("mouse down %i", button);
 
         if (m_state != App::State::LoadedModel) return;
 
@@ -1843,7 +1877,7 @@ namespace tyro
 
     void App::mouse_scroll(Window& window, float ydelta) 
     {
-        RA_LOG_INFO("mouse scroll delta %f", ydelta);
+        //RA_LOG_INFO("mouse scroll delta %f", ydelta);
         if (m_state != App::State::LoadedModel) return;
         
         m_camera->HandlePinchGesture(gesture_state, Wm5::Vector2i(current_mouse_x, current_mouse_y), ydelta);

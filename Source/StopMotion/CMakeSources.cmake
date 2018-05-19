@@ -17,14 +17,15 @@ set(TYRO_SRC_LOCAL
 "StopMotion/TyroTimeLine.cpp"
 "StopMotion/load_mesh_sequence.cpp"
 "StopMotion/mesh_split.cpp"
+"StopMotion/kmeans.cpp"
 
 "StopMotion/GraphCutMethods/GCOLib/GCoptimization.cpp" 
 "StopMotion/GraphCutMethods/GCOLib/graph.cpp" 
 "StopMotion/GraphCutMethods/GCOLib/LinkedBlockList.cpp" 
 "StopMotion/GraphCutMethods/GCOLib/maxflow.cpp" 
 
-"StopMotion/GraphCutMethods/kmeans/kmeans.cpp" 
-"StopMotion/GraphCutMethods/kmeans/point.cpp" 
+#"StopMotion/GraphCutMethods/kmeans/kmeans.cpp" 
+#"StopMotion/GraphCutMethods/kmeans/point.cpp" 
 
 "StopMotion/GraphCutMethods/labeling/labelingStep.cpp" 
 "StopMotion/GraphCutMethods/labeling/updateStep.cpp" 
