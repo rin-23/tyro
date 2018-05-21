@@ -125,6 +125,7 @@ void flatten_frames(const std::vector<Eigen::MatrixXd>& v_data, MatrixXd& F)
 
 int stop_motion_vertex_distance(int num_labels,
 								double w_s,
+								bool kmeans,
                             	const std::vector<Eigen::MatrixXd>& v_data,
 								std::vector<int>& sequenceIdx,
                             	const Eigen::MatrixXi& f_data,
@@ -133,9 +134,9 @@ int stop_motion_vertex_distance(int num_labels,
                             	double& result_energy)
 {
 	//double w_s = 2.0f; //smooth weight
-	int num_steps = 150;// 150;
+	int num_steps = 50;// 150;
 	double tolerance = 0.0001;
-	int n_init = 1; // number of times the clustering algorithm will be run
+	int n_init = 5; // number of times the clustering algorithm will be run
 
 	MatrixXd F; //,  SAVED_FACES; //frame data
 	flatten_frames(v_data, F);
@@ -147,23 +148,28 @@ int stop_motion_vertex_distance(int num_labels,
 	std::cout << "Energie for " << num_labels << " labels\n";
 	std::cout << "Smooth weight " << w_s << "\n";
 
-#define D_USE_KMEANS_INITALIZATION 1
-#if D_USE_KMEANS_INITALIZATION
+//#define D_USE_KMEANS_INITALIZATION 1
+	MatrixXd KMEANS;
+	if (kmeans) 
+	{
 		VectorXi lbvec;
 		int num_iter = 100;
-		MatrixXd KMEANS;
-	    tyro::kmeans(F, num_labels, num_iter, KMEANS, lbvec);
-#endif
+		tyro::kmeans(F, num_labels, num_iter, KMEANS, lbvec);
+	} 
 
 	for (int j = 0; j < n_init; ++j)
 	{
 		Eigen::MatrixXd D; //label blendshape data
 
-#if D_USE_KMEANS_INITALIZATION
-		D = KMEANS;
-#else
-		build_dictionary_random(F, D, num_labels);
-#endif
+		if (kmeans) 
+		{	
+			n_init  = 1;
+			D = KMEANS;
+			std::cout << "Using kmeans initialization" << w_s << "\n";
+		}else {
+			build_dictionary_random(F, D, num_labels);
+			std::cout << "Using random intialization" << w_s << "\n";
+		}
 
 		VectorXi S_vec;
 		double oldEnergy = 0; 
@@ -189,7 +195,7 @@ int stop_motion_vertex_distance(int num_labels,
 			high_resolution_clock::time_point t2 = high_resolution_clock::now();
 			auto duration = duration_cast<microseconds>(t2 - t1).count();
 			cout << "label time " << duration << "\n";
-			break;
+
 			if (graphEnergy > lastEnergy)
 			{	
 			    std::cout << "Energy after graph cuts " << graphEnergy << " is higher than previous energy " << lastEnergy << "\n\n";
@@ -208,7 +214,7 @@ int stop_motion_vertex_distance(int num_labels,
 			updateStepTRUEVertex(F, D, S_vec, sequenceIdx, w_s, oldEnergy, newEnergy);
 			t2 = high_resolution_clock::now();
 			duration = duration_cast<milliseconds>(t2 - t1).count();
-			cout << "updte time " << duration << "\n";
+			cout << "update time " << duration << "\n";
 			
 			std::cout << "Energy after graph cuts " << graphEnergy << "\nEnergy before update step " << oldEnergy << "\nEnergy after update step " << newEnergy << "\n\n";
 			double diff = abs(newEnergy - oldEnergy);

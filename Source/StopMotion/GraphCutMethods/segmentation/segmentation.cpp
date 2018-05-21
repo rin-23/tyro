@@ -107,10 +107,10 @@ void prepareSmoothMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex da
 		}
 
 		//double w_smooth = 9;
-		if (cost > 0) 
-		{
-			RA_LOG_INFO("lul");
-		}
+		//if (cost > 0) 
+	//	{
+			//RA_LOG_INFO("lul");
+	//	}
 
 		cost *= smooth_weight;
 		A.coeffRef(f1idx, f2idx) = cost;   
@@ -159,18 +159,23 @@ void prepareDataMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 	//int imin, imax;
 	//double zmin = Z.minCoeff(&imin);
 	//double zmax = Z.maxCoeff(&imax);
-	
-	/*
-	int imin = S(0);
-	int imax = S(1);
+
+
 	MatrixXd Thard;
 	Thard.resize(F.rows(), 2);
 	Thard.setZero();
-	Thard(imin, 0) = 0;
-	Thard(imin, 1) = 1;
-	Thard(imax, 0) = 1;
-	Thard(imax, 1) = 0;
-	*/
+	for (int i = 0; i < FS1.size(); ++i) 
+	{
+		Thard(FS1(i), 0) = 0;
+		Thard(FS1(i), 1) = 1;
+	}	
+
+	for (int i = 0; i < FS2.size(); ++i) 
+	{
+		Thard(FS2(i), 1) = 0;
+		Thard(FS2(i), 0) = 1;
+	}	
+
 
 	MatrixXd Tsoft;
 	Tsoft.resize(F.rows(), 2);
@@ -182,8 +187,8 @@ void prepareDataMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 	//double l2 = d2(imax);
 
 	double soft_w = 100;
-	//double hard_w = 0;
-	A = soft_w * Tsoft ;//+ hard_w * Thard;
+	double hard_w = 100;
+	A = soft_w * Tsoft + hard_w * Thard;
 }
 
 

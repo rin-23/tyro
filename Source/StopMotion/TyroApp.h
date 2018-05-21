@@ -48,7 +48,7 @@ namespace tyro
         void align_all_models();
         void align_all_models(int vid, Eigen::Vector3d offset);
         void debug_show_faces_near_edge_selection(const Eigen::VectorXi& uEI, const Eigen::VectorXi& DMAP);
-
+        
         State m_state;
         SelectionPrimitive m_sel_primitive;
         SelectionMethod m_sel_method;

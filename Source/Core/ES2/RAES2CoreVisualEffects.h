@@ -15,6 +15,8 @@ namespace tyro
     class ES2CoreVisualEffects
     {
     public:
+        static ES2VisualEffectSPtr PBR();
+        
         static ES2VisualEffectSPtr ColorPicking();
         
         static ES2VisualEffectSPtr GourandDirectional();

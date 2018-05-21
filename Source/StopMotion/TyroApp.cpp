@@ -13,6 +13,7 @@
 #include "Wm5Vector2.h"
 #include "Wm5Vector4.h"
 
+#include <igl/extract_manifold_patches.h>
 #include <igl/unproject_onto_mesh.h>
 #include <igl/readOBJ.h>
 #include <igl/per_vertex_normals.h>
@@ -27,6 +28,8 @@
 #include <igl/slice.h>
 #include <igl/project.h>
 #include <igl/min_quad_with_fixed.h>
+#include <igl/upsample.h>
+#include <igl/adjacency_list.h>
 
 #include <filesystem/path.h>
 
@@ -38,6 +41,8 @@
 #include "stop_motion.h"
 #include "mesh_split.h"
 #include "segmentation.h"
+
+
 
 using namespace std;
 
@@ -53,6 +58,18 @@ using Eigen::RowVector3d;
 
 using Wm5::APoint;
 
+//converte random soup of unique edges into set of directed edges that form a loop
+/*
+void tyro::get_edge_loop(const Eigen::MatrixXi& SUE,
+                         Eigen::MatrixXi& eid_list, // edges from vid_list
+                         Eigen::VectorXi& EI, // indicies into directed edges matrix
+                         Eigen::VectorXi& uEI, // indicies into undirected edges matrix
+                         Eigen::VectorXi& DMAP
+                         ) 
+{
+
+}
+*/
 void tyro::copy_animation(const tyro::App::MAnimation& source, 
                           tyro::App::MAnimation& dest, 
                           bool topology, 
@@ -145,6 +162,125 @@ namespace tyro
 {   
     namespace
     {   
+        void console_laplacian_smooth_along_edges(App* app, const std::vector<std::string>& args) 
+        {
+              using Eigen::Vector3d;
+            //Taubian smoothing
+            if (app->vid_list.size() > 0 ) 
+            {   
+                for (int iter = 0; iter < 1; ++iter) 
+                {   
+                    const auto& FDV = app->m_frame_data.avg_v_data;
+                    MatrixXd Voriginal = app->m_frame_data.avg_v_data.eval();
+
+                    for (int i = 0; i < app->vid_list.size(); ++i) 
+                    {   
+                        Vector3d Lv;
+                        Lv.setZero();
+                        
+                        int left = i-1; 
+                        int right = i+1; 
+                        
+                        //check if v is boundary, then dont smooth
+                        if (i==0) 
+                        {
+                            left = app->vid_list.size()-1;
+                            right = 1;  
+                        }
+                        else if (i == app->vid_list.size()-1) 
+                        {
+                            left = i-1;
+                            right = 0;  
+                        }
+                        
+                        Vector3d v = FDV.row(app->vid_list[i]);
+                        Vector3d v1 = FDV.row(app->vid_list[left]);
+                        Vector3d v2 = FDV.row(app->vid_list[right]);  
+
+                        double w1 = 0.5;//1.0/(1000*(v1 - v).squaredNorm());
+                        double w2 = 0.5;//1.0/(1000*(v2 - v).squaredNorm());
+                        
+                        Lv += (w1)*v1;
+                        Lv += (w2)*v2;
+                        
+                        //Lv += app->m_frame_data.v_data[app->m_frame].row(vid_n);
+                        Lv = (1.0/(w1+w2)) * Lv - v;
+                        //std::cout<< Lv;
+                        Voriginal.row(app->vid_list[i]) +=  0.5*Lv;
+                        
+                    }
+                    app->m_frame_data.avg_v_data = Voriginal.eval();
+                }
+
+                
+                app->render();
+                glfwPostEmptyEvent;
+            }
+            
+        }
+        
+
+        void console_taubin_smooth_along_edges(App* app, const std::vector<std::string>& args) 
+        {   
+            using Eigen::Vector3d;
+            //Taubian smoothing
+            if (app->vid_list.size() > 0) 
+            {   
+
+                for (int iter = 0; iter < 6; ++iter) 
+                {   
+                    const auto& FDV = app->m_frame_data.avg_v_data;
+                    MatrixXd Voriginal = app->m_frame_data.avg_v_data.eval();
+
+                    for (int i = 0; i < app->vid_list.size(); ++i) 
+                    {   
+                        Vector3d Lv;
+                        Lv.setZero();
+                        
+                        int left = i-1; 
+                        int right = i+1; 
+                        
+                        //check if v is boundary, then dont smooth
+                        if (i==0) 
+                        {
+                            left = app->vid_list.size()-1;
+                            right = 1;  
+                        }
+                        else if (i == app->vid_list.size()-1) 
+                        {
+                            left = i-1;
+                            right = 0;  
+                        }
+                        
+                        Vector3d v = FDV.row(app->vid_list[i]);
+                        Vector3d v1 = FDV.row(app->vid_list[left]);
+                        Vector3d v2 = FDV.row(app->vid_list[right]);  
+
+                        double w1 = 0.5;//1.0/(1000*(v1 - v).squaredNorm());
+                        double w2 = 0.5;//1.0/(1000*(v2 - v).squaredNorm());
+                        
+                        Lv += (w1)*v1;
+                        Lv += (w2)*v2;
+                        
+                        //Lv += app->m_frame_data.v_data[app->m_frame].row(vid_n);
+                        Lv = (1.0/(w1+w2)) * Lv - v;
+                        //std::cout<< Lv;
+                        if (iter%2 == 0)
+                            Voriginal.row(app->vid_list[i]) +=  0.5*Lv;
+                        else
+                            Voriginal.row(app->vid_list[i]) += -0.55*Lv;
+                        
+                    }
+                    app->m_frame_data.avg_v_data = Voriginal.eval();
+                }
+
+                
+                app->render();
+                glfwPostEmptyEvent;
+            }
+            
+        }
+        
         void console_save_serialised_data(App* app, const std::vector<std::string>& args) 
         {   
             if (args.size() != 2) 
@@ -435,8 +571,75 @@ namespace tyro
             }
 
             //TODO:find boundary
+            /*
+            const auto & cE = FD.ue_data;
+            const auto & cEMAP = FD.EMAP;
+            MatrixXi EF, EI;
+
+            igl::edge_flaps(FD.f_data, 
+                            cE, 
+                            cEMAP, 
+                            EF, 
+                            EI);
+            
+            for (int i = 0; i < FD.ue_data.rows(); ++i) 
+            {               
+                int f1 = EF(i, 0);
+                int f2 = EF(i, 1);
+                
+                auto it1 = std::find(app->fid_list.begin(), app->fid_list.end(), f1);
+                auto it2 = std::find(app->fid_list.begin(), app->fid_list.end(), f2);
+                
+                if (it1 != app->fid_list.end() && it2 != app->fid_list.end()) 
+                {   
+                    int idx1 = it1 - app->fid_list.begin();
+                    int idx2 = it2 - app->fid_list.begin();
+                    if (L(idx1) != L(idx2)) 
+                    {
+                        app->eid_list.push_back(i);                        
+                        app->m_frame_data.ec_data.row(i) = Eigen::Vector3d(0,0.0,0.8);
+
+                        Eigen::Vector2i evec = FD.ue_data.row(i);
+                       //if direction is switched after a mapping directed to undirected
+                        if (!(evec(0)== e1(0) && evec(1) == e1(1))) 
+                        {
+                            DMAP(i) = 1;
+                        }
+                    }
+                }
+            }    */ 
         }
         
+        void console_upsample(App* app, const std::vector<std::string> & args) 
+        {
+            auto& FD = app->m_frame_data;
+            Eigen::SparseMatrix<double> S;
+            Eigen::MatrixXi newF;
+            igl::upsample(FD.v_data[0].rows(), FD.f_data, S, newF);
+            FD.f_data = newF;
+
+            for (int i =0; i < FD.v_data.size(); ++i) 
+            {
+                FD.v_data[i] = S * FD.v_data[i];
+                
+                Eigen::MatrixXd N;
+                int num_face = FD.f_data.rows();
+                igl::per_vertex_normals(FD.v_data[i], FD.f_data, N); 
+                FD.n_data[i] = N;
+
+                std::vector<std::vector<int> > uE2E;
+                igl::unique_edge_map(FD.f_data,
+                                     FD.e_data,
+                                     FD.ue_data,
+                                     FD.EMAP,
+                                     uE2E);
+                Eigen::Vector3d face_color(0.5,0.5,0.5);
+                tyro::color_matrix(FD.f_data.rows(), face_color, FD.fc_data);
+                tyro::color_black_matrix(FD.ue_data.rows(), FD.ec_data);
+            }
+
+            app->compute_average();                       
+        }
 
         void console_show_wireframe(App* app, const std::vector<std::string> & args) 
         {
@@ -499,14 +702,39 @@ namespace tyro
         {
             RA_LOG_INFO("Splitting mesh");
             
-            if (app->vid_list.size() == 0) 
-            {
+            if (app->vid_list.size() == 0 || app->m_frame_deformed_data.v_data.size() == 0) 
+            {   
+                RA_LOG_INFO("Not enough information");
                 return;
             }
 
             if (!igl::is_edge_manifold(app->m_frame_deformed_data.f_data)) 
-            {
-                RA_LOG_ERROR_ASSERT("Mesh is not edge manifold");
+            {   
+                Eigen::MatrixXi P;
+                igl::extract_manifold_patches(app->m_frame_deformed_data.f_data, P);
+                //int a = P.minCoeff();
+                //int b = P.maxCoeff();
+                using Eigen::Vector3d;
+                int a = 0, b = 0, c = 0;
+
+                for (int i = 0; i < P.rows(); ++i) 
+                {   
+                    Vector3d clr;
+                    if (P(i,0)==0) {
+                        clr = Vector3d(1,0,0);
+                        a++;}
+                    
+                    if (P(i,0)==1){ 
+                        clr = Vector3d(0,1,0);
+                        b++;}
+
+                    if (P(i,0)==2) { 
+                        clr = Vector3d(0,0,1);
+                        c++;}
+
+                    app->setFaceColor(i, clr);
+                }
+                RA_LOG_ERROR("Mesh is not edge manifold");
                 return;
             }
 
@@ -590,11 +818,12 @@ namespace tyro
         {
             RA_LOG_INFO("running stop motion");
 
-            if (args.size() == 3)
+            if (args.size() == 4)
             {   
                 int num_labels = std::stoi(args[0]);
                 double smooth_weight = std::stof(args[1]);
                 int part_id = std::stoi(args[2]);
+                std::string initmethod = args[3]; 
                 
                 if (app->m_stop_motion.empty())
                 //app->m_stop_motion.clear();
@@ -618,9 +847,11 @@ namespace tyro
                     double result_energy;
                     auto& sm = app->m_stop_motion[i]; 
                     auto& piece = app->m_pieces[i];
-                    
+                    bool kmeans = false;
+                    if (initmethod == "kmeans") kmeans = true; 
                     tyro::stop_motion_vertex_distance(num_labels, 
                                                       smooth_weight,
+                                                      kmeans,
                                                       piece.v_data,
                                                       piece.sequenceIdx,
                                                       piece.f_data,
@@ -670,46 +901,103 @@ namespace tyro
         {
             RA_LOG_INFO("Saving mesh sequence with selected faces");
             
-            if (args.size() == 1 && app->fid_list.size() > 0) 
+            if (args.size() == 2 && app->fid_list.size() > 0) 
             {   
-                auto wheretosave = filesystem::path(args[0]);
-
+                auto& type = args[0];
+                auto wheretosave = filesystem::path(args[1]);
+                
                 MatrixXi newF;
                 VectorXi slice_list = Eigen::Map<VectorXi>(app->fid_list.data(), app->fid_list.size());
                 igl::slice(app->m_frame_data.f_data, slice_list, 1, newF);
                 int start_frame = 0;
-                
-                for (int file = 0; file < app->m_frame_data.sequenceIdx.size(); ++file) 
-                {   
-                    auto folder = filesystem::path(app->FOLDERS[file])/wheretosave;
 
-                    if (!folder.exists()) 
+                //check that the slice is manifold
+                if (!igl::is_edge_manifold(newF)) 
+                {
+                    Eigen::MatrixXi P;
+                    igl::extract_manifold_patches(newF, P);
+                    std::vector<int> Pindx;
+                    for (int fid=0; fid < P.rows(); ++fid) 
                     {
-                        filesystem::create_directory(folder);
+                        if (P(fid,0) == 0) Pindx.push_back(fid); //TODO HACK assume path 0 is the largest one
                     }
-                    
-                    auto objlist_path = folder/filesystem::path("objlist.txt");
-                    int num_frames = app->m_frame_data.sequenceIdx[file];
-                    
-                    ofstream objlist_file;
-                    objlist_file.open (objlist_path.str());
-                
-                    for (int frame = start_frame; frame < start_frame + num_frames; ++frame) 
+                    MatrixXi manifoldF;
+                    slice_list = Eigen::Map<VectorXi>(Pindx.data(), Pindx.size());
+                    igl::slice(newF, slice_list, 1, manifoldF);
+                    newF = manifoldF;
+                }
+
+                if (type == "obj") 
+                {
+                    for (int file = 0; file < app->m_frame_data.sequenceIdx.size(); ++file) 
                     {   
-                        assert(frame < app->m_frame_data.v_data.size());
-                        MatrixXd temp_V;
+                        auto folder = filesystem::path(app->FOLDERS[file])/wheretosave;
+
+                        if (!folder.exists()) 
+                        {
+                            filesystem::create_directory(folder);
+                        }
+                        
+                        auto objlist_path = folder/filesystem::path("objlist.txt");
+                        int num_frames = app->m_frame_data.sequenceIdx[file];
+                        
+                        ofstream objlist_file;
+                        objlist_file.open (objlist_path.str());
+                    
+                        for (int frame = start_frame; frame < start_frame + num_frames; ++frame) 
+                        {   
+                            assert(frame < app->m_frame_data.v_data.size());
+                            MatrixXd temp_V;
+                            MatrixXi temp_F;
+                            VectorXi I;
+                            igl::remove_unreferenced(app->m_frame_data.v_data[frame], newF, temp_V, temp_F, I);
+                            auto file_name = filesystem::path(tyro::pad_zeros(frame) + std::string(".obj"));
+                            auto file_path = folder/file_name; 
+                            igl::writeOBJ(file_path.str(), temp_V, temp_F);
+                            objlist_file << file_name << "\n";
+                        }
+                        
+                        start_frame += num_frames;
+                        
+                        objlist_file.close();             
+                    } 
+                }
+                else if (type == "binary")
+                {     
+                    App::MAnimation to_save;
+                    to_save.v_data.resize(app->m_frame_data.v_data.size());
+                    to_save.n_data.resize(app->m_frame_data.v_data.size());
+                    for (int frame = 0; frame < app->m_frame_data.v_data.size(); ++frame) 
+                    {   
                         MatrixXi temp_F;
                         VectorXi I;
-                        igl::remove_unreferenced(app->m_frame_data.v_data[frame], newF, temp_V, temp_F, I);
-                        auto file_name = filesystem::path(tyro::pad_zeros(frame) + std::string(".obj"));
-                        auto file_path = folder/file_name; 
-                        igl::writeOBJ(file_path.str(), temp_V, temp_F);
-                        objlist_file << file_name << "\n";
-                    }
+                        igl::remove_unreferenced(app->m_frame_data.v_data[frame], newF, to_save.v_data[frame], temp_F, I);
+                        igl::per_vertex_normals(to_save.v_data[frame], temp_F, to_save.n_data[frame]);
+                        if (frame == 0) 
+                        {
+                            to_save.f_data =temp_F;
+                        }
+                    }  
+                
+                    std::vector<std::vector<int> > uE2E;
+                    igl::unique_edge_map(to_save.f_data, 
+                                         to_save.e_data,
+                                         to_save.ue_data,
+                                         to_save.EMAP,
+                                         uE2E);
                     
-                    start_frame += num_frames;
-                    
-                    objlist_file.close();             
+                    //@TODO need this to update camera
+                    Eigen::Vector3d face_color(0.5,0.5,0.5);
+                    tyro::color_matrix(to_save.f_data.rows(), face_color, to_save.fc_data);
+                    tyro::color_black_matrix(to_save.ue_data.rows(), to_save.ec_data);
+
+                    to_save.sequenceIdx = app->m_frame_data.sequenceIdx;
+
+                    auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
+                    auto p = f/filesystem::path(wheretosave);
+                    std::ofstream os(p.str(), std::ios::binary);
+                    cereal::BinaryOutputArchive archive(os);
+                    archive(to_save);
                 }
             }
     
@@ -802,9 +1090,15 @@ namespace tyro
         void console_load_monka(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("load monka");
+            bool serialized = true;
+            if (args.size() == 1) 
+                serialized = std::stoi(args[0]);
+
             //Picked face_id 26093 vertex_id 13681 coord 11.950990 2.934150 16.501955
-            int offset_vid = 13681; // 1222;
-            auto offset = Eigen::Vector3d(11.950990, 2.934150, 16.501955) ; //Eigen::Vector3d(0.613322, 2.613381, 2.238946);
+            //face_id 40217 vertex_id 10585 coord -1.194749 -0.823966 1.658947
+            //Picked face_id 31779 vertex_id 12996 coord 0.012255 1.557947 0.744930
+            int offset_vid = 12996; // 1222;
+            auto offset = Eigen::Vector3d(0.012255, 1.557947, 0.744930) ; //Eigen::Vector3d(0.613322, 2.613381, 2.238946);
         
             app->FOLDERS = 
             {   
@@ -828,21 +1122,39 @@ namespace tyro
                 std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/data/production/obj/06/01/")
             };
 
-            std::vector<std::string> obj_paths;
-            for (auto folder : app->FOLDERS) 
+            if (serialized) 
             {
-                int num_files_read;
+                auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
+                auto p = f/filesystem::path("monka_manifold");
+                std::ifstream in = std::ifstream(p.str(), std::ios::binary);
+                cereal::BinaryInputArchive archive_i(in);
+                archive_i(app->m_frame_data);
+            }
+            else
+            {
+                std::vector<std::string> obj_paths;
+                for (int i = 0; i < app->FOLDERS.size(); ++i) 
+                {
+                    int num_files_read;
 
-                //Add smth
-                //folder += std::string("no_mouth/");
+                    //Add smth
+                    auto folder = app->FOLDERS[i];
+                    folder += std::string("face/");
 
-                RA_LOG_INFO("loading folder %s", folder.data());
-                tyro::obj_file_path_list(folder, "objlist.txt", obj_paths, num_files_read);
-                RA_LOG_INFO("frames read %i", num_files_read);
-                app->m_frame_data.sequenceIdx.push_back(num_files_read);
+                    RA_LOG_INFO("loading folder %s", folder.data());
+                    tyro::obj_file_path_list(folder, "objlist.txt", obj_paths, num_files_read);
+                    RA_LOG_INFO("frames read %i", num_files_read);
+                    app->m_frame_data.sequenceIdx.push_back(num_files_read);
+                    app->load_mesh_sequence(obj_paths, true); //use IGL obj loader
+                }
             }
 
-            app->load_mesh_sequence(obj_paths, true); //use IGL obj loader
+            
+            if (!igl::is_edge_manifold(app->m_frame_data.f_data)) 
+            {   
+                RA_LOG_ERROR_ASSERT("not manifold");
+                return;
+            }
             app->m_timeline->SetFrameRange(app->m_frame_data.v_data.size()-1);
 
             //app->align_all_models(offset_vid, offset);
@@ -855,7 +1167,7 @@ namespace tyro
 
             app->m_update_camera = true;
             app->m_state = App::State::LoadedModel;
-//            app->compute_average();
+            app->compute_average();
 
             app->m_weights.VW.resize(app->m_frame_data.v_data[0].rows());
             app->m_weights.VW.setOnes();
@@ -863,6 +1175,7 @@ namespace tyro
             app->m_weights.FW.resize(app->m_frame_data.f_data.rows());
             app->m_weights.FW.setOnes();
             
+            app->compute_average();
 
             app->render();
         }
@@ -904,7 +1217,7 @@ namespace tyro
                 RA_LOG_WARN("Need vertex/face selection and average mesh to compute deformation")
                 return;
             }
-            
+            //app->m_frame_deformed_data.v_data.clear();
             bool result = tyro::compute_deformation(app->vid_list, 
                                                     app->fid_list,
                                                     app->m_frame_data.v_data,
@@ -1063,7 +1376,10 @@ namespace tyro
         
         register_console_function("draw_vertex_weight_map", console_draw_vertex_weight_map, "");
         register_console_function("draw_face_weight_map", console_draw_face_weight_map, "");
-        
+        register_console_function("upsample", console_upsample, "");
+        register_console_function("taubin_smooth_along_edges", console_taubin_smooth_along_edges, "");
+        register_console_function("laplacian_smooth_along_edges", console_laplacian_smooth_along_edges, "");
+
         m_state = App::State::Launched;
         // Loop until the user closes the window
         m_tyro_window->GetGLContext()->swapBuffers();
@@ -1121,6 +1437,7 @@ namespace tyro
                         render_data.org_mesh_wire->Update(true);
                         vis_set.Insert(render_data.org_mesh_wire.get());
                     }
+                    
                     if (m_computed_avg) 
                     {
                         auto mesh = IGLMesh::Create(m_frame_data.avg_v_data, 
@@ -1134,6 +1451,19 @@ namespace tyro
 
                         render_data.avg_mesh = mesh;
                         vis_set.Insert(mesh.get());
+
+                       //create renderable for mesh wireframe
+                        if (m_show_wireframe)
+                        {
+                            auto wire = IGLMeshWireframe::Create(m_frame_data.avg_v_data, 
+                                                                 m_frame_data.ue_data,
+                                                                 m_frame_data.ec_data);
+                            wire->LocalTransform = tr * wire->LocalTransform;
+                            wire->Update(true);
+                            render_data.avg_mesh_wire = wire;
+                            vis_set.Insert(render_data.avg_mesh_wire.get());
+                        }
+                    
                     }
 
                     //DEFORMED MODEL
@@ -1155,7 +1485,7 @@ namespace tyro
                         {
                             auto wire = IGLMeshWireframe::Create(m_frame_deformed_data.v_data[m_frame], 
                                                                  m_frame_deformed_data.ue_data,
-                                                                 m_frame_deformed_data.ec_data);
+                                                                 m_frame_data.ec_data);
                             wire->LocalTransform = tr * wire->LocalTransform;
                             wire->Update(true);
                             render_data.dfm_mesh_wire = wire;
@@ -1370,7 +1700,7 @@ namespace tyro
     void App::addSphere(int vid, Wm5::Vector4f color) 
     {   
         Eigen::RowVector3d new_c = m_frame_data.v_data[m_frame].row(vid);
-        ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.001);
+        ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.007);
         Wm5::Transform tr;
         tr.SetTranslate(Wm5::APoint(new_c(0), new_c(1), new_c(2)));
         object->LocalTransform = tr * object->LocalTransform;
@@ -1426,8 +1756,11 @@ namespace tyro
         auto offset = Eigen::Vector3d(0.268563, 3.142050, 2.504273) ; //Eigen::Vector3d(0.613322, 2.613381, 2.238946);
        
         FOLDERS = 
-        {               
+        {   
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/just_face")
+                    
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/02/01/"),
+            
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/02/02/"),
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/02/03/"),
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/02/04/"),
@@ -1491,7 +1824,7 @@ namespace tyro
         if (serialized) 
         {   
             auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
-            auto p = f/filesystem::path("bunny.cereal");
+            auto p = f/filesystem::path("bunny_frames_upsampled");
             std::ifstream in = std::ifstream(p.str(), std::ios::binary);
             cereal::BinaryInputArchive archive_i(in);
             archive_i(m_frame_data);
@@ -1504,10 +1837,10 @@ namespace tyro
                 int num_files_read;
 
                 //Add smth
-                folder += std::string("no_mouth/");
+                //folder += std::string("no_mouth/");
 
                 RA_LOG_INFO("loading folder %s", folder.data());
-                tyro::obj_file_path_list(folder, "objlist.txt", obj_paths, num_files_read);
+                tyro::obj_file_path_list(folder, "objlist2.txt", obj_paths, num_files_read);
                 RA_LOG_INFO("frames read %i", num_files_read);
                 m_frame_data.sequenceIdx.push_back(num_files_read);
             }
@@ -1595,7 +1928,7 @@ namespace tyro
         int fid;
         while (myfile >> fid)
         {
-            printf("%i ", fid);
+            //printf("%i ", fid);
             
             auto it = std::find(fid_list.begin(), fid_list.end(), fid);
             if (it == fid_list.end()) 
@@ -1619,7 +1952,7 @@ namespace tyro
         int vid;
         while (myfile >> vid)
         {
-            printf("%i ", vid);
+            //printf("%i ", vid);
             vid_list.push_back(vid);
             addSphere(vid);
         }

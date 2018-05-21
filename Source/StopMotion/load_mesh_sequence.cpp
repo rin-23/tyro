@@ -7,6 +7,7 @@
 #include "tiny_obj_loader.h"
 #include <igl/unique_edge_map.h>
 #include "RALogManager.h"
+#include <igl/upsample.h>
 
 namespace tyro 
 {   
@@ -24,13 +25,21 @@ namespace tyro
             bool saved_faces = false;
             for (auto& line : obj_paths)
             {  
-                RA_LOG_INFO("Reading file %s", line.data());
+                //RA_LOG_INFO("Reading file %s", line.data());
                 if (line[0] == '#') //skip comments
                     continue;
 
-                Eigen::MatrixXd V, N;
+                Eigen::MatrixXd oldV;
+                Eigen::MatrixXi oldF;
+                igl::readOBJ(line, oldV, oldF);
+                
+                //upsample
+                Eigen::SparseMatrix<double> S;
                 Eigen::MatrixXi F;
-                igl::readOBJ(line, V, F);
+                igl::upsample(oldV.rows(), oldF, S, F);
+                Eigen::MatrixXd V = (S*oldV).eval();
+                
+                Eigen::MatrixXd N;
                 int num_face = F.rows();
                 igl::per_vertex_normals(V, F, N); 
 

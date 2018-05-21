@@ -14,6 +14,42 @@
 namespace tyro
 {
 
+ES2VisualEffectSPtr ES2CoreVisualEffects::PBR() 
+{
+    ES2ShaderProgram* shader = new ES2ShaderProgram();
+    shader->LoadProgram(GetFilePath("1.1.pbr", "vsh"), GetFilePath("1.1.pbr", "fsh"));
+    
+    ES2VertexFormat* vertexFormat = new ES2VertexFormat(2);
+    vertexFormat->SetAttribute(0, shader->GetAttributeLocation("aPos"), 0, ES2VertexFormat::AT_FLOAT3, ES2VertexFormat::AU_POSITION);
+    vertexFormat->SetAttribute(1, shader->GetAttributeLocation("aNormal"), vertexFormat->GetOffsetForNextAttrib(0), ES2VertexFormat::AT_FLOAT3, ES2VertexFormat::AU_NORMAL);
+    //vertexFormat->SetAttribute(2, shader->GetAttributeLocation("aClr"), vertexFormat->GetOffsetForNextAttrib(1), ES2VertexFormat::AT_FLOAT3, ES2VertexFormat::AU_COLOR);
+    
+    ES2ShaderUniforms* uniforms = new ES2ShaderUniforms(13);
+    uniforms->SetUniform(0, shader->GetUniformLocation("projection"), 1, "projection", ES2ShaderUniforms::UniformMatrix4fv);
+    uniforms->SetUniform(1, shader->GetUniformLocation("view"), 1, "view", ES2ShaderUniforms::UniformMatrix4fv);
+    uniforms->SetUniform(2, shader->GetUniformLocation("model"), 1, "model", ES2ShaderUniforms::UniformMatrix4fv);
+    
+    uniforms->SetUniform(3, shader->GetUniformLocation("albedo"), 1, "albedo", ES2ShaderUniforms::Uniform3fv);
+    uniforms->SetUniform(4, shader->GetUniformLocation("metallic"), 1, "metallic", ES2ShaderUniforms::Uniform1fv);
+    uniforms->SetUniform(5, shader->GetUniformLocation("roughness"), 1, "roughness", ES2ShaderUniforms::Uniform1fv);
+    uniforms->SetUniform(6, shader->GetUniformLocation("ao"), 1, "ao", ES2ShaderUniforms::Uniform1fv);
+
+    uniforms->SetUniform(7, shader->GetUniformLocation("lightPositions[0]"), 1, "lightPositions[0]", ES2ShaderUniforms::Uniform3fv);
+    uniforms->SetUniform(8, shader->GetUniformLocation("lightPositions[1]"), 1, "lightPositions[1]", ES2ShaderUniforms::Uniform3fv);
+    uniforms->SetUniform(9, shader->GetUniformLocation("lightPositions[2]"), 1, "lightPositions[2]", ES2ShaderUniforms::Uniform3fv);
+    uniforms->SetUniform(10, shader->GetUniformLocation("lightPositions[3]"), 1, "lightPositions[3]", ES2ShaderUniforms::Uniform3fv);
+
+    uniforms->SetUniform(11, shader->GetUniformLocation("lightColors"), 1, "lightColors", ES2ShaderUniforms::Uniform3fv);
+    uniforms->SetUniform(12, shader->GetUniformLocation("camPos"), 1, "camPos", ES2ShaderUniforms::Uniform3fv);
+    
+    //uniforms->SetUniform(10, shader->GetUniformLocation("norm"), 1, "norm", ES2ShaderUniforms::UniformMatrix3fv);
+
+
+    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms, new ES2AlphaState(), new ES2CullState(), new ES2DepthState(), new ES2PolygonOffset()));
+
+    return effect;
+}
+
 ES2VisualEffectSPtr ES2CoreVisualEffects::ColorPicking()
 {
     //Load shaders
@@ -62,10 +98,10 @@ ES2VisualEffectSPtr ES2CoreVisualEffects::GourandDirectionalWithVColor()
     ES2ShaderProgram* shader = new ES2ShaderProgram();
     shader->LoadProgram(GetFilePath("GourandDirectionalWithVColor", "vsh"), GetFilePath("GourandDirectionalWithVColor", "fsh"));
     
-    ES2VertexFormat* vertexFormat = new ES2VertexFormat(3);
+    ES2VertexFormat* vertexFormat = new ES2VertexFormat(2);
     vertexFormat->SetAttribute(0, shader->GetAttributeLocation("aPosition"), 0, ES2VertexFormat::AT_FLOAT3, ES2VertexFormat::AU_POSITION);
     vertexFormat->SetAttribute(1, shader->GetAttributeLocation("aNormal"), vertexFormat->GetOffsetForNextAttrib(0), ES2VertexFormat::AT_FLOAT3, ES2VertexFormat::AU_NORMAL);
-    vertexFormat->SetAttribute(2, shader->GetAttributeLocation("aColor"), vertexFormat->GetOffsetForNextAttrib(1), ES2VertexFormat::AT_FLOAT3, ES2VertexFormat::AU_COLOR);
+    //vertexFormat->SetAttribute(2, shader->GetAttributeLocation("aColor"), vertexFormat->GetOffsetForNextAttrib(1), ES2VertexFormat::AT_FLOAT3, ES2VertexFormat::AU_COLOR);
     
     ES2ShaderUniforms* uniforms = new ES2ShaderUniforms(2);
     uniforms->SetUniform(0, shader->GetUniformLocation("uMVPMatrix"), 1, "uMVPMatrix", ES2ShaderUniforms::UniformMatrix4fv);
