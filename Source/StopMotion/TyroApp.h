@@ -100,74 +100,74 @@ namespace tyro
         
         struct MRenderData 
         {
-            IGLMeshSPtr org_mesh;
-            IGLMeshWireframeSPtr org_mesh_wire;
+            IGLMeshSPtr mesh;
+            IGLMeshWireframeSPtr mesh_wire;
             bool org_visible = true;
 
-            IGLMeshSPtr avg_mesh;
-            IGLMeshWireframeSPtr avg_mesh_wire;
+            IGLMeshSPtr avg;
+            IGLMeshWireframeSPtr avg_wire;
             bool avg_visible = true;
 
-            IGLMeshSPtr dfm_mesh;
-            IGLMeshWireframeSPtr dfm_mesh_wire;            
+            IGLMeshSPtr dfm;
+            IGLMeshWireframeSPtr dfm_wire;            
             bool dfm_visible;
 
-            std::vector<IGLMeshSPtr> stop_motion_meshes;
-            std::vector<IGLMeshWireframeSPtr> stop_motion_meshes_wire;
+            std::vector<IGLMeshSPtr> stop;
+            std::vector<IGLMeshWireframeSPtr> stop_wire;
             bool stop_motion_visible = true;
 
-            std::vector<IGLMeshSPtr> part_meshes;
-            std::vector<IGLMeshWireframeSPtr> part_meshes_wire;
+            std::vector<IGLMeshSPtr> part;
+            std::vector<IGLMeshWireframeSPtr> part_wire;
             bool parts_visible = true;
 
-            std::vector<IGLMeshSPtr> error_meshes;
+            std::vector<IGLMeshSPtr> error;
             //std::vector<IGLMeshWireframeSPtr> stop_motion_meshes_wire;
             
         };
-        MRenderData render_data;
+        MRenderData RENDER;
 
         struct MAnimation 
         {   
             std::string unique_name;  // not unique in our implementation. used to search in array
-            std::vector<Eigen::MatrixXd> v_data; // Vertex data. 3*num_vert by num_frames. 
-            std::vector<Eigen::MatrixXd> n_data; // Normal data. 3*num_vert by num_frames. 
-            Eigen::MatrixXi f_data; // Face data. 
-            Eigen::MatrixXi e_data; // Edge data.
-            Eigen::MatrixXi ue_data; // Uniqie edge data
+            std::vector<Eigen::MatrixXd> VD; // Vertex data. 3*num_vert by num_frames. 
+            std::vector<Eigen::MatrixXd> ND; // Normal data. 3*num_vert by num_frames. 
+            Eigen::MatrixXi F; // Face data. 
+            Eigen::MatrixXi E; // Edge data.
+            Eigen::MatrixXi UE; // Uniqie edge data
             Eigen::VectorXi EMAP; // Map directed edges to unique edges. 
-            Eigen::MatrixXd fc_data; // Face Color data
-            Eigen::MatrixXd ec_data; // Edge color data
-            Eigen::MatrixXd avg_v_data; // average of v_data
-            std::vector<int> sequenceIdx; //
+            Eigen::MatrixXd FC; // Face Color data
+            Eigen::MatrixXd UEC; // Edge color data
+            Eigen::MatrixXd AvgVD; // average of v_data
+            std::vector<int> SIdx; //
             std::vector<Eigen::VectorXd> AO;
             template<class Archive>
             void save(Archive & archive) const
             {
-                archive(v_data);
-                archive(n_data);
-                archive(f_data);
-                archive(e_data);
-                archive(ue_data);
+                archive(VD);
+                archive(ND);
+                archive(F);
+                archive(E);
+                archive(UE);
                 archive(EMAP);
-                archive(fc_data);
-                archive(ec_data);
-                archive(avg_v_data);
-                archive(sequenceIdx);
+                archive(FC);
+                archive(UEC);
+                archive(AvgVD);
+                archive(SIdx);
             }
             
             template<class Archive>
             void load(Archive & archive)
             {
-                archive(v_data);
-                archive(n_data);
-                archive(f_data);
-                archive(e_data);
-                archive(ue_data);
+                archive(VD);
+                archive(ND);
+                archive(F);
+                archive(E);
+                archive(UE);
                 archive(EMAP);
-                archive(fc_data);
-                archive(ec_data);
-                archive(avg_v_data);
-                archive(sequenceIdx);            
+                archive(FC);
+                archive(UEC);
+                archive(AvgVD);
+                archive(SIdx);            
             }
         };
 
@@ -206,10 +206,10 @@ namespace tyro
         };
         PrimitiveWeights m_weights;
 
-        MAnimation m_frame_data; //Original animation data        
-        MAnimation m_frame_deformed_data; // Animation data after we smooth the seam(s)
-        std::vector<MAnimation> m_pieces; // Break deformed mesh into pieces along seam(s).
-        std::vector<MStopMotion> m_stop_motion; // Stop motion animate pieces
+        MAnimation ANIM; //Original animation data        
+        MAnimation DANIM; // Animation data after we smooth the seam(s)
+        std::vector<MAnimation> PIECES; // Break deformed mesh into pieces along seam(s).
+        std::vector<MStopMotion> SMOTION; // Stop motion animate pieces
         std::vector<std::vector<Eigen::VectorXd>> m_error;
         float max_error;
         std::vector<std::string> FOLDERS;

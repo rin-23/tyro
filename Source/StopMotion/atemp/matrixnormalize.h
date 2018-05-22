@@ -8,7 +8,7 @@
 
 namespace tyro 
 {
-void matrixnomalize(const Eigen::MatrixXd& M, MatrixXd& N) 
+void matrixnomalize(const Eigen::MatrixXd& M, Eigen::MatrixXd& N) 
 {
     //N = (M-min(M(:)))./(max(M(:))-min(M(:)));
     double minCoeff = M.minCoeff();

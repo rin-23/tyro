@@ -81,17 +81,17 @@ void tyro::copy_animation(const tyro::App::MAnimation& source,
 {
     if (topology) 
     {
-        dest.f_data = source.f_data;
-        dest.e_data = source.e_data;
-        dest.ue_data = source.ue_data;
+        dest.F = source.F;
+        dest.E = source.E;
+        dest.UE = source.UE;
         dest.EMAP = source.EMAP;
     }
 
     if (face_color)
-        dest.fc_data = source.fc_data;
+        dest.FC = source.FC;
     
     if (edge_color)
-        dest.ec_data = source.ec_data;
+        dest.UEC = source.UEC;
 }
 
 void tyro::color_black_matrix(int rows, Eigen::MatrixXd& uC)
@@ -183,19 +183,19 @@ namespace
 
             std::cout << m.rows() << " " << m.cols() <<  std::endl;
 
-            int num_parts = app->m_stop_motion.size();
-            int num_frames = app->m_frame_data.v_data.size();
+            int num_parts = app->SMOTION.size();
+            int num_frames = app->ANIM.VD.size();
             app->m_error.resize(num_parts);
             app->max_error = std::numeric_limits<float>::min();
             for (int p = 0; p < num_parts; ++p) 
             {   
-                if (app->m_stop_motion[p].computed) 
+                if (app->SMOTION[p].computed) 
                 {
                     app->m_error[p].resize(num_frames); 
                     for (int frame=0; frame < num_frames; ++frame) 
                     {                   
-                        //VC[frame].resize(FD.v_data[0].rows());
-                        VectorXd lul = (app->m_pieces[p].v_data[frame] - app->m_stop_motion[p].anim.v_data[frame]).rowwise().squaredNorm();  
+                        //VC[frame].resize(FD.VD[0].rows());
+                        VectorXd lul = (app->PIECES[p].VD[frame] - app->SMOTION[p].anim.VD[frame]).rowwise().squaredNorm();  
                         float max = lul.maxCoeff();
                         app->max_error = std::max(app->max_error, max); 
                         app->m_error[p][frame] = lul;                          
@@ -225,8 +225,8 @@ namespace
             {   
                 for (int iter = 0; iter < 1; ++iter) 
                 {   
-                    const auto& FDV = app->m_frame_data.avg_v_data;
-                    MatrixXd Voriginal = app->m_frame_data.avg_v_data.eval();
+                    const auto& FDV = app->ANIM.AvgVD;
+                    MatrixXd Voriginal = app->ANIM.AvgVD.eval();
 
                     for (int i = 0; i < app->vid_list.size(); ++i) 
                     {   
@@ -258,13 +258,13 @@ namespace
                         Lv += (w1)*v1;
                         Lv += (w2)*v2;
                         
-                        //Lv += app->m_frame_data.v_data[app->m_frame].row(vid_n);
+                        //Lv += app->ANIM.VD[app->m_frame].row(vid_n);
                         Lv = (1.0/(w1+w2)) * Lv - v;
                         //std::cout<< Lv;
                         Voriginal.row(app->vid_list[i]) +=  0.5*Lv;
                         
                     }
-                    app->m_frame_data.avg_v_data = Voriginal.eval();
+                    app->ANIM.AvgVD = Voriginal.eval();
                 }
 
                 
@@ -284,8 +284,8 @@ namespace
 
                 for (int iter = 0; iter < 6; ++iter) 
                 {   
-                    const auto& FDV = app->m_frame_data.avg_v_data;
-                    MatrixXd Voriginal = app->m_frame_data.avg_v_data.eval();
+                    const auto& FDV = app->ANIM.AvgVD;
+                    MatrixXd Voriginal = app->ANIM.AvgVD.eval();
 
                     for (int i = 0; i < app->vid_list.size(); ++i) 
                     {   
@@ -317,7 +317,7 @@ namespace
                         Lv += (w1)*v1;
                         Lv += (w2)*v2;
                         
-                        //Lv += app->m_frame_data.v_data[app->m_frame].row(vid_n);
+                        //Lv += app->ANIM.VD[app->m_frame].row(vid_n);
                         Lv = (1.0/(w1+w2)) * Lv - v;
                         //std::cout<< Lv;
                         if (iter%2 == 0)
@@ -326,7 +326,7 @@ namespace
                             Voriginal.row(app->vid_list[i]) += -0.55*Lv;
                         
                     }
-                    app->m_frame_data.avg_v_data = Voriginal.eval();
+                    app->ANIM.AvgVD = Voriginal.eval();
                 }
 
                 
@@ -351,27 +351,27 @@ namespace
             
             if (type == "frames") 
             {
-                archive(app->m_frame_data);
+                archive(app->ANIM);
             } 
             else if (type == "deform") 
             {
-                archive(app->m_frame_deformed_data);
+                archive(app->DANIM);
             }
             else if (type == "split") 
             {
-                archive(app->m_pieces);
+                archive(app->PIECES);
             }
             else if (type == "stop") 
             {
-                archive(app->m_stop_motion);
+                archive(app->SMOTION);
             }
             else if (type == "stop_low") 
             {
-                archive(app->m_stop_motion[1]);
+                archive(app->SMOTION[1]);
             }
             else if (type == "stop_up") 
             {
-                archive(app->m_stop_motion[0]);
+                archive(app->SMOTION[0]);
             }
         }
 
@@ -391,13 +391,13 @@ namespace
             
             if (type == "frames") 
             {
-                archive(app->m_frame_data);
+                archive(app->ANIM);
 
-                app->m_timeline->SetFrameRange(app->m_frame_data.v_data.size()-1);
+                app->m_timeline->SetFrameRange(app->ANIM.VD.size()-1);
 
                 //Compute radius of the bounding box of the model
                 AxisAlignedBBox bbox;
-                MatrixXd VT = app->m_frame_data.v_data[0].transpose();
+                MatrixXd VT = app->ANIM.VD[0].transpose();
                 bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
                 app->m_model_offset = bbox.GetRadius(); 
 
@@ -406,22 +406,22 @@ namespace
             } 
             else if (type == "deform") 
             {
-                archive(app->m_frame_deformed_data);
+                archive(app->DANIM);
                 app->m_computed_deformation = true;
                 app->m_update_camera = true;
             }
             else if (type == "split") 
             {
-                archive(app->m_pieces);
+                archive(app->PIECES);
                 app->m_computed_parts = true;            
                 app->m_update_camera = true;
             }
             else if (type == "stop") 
             {
-                archive(app->m_stop_motion);
-                for (int i = 0; i < app->m_stop_motion.size(); ++i)
-                    if (app->m_stop_motion[i].anim.v_data.size() > 0)
-                        app->m_stop_motion[i].computed = true;
+                archive(app->SMOTION);
+                for (int i = 0; i < app->SMOTION.size(); ++i)
+                    if (app->SMOTION[i].anim.VD.size() > 0)
+                        app->SMOTION[i].computed = true;
                 
                 app->m_computed_stop_motion = true;
                 app->m_update_camera = true;
@@ -429,22 +429,22 @@ namespace
             }
             else if (type == "stop_low") 
             {   
-                if (app->m_stop_motion.empty())
-                    app->m_stop_motion.resize(2);
+                if (app->SMOTION.empty())
+                    app->SMOTION.resize(2);
                 
-                archive(app->m_stop_motion[1]);
-                app->m_stop_motion[1].computed = true;
+                archive(app->SMOTION[1]);
+                app->SMOTION[1].computed = true;
                 
                 app->m_computed_stop_motion = true;
                 app->m_update_camera = true;
             }
             else if (type == "stop_up") 
             {
-                if (app->m_stop_motion.empty())
-                    app->m_stop_motion.resize(2);
+                if (app->SMOTION.empty())
+                    app->SMOTION.resize(2);
                 
-                archive(app->m_stop_motion[0]);
-                app->m_stop_motion[0].computed = true;
+                archive(app->SMOTION[0]);
+                app->SMOTION[0].computed = true;
                 
                 app->m_computed_stop_motion = true;
                 app->m_update_camera = true;
@@ -458,7 +458,7 @@ namespace
             app->vid_list.clear();
             app->ball_list.clear();
             
-            for (int fid = 0; fid < app->m_frame_data.f_data.rows(); ++fid) 
+            for (int fid = 0; fid < app->ANIM.F.rows(); ++fid) 
             {
                 app->setFaceColor(fid, false);
             }
@@ -477,7 +477,7 @@ namespace
 
         void console_clear_face_selection(App* app, const std::vector<std::string>& args) 
         {
-            for (int fid = 0; fid < app->m_frame_data.f_data.rows(); ++fid) 
+            for (int fid = 0; fid < app->ANIM.F.rows(); ++fid) 
             {
                 app->setFaceColor(fid, false);
             }
@@ -556,13 +556,13 @@ namespace
 
             double smooth_weight = (double)std::stoi(args[0]);
             
-            const auto& FD = app->m_frame_data;
+            //const auto& FD = app->ANIM;
 
             VectorXi L;
             VectorXi flist1 = Eigen::Map<VectorXi>(app->fid_list.data(), 
                                                    app->fid_list.size());
             MatrixXi F;
-            igl::slice(FD.f_data, flist1, 1, F); 
+            igl::slice(app->ANIM.F, flist1, 1, F); 
 
             VectorXi seeds2, seeds3; //foreground and background         
             seeds2.resize(app->fid_list2.size());
@@ -595,15 +595,15 @@ namespace
 
             std::vector<MatrixXd> v_data;
             MatrixXi NF, I;
-            for (int i = 0; i < FD.v_data.size(); ++i) 
+            for (int i = 0; i < app->ANIM.VD.size(); ++i) 
             {   
                 MatrixXd NV;
-                igl::remove_unreferenced(FD.v_data[i], F, NV, NF, I);
+                igl::remove_unreferenced(app->ANIM.VD[i], F, NV, NF, I);
                 v_data.push_back(NV);
             }
 
             MatrixXd Vavg;
-            igl::remove_unreferenced(FD.avg_v_data, F, Vavg, NF, I);
+            igl::remove_unreferenced(app->ANIM.AvgVD, F, Vavg, NF, I);
                     
             tyro::segmentation(v_data, 
                                NF,
@@ -652,7 +652,7 @@ namespace
                     if (L(idx1) != L(idx2)) 
                     {
                         app->eid_list.push_back(i);                        
-                        app->m_frame_data.ec_data.row(i) = Eigen::Vector3d(0,0.0,0.8);
+                        app->ANIM.UEC.row(i) = Eigen::Vector3d(0,0.0,0.8);
 
                         Eigen::Vector2i evec = FD.ue_data.row(i);
                        //if direction is switched after a mapping directed to undirected
@@ -667,30 +667,29 @@ namespace
         
         void console_upsample(App* app, const std::vector<std::string> & args) 
         {
-            auto& FD = app->m_frame_data;
             Eigen::SparseMatrix<double> S;
             Eigen::MatrixXi newF;
-            igl::upsample(FD.v_data[0].rows(), FD.f_data, S, newF);
-            FD.f_data = newF;
+            igl::upsample(app->ANIM.VD[0].rows(), app->ANIM.F, S, newF);
+            app->ANIM.F = newF;
 
-            for (int i =0; i < FD.v_data.size(); ++i) 
+            for (int i =0; i < app->ANIM.VD.size(); ++i) 
             {
-                FD.v_data[i] = S * FD.v_data[i];
+                app->ANIM.VD[i] = S * app->ANIM.VD[i];
                 
                 Eigen::MatrixXd N;
-                int num_face = FD.f_data.rows();
-                igl::per_vertex_normals(FD.v_data[i], FD.f_data, N); 
-                FD.n_data[i] = N;
+                int num_face = app->ANIM.F.rows();
+                igl::per_vertex_normals(app->ANIM.VD[i], app->ANIM.F, N); 
+                app->ANIM.ND[i] = N;
 
                 std::vector<std::vector<int> > uE2E;
-                igl::unique_edge_map(FD.f_data,
-                                     FD.e_data,
-                                     FD.ue_data,
-                                     FD.EMAP,
+                igl::unique_edge_map(app->ANIM.F,
+                                     app->ANIM.E,
+                                     app->ANIM.UE,
+                                     app->ANIM.EMAP,
                                      uE2E);
                 Eigen::Vector3d face_color(0.5,0.5,0.5);
-                tyro::color_matrix(FD.f_data.rows(), face_color, FD.fc_data);
-                tyro::color_black_matrix(FD.ue_data.rows(), FD.ec_data);
+                tyro::color_matrix(app->ANIM.F.rows(), face_color, app->ANIM.FC);
+                tyro::color_black_matrix(app->ANIM.UE.rows(), app->ANIM.UEC);
             }
 
             app->compute_average();                       
@@ -732,9 +731,9 @@ namespace
             MatrixXi eid_list;
             VectorXi EI, uEI, DMAP;
             convert_vertex_to_edge_selection(app->vid_list, 
-                                             app->m_frame_data.e_data, 
-                                             app->m_frame_data.ue_data, 
-                                             app->m_frame_data.EMAP,
+                                             app->ANIM.E, 
+                                             app->ANIM.UE, 
+                                             app->ANIM.EMAP,
                                              eid_list, 
                                              EI, 
                                              uEI, 
@@ -742,7 +741,7 @@ namespace
         
             for (int i = 0; i < uEI.size(); ++i) 
             {   
-                app->m_frame_data.ec_data.row(uEI(i)) = Eigen::Vector3d(0,0.8,0);
+                app->ANIM.UEC.row(uEI(i)) = Eigen::Vector3d(0,0.8,0);
             }
             
             //debug_show_faces_near_edge_selection(uEI, DMAP);       
@@ -757,16 +756,16 @@ namespace
         {
             RA_LOG_INFO("Splitting mesh");
             
-            if (app->vid_list.size() == 0 || app->m_frame_deformed_data.v_data.size() == 0) 
+            if (app->vid_list.size() == 0 || app->DANIM.VD.size() == 0) 
             {   
                 RA_LOG_INFO("Not enough information");
                 return;
             }
 
-            if (!igl::is_edge_manifold(app->m_frame_deformed_data.f_data)) 
+            if (!igl::is_edge_manifold(app->DANIM.F)) 
             {   
                 Eigen::MatrixXi P;
-                igl::extract_manifold_patches(app->m_frame_deformed_data.f_data, P);
+                igl::extract_manifold_patches(app->DANIM.F, P);
                 //int a = P.minCoeff();
                 //int b = P.maxCoeff();
                 using Eigen::Vector3d;
@@ -796,9 +795,9 @@ namespace
             MatrixXi eid_list;
             VectorXi EI, uEI, DMAP;
             convert_vertex_to_edge_selection(app->vid_list, 
-                                             app->m_frame_deformed_data.e_data, 
-                                             app->m_frame_deformed_data.ue_data, 
-                                             app->m_frame_deformed_data.EMAP,
+                                             app->DANIM.E, 
+                                             app->DANIM.UE, 
+                                             app->DANIM.EMAP,
                                              eid_list, 
                                              EI, 
                                              uEI, 
@@ -806,49 +805,49 @@ namespace
         
 
             MatrixXi F1, F2;
-            tyro::mesh_split(app->m_frame_deformed_data.f_data,
+            tyro::mesh_split(app->DANIM.F,
                              uEI,
                              DMAP, 
                              F1, 
                              F2);
             
-            app->m_pieces.resize(2);
-            auto& A1 = app->m_pieces[0];
-            auto& A2 = app->m_pieces[1];
-            A1.v_data.resize(app->m_frame_deformed_data.v_data.size());
-            A2.v_data.resize(app->m_frame_deformed_data.v_data.size());
-            A1.n_data.resize(app->m_frame_deformed_data.v_data.size());
-            A2.n_data.resize(app->m_frame_deformed_data.v_data.size());
+            app->PIECES.resize(2);
+            auto& A1 = app->PIECES[0];
+            auto& A2 = app->PIECES[1];
+            A1.VD.resize(app->DANIM.VD.size());
+            A2.VD.resize(app->DANIM.VD.size());
+            A1.ND.resize(app->DANIM.VD.size());
+            A2.ND.resize(app->DANIM.VD.size());
             
-            A1.sequenceIdx = app->m_frame_data.sequenceIdx;
-            A2.sequenceIdx = app->m_frame_data.sequenceIdx;
+            A1.SIdx = app->ANIM.SIdx;
+            A2.SIdx = app->ANIM.SIdx;
             
-            for (int i = 0; i < app->m_frame_data.v_data.size(); ++i) 
+            for (int i = 0; i < app->ANIM.VD.size(); ++i) 
             {                   
                 MatrixXi I1, I2;    
-                igl::remove_unreferenced(app->m_frame_deformed_data.v_data[i], 
+                igl::remove_unreferenced(app->DANIM.VD[i], 
                                          F1, 
-                                         A1.v_data[i], 
-                                         A1.f_data, 
+                                         A1.VD[i], 
+                                         A1.F, 
                                          I1);
 
-                igl::per_vertex_normals(A1.v_data[i], A1.f_data, A1.n_data[i]);
+                igl::per_vertex_normals(A1.VD[i], A1.F, A1.ND[i]);
                 std::vector<std::vector<int> > uE2E1;
-                igl::unique_edge_map(A1.f_data,A1.e_data,A1.ue_data,A1.EMAP,uE2E1);
-                tyro::color_matrix(A1.f_data.rows(), Eigen::Vector3d(0.2,0.2,0.2), A1.fc_data);
-                tyro::color_black_matrix(A1.e_data.rows(), A1.ec_data);
+                igl::unique_edge_map(A1.F,A1.E,A1.UE,A1.EMAP,uE2E1);
+                tyro::color_matrix(A1.F.rows(), Eigen::Vector3d(0.2,0.2,0.2), A1.FC);
+                tyro::color_black_matrix(A1.UE.rows(), A1.UEC);
 
-                igl::remove_unreferenced(app->m_frame_deformed_data.v_data[i], 
+                igl::remove_unreferenced(app->DANIM.VD[i], 
                                          F2, 
-                                         A2.v_data[i], 
-                                         A2.f_data, 
+                                         A2.VD[i], 
+                                         A2.F, 
                                          I2);
                 
-                igl::per_vertex_normals(A2.v_data[i], A2.f_data, A2.n_data[i]);
+                igl::per_vertex_normals(A2.VD[i], A2.F, A2.ND[i]);
                 std::vector<std::vector<int> > uE2E2;
-                igl::unique_edge_map(A2.f_data,A2.e_data,A2.ue_data,A2.EMAP,uE2E2);
-                tyro::color_matrix(A2.f_data.rows(), Eigen::Vector3d(0.6,0.6,0.6), A2.fc_data);
-                tyro::color_black_matrix(A2.e_data.rows(), A2.ec_data);
+                igl::unique_edge_map(A2.F, A2.E, A2.UE, A2.EMAP,uE2E2);
+                tyro::color_matrix(A2.F.rows(), Eigen::Vector3d(0.6,0.6,0.6), A2.FC);
+                tyro::color_black_matrix(A2.E.rows(), A2.UEC);
             }
 
                 
@@ -880,15 +879,15 @@ namespace
                 int part_id = std::stoi(args[2]);
                 std::string initmethod = args[3]; 
                 
-                if (app->m_stop_motion.empty())
-                //app->m_stop_motion.clear();
-                    app->m_stop_motion.resize(app->m_pieces.size());
+                if (app->SMOTION.empty())
+                //app->SMOTION.clear();
+                    app->SMOTION.resize(app->PIECES.size());
 
                 int start, end;
                 if (part_id == -1) 
                 {
                     start = 0;
-                    end = app->m_stop_motion.size();
+                    end = app->SMOTION.size();
                 }
                 else
                 {   
@@ -900,39 +899,39 @@ namespace
                 for (int i = start; i < end; ++i) 
                 {   
                     double result_energy;
-                    auto& sm = app->m_stop_motion[i]; 
-                    auto& piece = app->m_pieces[i];
+                    auto& sm = app->SMOTION[i]; 
+                    auto& piece = app->PIECES[i];
                     bool kmeans = false;
                     if (initmethod == "kmeans") kmeans = true; 
                     tyro::stop_motion_vertex_distance(num_labels, 
                                                       smooth_weight,
                                                       kmeans,
-                                                      piece.v_data,
-                                                      piece.sequenceIdx,
-                                                      piece.f_data,
+                                                      piece.VD,
+                                                      piece.SIdx,
+                                                      piece.F,
                                                       sm.D, //dictionary
                                                       sm.L, //labels,  
                                                       result_energy);
                     
-                    sm.anim.f_data = piece.f_data;
-                    sm.anim.e_data = piece.e_data;
-                    sm.anim.ue_data = piece.ue_data;
+                    sm.anim.F = piece.F;
+                    sm.anim.E = piece.E;
+                    sm.anim.UE = piece.UE;
                     sm.anim.EMAP = piece.EMAP;
-                    sm.anim.ec_data = piece.ec_data;
-                    sm.anim.fc_data = piece.fc_data;
+                    sm.anim.UEC = piece.UEC;
+                    sm.anim.FC = piece.FC;
                     //precompute normals
                     std::vector<MatrixXd> normals;
                     normals.resize(sm.D.size());
                     for (int j = 0; j < sm.D.size(); ++j) 
                     {   
-                        igl::per_vertex_normals(sm.D[j], sm.anim.f_data, normals[j]);
+                        igl::per_vertex_normals(sm.D[j], sm.anim.F, normals[j]);
                     }
 
                     for (int j = 0; j < sm.L.size(); ++j) 
                     {
                         int l_idx = sm.L(j);
-                        sm.anim.v_data.push_back(sm.D[l_idx]);
-                        sm.anim.n_data.push_back(normals[l_idx]);
+                        sm.anim.VD.push_back(sm.D[l_idx]);
+                        sm.anim.ND.push_back(normals[l_idx]);
                     }
                     sm.computed = true;                   
                 }
@@ -963,7 +962,7 @@ namespace
                 
                 MatrixXi newF;
                 VectorXi slice_list = Eigen::Map<VectorXi>(app->fid_list.data(), app->fid_list.size());
-                igl::slice(app->m_frame_data.f_data, slice_list, 1, newF);
+                igl::slice(app->ANIM.F, slice_list, 1, newF);
                 int start_frame = 0;
 
                 //check that the slice is manifold
@@ -984,7 +983,7 @@ namespace
 
                 if (type == "obj") 
                 {
-                    for (int file = 0; file < app->m_frame_data.sequenceIdx.size(); ++file) 
+                    for (int file = 0; file < app->ANIM.SIdx.size(); ++file) 
                     {   
                         auto folder = filesystem::path(app->FOLDERS[file])/wheretosave;
 
@@ -994,18 +993,18 @@ namespace
                         }
                         
                         auto objlist_path = folder/filesystem::path("objlist.txt");
-                        int num_frames = app->m_frame_data.sequenceIdx[file];
+                        int num_frames = app->ANIM.SIdx[file];
                         
                         ofstream objlist_file;
                         objlist_file.open (objlist_path.str());
                     
                         for (int frame = start_frame; frame < start_frame + num_frames; ++frame) 
                         {   
-                            assert(frame < app->m_frame_data.v_data.size());
+                            assert(frame < app->ANIM.VD.size());
                             MatrixXd temp_V;
                             MatrixXi temp_F;
                             VectorXi I;
-                            igl::remove_unreferenced(app->m_frame_data.v_data[frame], newF, temp_V, temp_F, I);
+                            igl::remove_unreferenced(app->ANIM.VD[frame], newF, temp_V, temp_F, I);
                             auto file_name = filesystem::path(tyro::pad_zeros(frame) + std::string(".obj"));
                             auto file_path = folder/file_name; 
                             igl::writeOBJ(file_path.str(), temp_V, temp_F);
@@ -1020,33 +1019,33 @@ namespace
                 else if (type == "binary")
                 {     
                     App::MAnimation to_save;
-                    to_save.v_data.resize(app->m_frame_data.v_data.size());
-                    to_save.n_data.resize(app->m_frame_data.v_data.size());
-                    for (int frame = 0; frame < app->m_frame_data.v_data.size(); ++frame) 
+                    to_save.VD.resize(app->ANIM.VD.size());
+                    to_save.ND.resize(app->ANIM.VD.size());
+                    for (int frame = 0; frame < app->ANIM.VD.size(); ++frame) 
                     {   
                         MatrixXi temp_F;
                         VectorXi I;
-                        igl::remove_unreferenced(app->m_frame_data.v_data[frame], newF, to_save.v_data[frame], temp_F, I);
-                        igl::per_vertex_normals(to_save.v_data[frame], temp_F, to_save.n_data[frame]);
+                        igl::remove_unreferenced(app->ANIM.VD[frame], newF, to_save.VD[frame], temp_F, I);
+                        igl::per_vertex_normals(to_save.VD[frame], temp_F, to_save.ND[frame]);
                         if (frame == 0) 
                         {
-                            to_save.f_data =temp_F;
+                            to_save.F = temp_F;
                         }
                     }  
                 
                     std::vector<std::vector<int> > uE2E;
-                    igl::unique_edge_map(to_save.f_data, 
-                                         to_save.e_data,
-                                         to_save.ue_data,
+                    igl::unique_edge_map(to_save.F, 
+                                         to_save.E,
+                                         to_save.UE,
                                          to_save.EMAP,
                                          uE2E);
                     
                     //@TODO need this to update camera
                     Eigen::Vector3d face_color(0.5,0.5,0.5);
-                    tyro::color_matrix(to_save.f_data.rows(), face_color, to_save.fc_data);
-                    tyro::color_black_matrix(to_save.ue_data.rows(), to_save.ec_data);
+                    tyro::color_matrix(to_save.F.rows(), face_color, to_save.FC);
+                    tyro::color_black_matrix(to_save.UE.rows(), to_save.UEC);
 
-                    to_save.sequenceIdx = app->m_frame_data.sequenceIdx;
+                    to_save.SIdx = app->ANIM.SIdx;
 
                     auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
                     auto p = f/filesystem::path(wheretosave);
@@ -1182,7 +1181,7 @@ namespace
                 auto p = f/filesystem::path("monka_manifold");
                 std::ifstream in = std::ifstream(p.str(), std::ios::binary);
                 cereal::BinaryInputArchive archive_i(in);
-                archive_i(app->m_frame_data);
+                archive_i(app->ANIM);
             }
             else
             {
@@ -1198,24 +1197,24 @@ namespace
                     RA_LOG_INFO("loading folder %s", folder.data());
                     tyro::obj_file_path_list(folder, "objlist.txt", obj_paths, num_files_read);
                     RA_LOG_INFO("frames read %i", num_files_read);
-                    app->m_frame_data.sequenceIdx.push_back(num_files_read);
+                    app->ANIM.SIdx.push_back(num_files_read);
                     app->load_mesh_sequence(obj_paths, true); //use IGL obj loader
                 }
             }
 
             
-            if (!igl::is_edge_manifold(app->m_frame_data.f_data)) 
+            if (!igl::is_edge_manifold(app->ANIM.F)) 
             {   
                 RA_LOG_ERROR_ASSERT("not manifold");
                 return;
             }
-            app->m_timeline->SetFrameRange(app->m_frame_data.v_data.size()-1);
+            app->m_timeline->SetFrameRange(app->ANIM.VD.size()-1);
 
             //app->align_all_models(offset_vid, offset);
                 
             //Compute radius of the bounding box of the model
             AxisAlignedBBox bbox;
-            MatrixXd VT = app->m_frame_data.v_data[0].transpose();
+            MatrixXd VT = app->ANIM.VD[0].transpose();
             bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
             app->m_model_offset = bbox.GetRadius(); 
 
@@ -1223,10 +1222,10 @@ namespace
             app->m_state = App::State::LoadedModel;
             app->compute_average();
 
-            app->m_weights.VW.resize(app->m_frame_data.v_data[0].rows());
+            app->m_weights.VW.resize(app->ANIM.VD[0].rows());
             app->m_weights.VW.setOnes();
 
-            app->m_weights.FW.resize(app->m_frame_data.f_data.rows());
+            app->m_weights.FW.resize(app->ANIM.F.rows());
             app->m_weights.FW.setOnes();
             
             app->compute_average();
@@ -1271,15 +1270,15 @@ namespace
                 RA_LOG_WARN("Need vertex/face selection and average mesh to compute deformation")
                 return;
             }
-            //app->m_frame_deformed_data.v_data.clear();
+            //app->DANIM.VD.clear();
             bool result = tyro::compute_deformation(app->vid_list, 
                                                     app->fid_list,
-                                                    app->m_frame_data.v_data,
-                                                    app->m_frame_data.f_data,
-                                                    app->m_frame_data.avg_v_data,
-                                                    app->m_frame_deformed_data.v_data);
+                                                    app->ANIM.VD,
+                                                    app->ANIM.F,
+                                                    app->ANIM.AvgVD,
+                                                    app->DANIM.VD);
             assert(result);
-            tyro::copy_animation(app->m_frame_data, app->m_frame_deformed_data, true, true, true);
+            tyro::copy_animation(app->ANIM, app->DANIM, true, true, true);
             app->m_computed_deformation = true;
             app->m_update_camera = true;
             //app->render();
@@ -1670,85 +1669,85 @@ namespace
 
                     #if 1
                     //ORIGNAL MODEL
-                    if (render_data.org_mesh == nullptr) 
+                    if (RENDER.mesh == nullptr) 
                     {
-                        render_data.org_mesh = IGLMesh::Create(m_frame_data.v_data[m_frame], 
-                                                                m_frame_data.f_data, 
-                                                                m_frame_data.n_data[m_frame],
-                                                                m_frame_data.fc_data);
-                    }                                       //m_frame_data.AO[3114]);
+                        RENDER.mesh = IGLMesh::Create(ANIM.VD[m_frame], 
+                                                                ANIM.F, 
+                                                                ANIM.ND[m_frame],
+                                                                ANIM.FC);
+                    }                                       //ANIM.AO[3114]);
                     else 
                     { 
-                        render_data.org_mesh->UpdateData(m_frame_data.v_data[m_frame], 
-                                                        m_frame_data.f_data, 
-                                                        m_frame_data.n_data[m_frame],
-                                                        m_frame_data.fc_data);
+                        RENDER.mesh->UpdateData(ANIM.VD[m_frame], 
+                                                        ANIM.F, 
+                                                        ANIM.ND[m_frame],
+                                                        ANIM.FC);
                     }
 
-                    render_data.org_mesh->Update(true);
-                    vis_set.Insert(render_data.org_mesh.get());
+                    RENDER.mesh->Update(true);
+                    vis_set.Insert(RENDER.mesh.get());
                     
                     if (m_show_wireframe)
                     {
-                        render_data.org_mesh_wire = IGLMeshWireframe::Create(m_frame_data.v_data[m_frame], 
-                                                                            m_frame_data.ue_data,
-                                                                            m_frame_data.ec_data);
-                        render_data.org_mesh_wire->Update(true);
-                        vis_set.Insert(render_data.org_mesh_wire.get());
+                        RENDER.mesh_wire = IGLMeshWireframe::Create(ANIM.VD[m_frame], 
+                                                                            ANIM.UE,
+                                                                            ANIM.UEC);
+                        RENDER.mesh_wire->Update(true);
+                        vis_set.Insert(RENDER.mesh_wire.get());
                     }
 
                     if (m_computed_error) 
                     {
                         //Rendering stuff
-                        render_data.error_meshes.clear();
-                        //render_data.part_meshes_wire.clear();
+                        RENDER.error.clear();
+                        //RENDER.part_wire.clear();
                         
-                        for (int i = 0; i < m_stop_motion.size(); ++i) 
+                        for (int i = 0; i < SMOTION.size(); ++i) 
                         {   
-                            auto& sm = m_stop_motion[i];
+                            auto& sm = SMOTION[i];
                             
                             if (sm.computed == false) 
                                 continue;
 
-                            auto mesh = IGLMesh::CreateColor(sm.anim.v_data[m_frame], 
-                                                             sm.anim.f_data, 
-                                                             sm.anim.n_data[m_frame],
-                                                             sm.anim.fc_data, 
+                            auto mesh = IGLMesh::CreateColor(sm.anim.VD[m_frame], 
+                                                             sm.anim.F, 
+                                                             sm.anim.ND[m_frame],
+                                                             sm.anim.FC, 
                                                              m_error[i][m_frame],
                                                              max_error);
                             Wm5::Transform tr;
                             tr.SetTranslate(Wm5::APoint(3*m_model_offset, 0, 0));
                             mesh->LocalTransform = tr * mesh->LocalTransform;
                             mesh->Update(true);
-                            render_data.error_meshes.push_back(mesh);
+                            RENDER.error.push_back(mesh);
                             vis_set.Insert(mesh.get());
                         } 
                     }
                     
                     if (m_computed_avg) 
                     {
-                        auto mesh = IGLMesh::Create(m_frame_data.avg_v_data, 
-                                                    m_frame_data.f_data, 
-                                                    m_frame_data.n_data[0],
+                        auto mesh = IGLMesh::Create(ANIM.AvgVD, 
+                                                    ANIM.F, 
+                                                    ANIM.ND[0],
                                                     Eigen::Vector3d(0.5, 0, 0));
                         Wm5::Transform tr;
                         tr.SetTranslate(Wm5::APoint(-2*m_model_offset, 0, 0));
                         mesh->LocalTransform = tr * mesh->LocalTransform;
                         mesh->Update(true);
 
-                        render_data.avg_mesh = mesh;
+                        RENDER.avg = mesh;
                         vis_set.Insert(mesh.get());
 
                        //create renderable for mesh wireframe
                         if (m_show_wireframe)
                         {
-                            auto wire = IGLMeshWireframe::Create(m_frame_data.avg_v_data, 
-                                                                 m_frame_data.ue_data,
-                                                                 m_frame_data.ec_data);
+                            auto wire = IGLMeshWireframe::Create(ANIM.AvgVD, 
+                                                                 ANIM.UE,
+                                                                 ANIM.UEC);
                             wire->LocalTransform = tr * wire->LocalTransform;
                             wire->Update(true);
-                            render_data.avg_mesh_wire = wire;
-                            vis_set.Insert(render_data.avg_mesh_wire.get());
+                            RENDER.avg_wire = wire;
+                            vis_set.Insert(RENDER.avg_wire.get());
                         }
                     
                     }
@@ -1756,27 +1755,27 @@ namespace
                     //DEFORMED MODEL
                     if (m_computed_deformation)
                     {                        
-                        auto mesh = IGLMesh::Create(m_frame_deformed_data.v_data[m_frame], 
-                                                    m_frame_deformed_data.f_data, 
-                                                    m_frame_data.n_data[m_frame],
+                        auto mesh = IGLMesh::Create(DANIM.VD[m_frame], 
+                                                    DANIM.F, 
+                                                    ANIM.ND[m_frame],
                                                     Eigen::Vector3d(0.5,0.5,0.5));
                         Wm5::Transform tr;
                         tr.SetTranslate(Wm5::APoint(-1*m_model_offset, 0, 0));
                         mesh->LocalTransform = tr * mesh->LocalTransform;
                         mesh->Update(true);
-                        render_data.dfm_mesh = mesh;
+                        RENDER.dfm = mesh;
                         vis_set.Insert(mesh.get());
 
                         //create renderable for mesh wireframe
                          if (m_show_wireframe)
                         {
-                            auto wire = IGLMeshWireframe::Create(m_frame_deformed_data.v_data[m_frame], 
-                                                                 m_frame_deformed_data.ue_data,
-                                                                 m_frame_data.ec_data);
+                            auto wire = IGLMeshWireframe::Create(DANIM.VD[m_frame], 
+                                                                 DANIM.UE,
+                                                                 ANIM.UEC);
                             wire->LocalTransform = tr * wire->LocalTransform;
                             wire->Update(true);
-                            render_data.dfm_mesh_wire = wire;
-                            vis_set.Insert(render_data.dfm_mesh_wire.get());
+                            RENDER.dfm_wire = wire;
+                            vis_set.Insert(RENDER.dfm_wire.get());
                         }
                     }
 
@@ -1784,31 +1783,31 @@ namespace
                     if (m_computed_parts)
                     {
                         //Rendering stuff
-                        render_data.part_meshes.clear();
-                        render_data.part_meshes_wire.clear();
+                        RENDER.part.clear();
+                        RENDER.part_wire.clear();
 
-                        for (int i = 0; i < m_pieces.size(); ++i) 
+                        for (int i = 0; i < PIECES.size(); ++i) 
                         {                             
-                            auto mesh1 = IGLMesh::Create(m_pieces[i].v_data[m_frame], 
-                                                         m_pieces[i].f_data, 
-                                                         m_pieces[i].n_data[m_frame],
-                                                         m_pieces[i].fc_data);
+                            auto mesh1 = IGLMesh::Create(PIECES[i].VD[m_frame], 
+                                                         PIECES[i].F, 
+                                                         PIECES[i].ND[m_frame],
+                                                         PIECES[i].FC);
                             Wm5::Transform tr;
                             tr.SetTranslate(Wm5::APoint(m_model_offset, 0, 0));
                             mesh1->LocalTransform = tr * mesh1->LocalTransform;
                             mesh1->Update(true);
-                            render_data.part_meshes.push_back(mesh1);
+                            RENDER.part.push_back(mesh1);
                             vis_set.Insert(mesh1.get());
 
                             //create renderable for mesh wireframe
                             if (m_show_wireframe)
                             {
-                                auto wire1 = IGLMeshWireframe::Create(m_pieces[i].v_data[m_frame], 
-                                                                    m_pieces[i].ue_data,
-                                                                    m_pieces[i].ec_data);
+                                auto wire1 = IGLMeshWireframe::Create(PIECES[i].VD[m_frame], 
+                                                                    PIECES[i].UE,
+                                                                    PIECES[i].UEC);
                                 wire1->LocalTransform = tr * wire1->LocalTransform;                                                        
                                 wire1->Update(true);
-                                render_data.part_meshes_wire.push_back(wire1);
+                                RENDER.part_wire.push_back(wire1);
                                 vis_set.Insert(wire1.get());
                             }
                         } 
@@ -1817,36 +1816,36 @@ namespace
                     //Stop motion
                     if (m_computed_stop_motion) 
                     {   
-                        render_data.stop_motion_meshes.clear();
-                        render_data.stop_motion_meshes_wire.clear();
+                        RENDER.stop.clear();
+                        RENDER.stop_wire.clear();
 
-                        for (int i = 0; i < m_stop_motion.size(); ++i) 
+                        for (int i = 0; i < SMOTION.size(); ++i) 
                         {   
-                            auto& sm = m_stop_motion[i];
+                            auto& sm = SMOTION[i];
                             
                             if (sm.computed == false) 
                                 continue;
 
-                            auto mesh = IGLMesh::Create(sm.anim.v_data[m_frame], 
-                                                        sm.anim.f_data, 
-                                                        sm.anim.n_data[m_frame],
-                                                        sm.anim.fc_data);
+                            auto mesh = IGLMesh::Create(sm.anim.VD[m_frame], 
+                                                        sm.anim.F, 
+                                                        sm.anim.ND[m_frame],
+                                                        sm.anim.FC);
                             Wm5::Transform tr;
                             tr.SetTranslate(Wm5::APoint(2*m_model_offset, 0, 0));
                             mesh->LocalTransform = tr * mesh->LocalTransform;
                             mesh->Update(true);
-                            render_data.stop_motion_meshes.push_back(mesh);
+                            RENDER.stop.push_back(mesh);
                             vis_set.Insert(mesh.get());
 
                             //create renderable for mesh wireframe
                             if (m_show_wireframe)
                             {
-                                auto wire  = IGLMeshWireframe::Create(sm.anim.v_data[m_frame], 
-                                                                    sm.anim.ue_data,
-                                                                    sm.anim.ec_data);
+                                auto wire  = IGLMeshWireframe::Create(sm.anim.VD[m_frame], 
+                                                                      sm.anim.UE,
+                                                                      sm.anim.UEC);
                                 wire->LocalTransform = tr * wire->LocalTransform;                                                        
                                 wire->Update(true);
-                                render_data.stop_motion_meshes_wire.push_back(wire);
+                                RENDER.stop_wire.push_back(wire);
                                 vis_set.Insert(wire.get());
                             }
                         }
@@ -1857,7 +1856,7 @@ namespace
                         vis_set.Insert(object_sptr.get());
                     }
                     #endif
-                    std::string fstr = std::string("Frame ") + std::to_string(m_frame) + std::string("/") + std::to_string(m_frame_data.v_data.size());
+                    std::string fstr = std::string("Frame ") + std::to_string(m_frame) + std::string("/") + std::to_string(ANIM.VD.size());
                     m_frame_overlay->SetText(fstr);
                     vis_set.Insert(m_frame_overlay.get());
 
@@ -1901,7 +1900,7 @@ namespace
     void App::invert_face_selection() 
     {
         std::vector<int> newlist;
-        for (int fid = 0; fid < m_frame_data.f_data.rows(); ++fid) 
+        for (int fid = 0; fid < ANIM.F.rows(); ++fid) 
         {
             auto it2 = std::find(fid_list.begin(), fid_list.end(), fid);
             if (it2 == fid_list.end()) 
@@ -1929,18 +1928,18 @@ namespace
 
     void App::compute_average()
     {
-        if (m_frame_data.v_data.size()==0)
+        if (ANIM.VD.size()==0)
             RA_LOG_ERROR_ASSERT("cant compute average");
         
-        m_frame_data.avg_v_data.resize(m_frame_data.v_data[0].rows(), 
-                                       m_frame_data.v_data[0].cols());
-        m_frame_data.avg_v_data.setZero();
+        ANIM.AvgVD.resize(ANIM.VD[0].rows(), 
+                                       ANIM.VD[0].cols());
+        ANIM.AvgVD.setZero();
 
-        for (auto& mat : m_frame_data.v_data) 
+        for (auto& mat : ANIM.VD) 
         {
-            m_frame_data.avg_v_data += mat;
+            ANIM.AvgVD += mat;
         }
-        m_frame_data.avg_v_data = (1.0/m_frame_data.v_data.size()) * m_frame_data.avg_v_data;
+        ANIM.AvgVD = (1.0/ANIM.VD.size()) * ANIM.AvgVD;
 
         m_computed_avg = true;
         m_update_camera = true;
@@ -1949,27 +1948,27 @@ namespace
     void App::update_camera() 
     {
         //setup camera
-        AxisAlignedBBox WorldBoundBox = render_data.org_mesh->WorldBoundBox;
+        AxisAlignedBBox WorldBoundBox = RENDER.mesh->WorldBoundBox;
 
         if (m_computed_avg) 
         {
-            WorldBoundBox.Merge(render_data.avg_mesh->WorldBoundBox);
+            WorldBoundBox.Merge(RENDER.avg->WorldBoundBox);
         }
 
         if (m_computed_deformation) 
         {
-            WorldBoundBox.Merge(render_data.dfm_mesh->WorldBoundBox);
+            WorldBoundBox.Merge(RENDER.dfm->WorldBoundBox);
         }
 
         if (m_computed_parts) 
         {
-            for (auto& mesh : render_data.part_meshes)
+            for (auto& mesh : RENDER.part)
                 WorldBoundBox.Merge(mesh->WorldBoundBox);
         }
 
         if (m_computed_stop_motion) 
         {   
-            for (auto& mesh : render_data.stop_motion_meshes)
+            for (auto& mesh : RENDER.stop)
                 WorldBoundBox.Merge(mesh->WorldBoundBox);
         }
 
@@ -1988,7 +1987,7 @@ namespace
 
     void App::addSphere(int vid, Wm5::Vector4f color) 
     {   
-        Eigen::RowVector3d new_c = m_frame_data.v_data[m_frame].row(vid);
+        Eigen::RowVector3d new_c = ANIM.VD[m_frame].row(vid);
         ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.007);
         Wm5::Transform tr;
         tr.SetTranslate(Wm5::APoint(new_c(0), new_c(1), new_c(2)));
@@ -2005,7 +2004,7 @@ namespace
     
      void App::setFaceColor(int fid, const Eigen::Vector3d& clr) 
     {
-        m_frame_data.fc_data.row(fid) = clr;
+        ANIM.FC.row(fid) = clr;
     }
 
     void App::setFaceColor(int fid, bool selected) 
@@ -2016,7 +2015,7 @@ namespace
         else
             clr = Eigen::Vector3d(0.5,0.5,0.5);
         
-        m_frame_data.fc_data.row(fid) = clr;
+        ANIM.FC.row(fid) = clr;
     }
    
     void App::load_mesh_sequence(const std::vector<std::string>& obj_list, bool use_igl_loader) 
@@ -2024,18 +2023,18 @@ namespace
         RA_LOG_INFO("LOAD MESH SEQUENCE")
         
         tyro::load_mesh_sequence(obj_list, 
-                                 m_frame_data.v_data, 
-                                 m_frame_data.n_data, 
-                                 m_frame_data.f_data,
-                                 m_frame_data.e_data,
-                                 m_frame_data.ue_data,
-                                 m_frame_data.EMAP,
+                                 ANIM.VD, 
+                                 ANIM.ND, 
+                                 ANIM.F,
+                                 ANIM.E,
+                                 ANIM.UE,
+                                 ANIM.EMAP,
                                  use_igl_loader);
         
         //@TODO need this to update camera
         Eigen::Vector3d face_color(0.5,0.5,0.5);
-        tyro::color_matrix(m_frame_data.f_data.rows(), face_color, m_frame_data.fc_data);
-        tyro::color_black_matrix(m_frame_data.ue_data.rows(), m_frame_data.ec_data);
+        tyro::color_matrix(ANIM.F.rows(), face_color, ANIM.FC);
+        tyro::color_black_matrix(ANIM.UE.rows(), ANIM.UEC);
     }
 
     void App::load_bunny(bool serialized)
@@ -2113,7 +2112,7 @@ namespace
             auto p = f/filesystem::path("bunny_frames_upsampled");
             std::ifstream in = std::ifstream(p.str(), std::ios::binary);
             cereal::BinaryInputArchive archive_i(in);
-            archive_i(m_frame_data);
+            archive_i(ANIM);
         }
         else
         {   
@@ -2128,28 +2127,28 @@ namespace
                 RA_LOG_INFO("loading folder %s", folder.data());
                 tyro::obj_file_path_list(folder, "objlist2.txt", obj_paths, num_files_read);
                 RA_LOG_INFO("frames read %i", num_files_read);
-                m_frame_data.sequenceIdx.push_back(num_files_read);
+                ANIM.SIdx.push_back(num_files_read);
             }
             load_mesh_sequence(obj_paths, true); //use IGL obj loader
         }
-        m_timeline->SetFrameRange(m_frame_data.v_data.size()-1);
+        m_timeline->SetFrameRange(ANIM.VD.size()-1);
 
         //align_all_models(offset_vid, offset);
 
                
         //Compute radius of the bounding box of the model
         AxisAlignedBBox bbox;
-        MatrixXd VT = m_frame_data.v_data[0].transpose();
+        MatrixXd VT = ANIM.VD[0].transpose();
         bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
         m_model_offset = bbox.GetRadius(); 
 
         m_update_camera = true;
         m_state = App::State::LoadedModel;
         
-        m_weights.VW.resize(m_frame_data.v_data[0].rows());
+        m_weights.VW.resize(ANIM.VD[0].rows());
         m_weights.VW.setOnes();
 
-        m_weights.FW.resize(m_frame_data.f_data.rows());
+        m_weights.FW.resize(ANIM.F.rows());
         m_weights.FW.setOnes();
 
         compute_average();
@@ -2159,15 +2158,15 @@ namespace
        // Eigen::VectorXd AO;
         for (int i = 0; i < 0; ++i) 
         {               
-            m_frame_data.AO.resize(m_frame_data.v_data.size());
-            igl::ambient_occlusion(m_frame_data.v_data[i], 
-                                   m_frame_data.f_data, 
-                                   m_frame_data.v_data[i], 
-                                   m_frame_data.n_data[i], 
+            ANIM.AO.resize(ANIM.VD.size());
+            igl::ambient_occlusion(ANIM.VD[i], 
+                                   ANIM.F, 
+                                   ANIM.VD[i], 
+                                   ANIM.ND[i], 
                                    1000, 
-                                   m_frame_data.AO[3114]);
+                                   ANIM.AO[3114]);
             RA_LOG_INFO("Computed AO for frame %i", i);
-            //RA_LOG_INFO("AO %f, %f",m_frame_data.AO[339].minCoeff(), m_frame_data.AO[339].maxCoeff());
+            //RA_LOG_INFO("AO %f, %f",ANIM.AO[339].minCoeff(), ANIM.AO[339].maxCoeff());
         }
 
         std::vector<std::string> args1 = {"split", "bunny_split"};
@@ -2283,12 +2282,12 @@ namespace
 
     void App::align_all_models(int vid, Eigen::Vector3d ref_vec)
     {
-        for (int frame = 0; frame < m_frame_data.v_data.size(); ++frame) 
+        for (int frame = 0; frame < ANIM.VD.size(); ++frame) 
         {
-            Eigen::Vector3d new_vec = m_frame_data.v_data[frame].row(vid);
+            Eigen::Vector3d new_vec = ANIM.VD[frame].row(vid);
             Eigen::Vector3d d = ref_vec - new_vec;
             RowVector3d diff(d(0), d(1), d(2)); 
-            m_frame_data.v_data[frame].rowwise() += diff;
+            ANIM.VD[frame].rowwise() += diff;
         }
         render();
     }
@@ -2301,18 +2300,18 @@ namespace
         int vid = vid_list.back();
         
         Eigen::Vector3d ref_vec;
-        for (int frame = 0; frame < m_frame_data.v_data.size(); ++frame) 
+        for (int frame = 0; frame < ANIM.VD.size(); ++frame) 
         {
             if (frame ==0 ) 
             {
-                ref_vec = m_frame_data.v_data[frame].row(vid);
+                ref_vec = ANIM.VD[frame].row(vid);
             }
             else 
             {
-                Eigen::Vector3d new_vec = m_frame_data.v_data[frame].row(vid);
+                Eigen::Vector3d new_vec = ANIM.VD[frame].row(vid);
                 Eigen::Vector3d d = ref_vec - new_vec;
                 Eigen::RowVector3d diff(d(0), d(1), d(2)); 
-                m_frame_data.v_data[frame].rowwise() += diff;
+                ANIM.VD[frame].rowwise() += diff;
             }
         }
 
@@ -2324,7 +2323,7 @@ namespace
     {
         int fid;
         Eigen::Vector3f bc;
-        Wm5::HMatrix modelViewMatrix = m_camera->GetViewMatrix() * render_data.org_mesh->WorldTransform.Matrix();
+        Wm5::HMatrix modelViewMatrix = m_camera->GetViewMatrix() * RENDER.mesh->WorldTransform.Matrix();
         Wm5::HMatrix projectMatrix = m_camera->GetProjectionMatrix();
         Eigen::Matrix4f e1 = Eigen::Map<Eigen::Matrix4f>(modelViewMatrix.mEntry);
         Eigen::Matrix4f e2 = Eigen::Map<Eigen::Matrix4f>(projectMatrix.mEntry);
@@ -2337,8 +2336,8 @@ namespace
                                      e1.transpose(),
                                      e2.transpose(),
                                      e3,
-                                     m_frame_data.v_data[m_frame],
-                                     m_frame_data.f_data,
+                                     ANIM.VD[m_frame],
+                                     ANIM.F,
                                      fid,
                                      bc))
         {
@@ -2346,11 +2345,11 @@ namespace
             {
                 long c;
                 bc.maxCoeff(&c);
-                int vid = m_frame_data.f_data(fid, c);
+                int vid = ANIM.F(fid, c);
                 auto it = std::find(vid_list.begin(), vid_list.end(), vid);
                 if (it == vid_list.end()) 
                 {       
-                Eigen::Vector3d vec = m_frame_data.v_data[m_frame].row(vid);
+                Eigen::Vector3d vec = ANIM.VD[m_frame].row(vid);
                     RA_LOG_INFO("Picked face_id %i vertex_id %i coord %f %f %f", fid, vid, vec(0), vec(1), vec(2));
                     addSphere(vid);
                     vid_list.push_back(vid);
@@ -2419,11 +2418,11 @@ namespace
     
     void App::debug_show_faces_near_edge_selection(const Eigen::VectorXi& uEI, const Eigen::VectorXi& DMAP) 
     {   
-        const auto & cE = m_frame_data.ue_data;
-        const auto & cEMAP = m_frame_data.EMAP;
+        const auto & cE = ANIM.UE;
+        const auto & cEMAP = ANIM.EMAP;
         MatrixXi EF, EI;
 
-        igl::edge_flaps(m_frame_data.f_data, 
+        igl::edge_flaps(ANIM.F, 
                         cE, 
                         cEMAP, 
                         EF, 
@@ -2489,7 +2488,7 @@ namespace
             int x1 = current_mouse_x;
             int y1 = m_camera->GetViewport()[3] - current_mouse_y;
 
-            Wm5::HMatrix modelViewMatrix = m_camera->GetViewMatrix() * render_data.org_mesh->WorldTransform.Matrix();
+            Wm5::HMatrix modelViewMatrix = m_camera->GetViewMatrix() * RENDER.mesh->WorldTransform.Matrix();
             Wm5::HMatrix projectMatrix = m_camera->GetProjectionMatrix();
             Eigen::Matrix4f e1 = Eigen::Map<Eigen::Matrix4f>(modelViewMatrix.mEntry);
             Eigen::Matrix4f e2 = Eigen::Map<Eigen::Matrix4f>(projectMatrix.mEntry);
@@ -2500,7 +2499,7 @@ namespace
 
 
             MatrixXd P;
-            igl::project(m_frame_data.v_data[m_frame],
+            igl::project(ANIM.VD[m_frame],
                          e1.transpose(), 
                          e2.transpose(),
                          e3,
@@ -2533,9 +2532,9 @@ namespace
             else if (m_sel_primitive == App::SelectionPrimitive::Faces) 
             {   
                 //std::vector<int> fid_selected;
-                for (int fid = 0; fid < m_frame_data.f_data.rows(); ++fid) 
+                for (int fid = 0; fid < ANIM.F.rows(); ++fid) 
                 {
-                    Eigen::Vector3i vids = m_frame_data.f_data.row(fid);
+                    Eigen::Vector3i vids = ANIM.F.row(fid);
 
                     auto it = std::find(vid_selected.begin(), vid_selected.end(), vids(0));
                     if (it != vid_selected.end())  
