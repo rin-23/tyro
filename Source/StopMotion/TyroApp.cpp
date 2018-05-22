@@ -1670,11 +1670,21 @@ namespace
 
                     #if 1
                     //ORIGNAL MODEL
-                    render_data.org_mesh = IGLMesh::Create(m_frame_data.v_data[m_frame], 
-                                                           m_frame_data.f_data, 
-                                                           m_frame_data.n_data[m_frame],
-                                                           m_frame_data.fc_data);
-                                                           //m_frame_data.AO[3114]);
+                    if (render_data.org_mesh == nullptr) 
+                    {
+                        render_data.org_mesh = IGLMesh::Create(m_frame_data.v_data[m_frame], 
+                                                                m_frame_data.f_data, 
+                                                                m_frame_data.n_data[m_frame],
+                                                                m_frame_data.fc_data);
+                    }                                       //m_frame_data.AO[3114]);
+                    else 
+                    { 
+                        render_data.org_mesh->UpdateData(m_frame_data.v_data[m_frame], 
+                                                        m_frame_data.f_data, 
+                                                        m_frame_data.n_data[m_frame],
+                                                        m_frame_data.fc_data);
+                    }
+
                     render_data.org_mesh->Update(true);
                     vis_set.Insert(render_data.org_mesh.get());
                     
