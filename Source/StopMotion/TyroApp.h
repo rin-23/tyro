@@ -29,6 +29,8 @@ namespace tyro
         ~App();
         
         int Launch();
+        int Video();
+        int VideoToImages();
 
         //Commands
         void load_blobby();
@@ -58,6 +60,7 @@ namespace tyro
         ES2Renderer* m_gl_rend;
         iOSCamera* m_camera;
         ES2TextOverlaySPtr m_frame_overlay;
+        ES2VideoTextureSPtr m_video_texture;
         
         void mouse_down(Window& window, int button, int modifier);
         void mouse_up(Window& window, int button, int modifier);
@@ -85,10 +88,14 @@ namespace tyro
         //square selection
         int m_square_sel_start_x;
         int m_square_sel_start_y;
-        
+        bool m_computed_error = false;
+        int m_frame_offset;
+
         std::vector<SpatialSPtr> ball_list;
         std::atomic<int> m_frame;
-        
+        std::atomic<bool> m_need_rendering;
+        //int  m_frame;   
+        //bool m_need_rendering;
         double m_model_offset;
         
         struct MRenderData 
@@ -112,6 +119,10 @@ namespace tyro
             std::vector<IGLMeshSPtr> part_meshes;
             std::vector<IGLMeshWireframeSPtr> part_meshes_wire;
             bool parts_visible = true;
+
+            std::vector<IGLMeshSPtr> error_meshes;
+            //std::vector<IGLMeshWireframeSPtr> stop_motion_meshes_wire;
+            
         };
         MRenderData render_data;
 
@@ -128,7 +139,7 @@ namespace tyro
             Eigen::MatrixXd ec_data; // Edge color data
             Eigen::MatrixXd avg_v_data; // average of v_data
             std::vector<int> sequenceIdx; //
-
+            std::vector<Eigen::VectorXd> AO;
             template<class Archive>
             void save(Archive & archive) const
             {
@@ -186,6 +197,7 @@ namespace tyro
             }
         };
 
+
         struct PrimitiveWeights 
         {
             //VectorXd V;
@@ -198,6 +210,8 @@ namespace tyro
         MAnimation m_frame_deformed_data; // Animation data after we smooth the seam(s)
         std::vector<MAnimation> m_pieces; // Break deformed mesh into pieces along seam(s).
         std::vector<MStopMotion> m_stop_motion; // Stop motion animate pieces
+        std::vector<std::vector<Eigen::VectorXd>> m_error;
+        float max_error;
         std::vector<std::string> FOLDERS;
         //std::vector<std::string> FOLDERS_MONKA;
         
@@ -224,7 +238,7 @@ namespace tyro
         void setFaceColor(int fid, const Eigen::Vector3d& clr);
         void selectVertex(Eigen::Vector2f& mouse_pos, int mouse_button, int modifier);
         
-        std::atomic<bool> m_need_rendering;
+        
     };
 
 

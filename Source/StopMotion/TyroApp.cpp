@@ -6,8 +6,11 @@
 #include "RAVisibleSet.h"
 #include "RAES2StandardMesh.h"
 #include "RAAxisAlignedBBox.h"
+#include "ES2VideoTexture.h"
+#include <stdio.h>
 
 #include <functional>
+#include <opencv2/opencv.hpp>
 
 #include "Wm5APoint.h"
 #include "Wm5Vector2.h"
@@ -30,7 +33,7 @@
 #include <igl/min_quad_with_fixed.h>
 #include <igl/upsample.h>
 #include <igl/adjacency_list.h>
-
+#include <igl/ambient_occlusion.h>
 #include <filesystem/path.h>
 
 #include "TyroIGLMesh.h"
@@ -160,8 +163,60 @@ void tyro::convert_vertex_to_edge_selection(const std::vector<int>& vid_list,
 
 namespace tyro
 {   
-    namespace
-    {   
+namespace
+{     
+        void console_plot_error(App* app, const std::vector<std::string>& args) 
+        {   
+            using namespace Eigen;
+            
+            Eigen::MatrixXf m1(2,3);
+            Eigen::MatrixXf m2(2,3);
+            Eigen::VectorXf v(2);
+  
+            m1 << 1, 2, 3,
+                  4, 5, 6;
+            
+            m2 << 1, 0, 0,
+                  0, 0, 0;
+            
+            VectorXf m = (m1-m2).rowwise().squaredNorm();
+
+            std::cout << m.rows() << " " << m.cols() <<  std::endl;
+
+            int num_parts = app->m_stop_motion.size();
+            int num_frames = app->m_frame_data.v_data.size();
+            app->m_error.resize(num_parts);
+            app->max_error = std::numeric_limits<float>::min();
+            for (int p = 0; p < num_parts; ++p) 
+            {   
+                if (app->m_stop_motion[p].computed) 
+                {
+                    app->m_error[p].resize(num_frames); 
+                    for (int frame=0; frame < num_frames; ++frame) 
+                    {                   
+                        //VC[frame].resize(FD.v_data[0].rows());
+                        VectorXd lul = (app->m_pieces[p].v_data[frame] - app->m_stop_motion[p].anim.v_data[frame]).rowwise().squaredNorm();  
+                        float max = lul.maxCoeff();
+                        app->max_error = std::max(app->max_error, max); 
+                        app->m_error[p][frame] = lul;                          
+                    }
+                }
+            }
+            app->m_computed_error =true;
+        }
+
+        void console_offset_frame(App* app, const std::vector<std::string>& args) 
+        {
+            if (args.size() == 1) 
+            {
+                int start = std::stoi(args[0]);
+//                int end = std::stoi(args[1]);
+                app->m_frame_offset = start;
+                app->render();
+                glfwPostEmptyEvent();
+            }
+        }
+
         void console_laplacian_smooth_along_edges(App* app, const std::vector<std::string>& args) 
         {
               using Eigen::Vector3d;
@@ -1102,7 +1157,6 @@ namespace tyro
         
             app->FOLDERS = 
             {   
-                            
                 std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/data/production/obj/01/02/"),
                 std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/data/production/obj/01/03/"),
                 std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/data/production/obj/01/06/"),
@@ -1259,7 +1313,9 @@ namespace tyro
     m_frame_overlay(nullptr),
     m_computed_parts(false),
     m_show_wireframe(true),
-    add_seg_faces(false)
+    add_seg_faces(false),
+    m_video_texture(nullptr),
+    m_frame_offset(0)
     {}
 
     App::~App() 
@@ -1277,6 +1333,185 @@ namespace tyro
             delete m_camera;
     }
 
+    using  std::string;
+    string type2str(int type) 
+    {
+        string r;
+
+        uchar depth = type & CV_MAT_DEPTH_MASK;
+        uchar chans = 1 + (type >> CV_CN_SHIFT);
+
+        switch ( depth ) {
+            case CV_8U:  r = "8U"; break;
+            case CV_8S:  r = "8S"; break;
+            case CV_16U: r = "16U"; break;
+            case CV_16S: r = "16S"; break;
+            case CV_32S: r = "32S"; break;
+            case CV_32F: r = "32F"; break;
+            case CV_64F: r = "64F"; break;
+            default:     r = "User"; break;
+        }
+
+        r += "C";
+        r += (chans+'0');
+
+        return r;
+    }
+
+    int App::VideoToImages() 
+    {   
+        using namespace cv;
+
+        // Create a VideoCapture object and open the input file
+        // If the input is the web camera, pass 0 instead of the video file name
+        VideoCapture cap("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/Big Buck Bunny-720p.mp4"); 
+            
+        // Check if camera opened successfully
+        if(!cap.isOpened())
+        {
+            cout << "Error opening video stream or file" << endl;
+            return -1;
+        }
+        
+        int width = cap.get(CV_CAP_PROP_FRAME_WIDTH);
+        int height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+        int num_frames = cap.get(CV_CAP_PROP_FRAME_COUNT);
+           int frame = 0;
+           int fcount = 0;
+        while(1)
+        {   
+
+            cv::Mat frame_image;
+            // Capture frame-by-frame
+            cap >> frame_image;
+            //cv::Mat frame_image_rgb;
+            //cv::Mat frame_image;
+
+            //cv::cvtColor(frame_image_grb, frame_image_rgb, CV_BGR2RGB);
+            //cv::flip(frame_image_rgb, frame_image, 0);
+
+            //auto tp = type2str(frame_image.type());
+            // If the frame is empty, break immediately
+            if (frame_image.empty())
+                break;
+        
+            // Display the resulting frame
+            //imshow( "Frame", frame );
+            string folder = "images";
+            
+            if (frame%500 == 0) 
+            {
+                fcount++;
+            }
+            folder = folder + std::to_string(fcount);
+            auto a = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/images");
+            a = a/folder;
+            if (!a.exists())
+                filesystem::create_directory(a);
+            auto final_p = a/filesystem::path(tyro::pad_zeros(frame, width = 7) + string(".jpeg"));
+            imwrite(final_p.str(), frame_image);
+            frame++;
+
+        }
+    }
+
+
+    int App::Video() 
+    {   
+        using namespace cv;
+
+         //setup windowshapes
+        m_tyro_window = new Window();
+        m_tyro_window->Init();
+                
+        //setup renderer
+        m_gl_rend = new ES2Renderer(m_tyro_window->GetGLContext());
+ 
+        int v_width, v_height;
+        m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
+        Wm5::Vector4i viewport(0, 0, v_width, v_height);
+        m_camera = new iOSCamera(Wm5::APoint(0,0,0), 1.0, 1.0, 2, viewport, true);
+
+        // Create a VideoCapture object and open the input file
+        // If the input is the web camera, pass 0 instead of the video file name
+        VideoCapture cap("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/Big Buck Bunny-720p.mp4"); 
+            
+        // Check if camera opened successfully
+        if(!cap.isOpened())
+        {
+            cout << "Error opening video stream or file" << endl;
+            return -1;
+        }
+        
+        int width = cap.get(CV_CAP_PROP_FRAME_WIDTH);
+        int height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+        int num_frames = cap.get(CV_CAP_PROP_FRAME_COUNT);
+        cap.set(CV_CAP_PROP_CONVERT_RGB, 1);
+
+        m_video_texture = ES2VideoTexture::Create(width, height, num_frames, Texture::TextureFormat::TF_R8G8B8);
+        int frame = 0;
+        //m_tyro_window->GetGLContext()->swapBuffers();
+
+        m_gl_rend->SetClearColor(Wm5::Vector4f(0.0, 0, 0.5, 1.0));
+
+        FontManager* fManager = FontManager::GetSingleton();
+        float scale = 1;
+        float ppi = 144;
+        fManager->Setup(ppi, scale);
+
+        ES2FontSPtr font = FontManager::GetSingleton()->GetSystemFontOfSize12();
+        std::string strrr("Frame 0/9000");
+        m_frame_overlay = ES2TextOverlay::Create(strrr, 
+                                                 Wm5::Vector2f(0, 0), 
+                                                 font, 
+                                                 Wm5::Vector4f(0,0,0,1), 
+                                                 viewport);
+        m_frame_overlay->SetTranslate(Wm5::Vector2i(-viewport[2]/2 + 50,-viewport[3]/2 + 50));
+   
+        while(!m_tyro_window->ShouldClose())
+        {   
+
+            cv::Mat frame_image_grb;
+            // Capture frame-by-frame
+            cap >> frame_image_grb;
+            cv::Mat frame_image_rgb;
+            cv::Mat frame_image;
+
+            cv::cvtColor(frame_image_grb, frame_image_rgb, CV_BGR2RGB);
+            cv::flip(frame_image_rgb, frame_image, 0);
+
+            auto tp = type2str(frame_image.type());
+            // If the frame is empty, break immediately
+            if (frame_image.empty())
+                break;
+        
+            // Display the resulting frame
+            //imshow( "Frame", frame );
+            
+            m_video_texture->showFrame(frame, frame_image.data);
+            VisibleSet vis_set;
+            vis_set.Insert(m_video_texture.get());
+            vis_set.Insert(m_frame_overlay.get());
+            m_gl_rend->RenderVisibleSet(&vis_set, m_camera);         
+        
+            RA_LOG_INFO("Drawn frame %i out of %i", frame, num_frames);
+            frame++;
+            
+            m_tyro_window->GetGLContext()->swapBuffers();
+            m_tyro_window->ProcessUserEvents();
+        }
+
+        
+        
+        // When everything done, release the video capture object
+        cap.release();
+        
+        // Closes all the frames
+        //destroyAllWindows();
+            
+        return 0;
+    }
+
     int App::Launch()
     {   
         RA_LOG_INFO("Launching the app");
@@ -1288,13 +1523,13 @@ namespace tyro
         //setup renderer
         m_gl_rend = new ES2Renderer(m_tyro_window->GetGLContext());
         m_gl_rend->SetClearColor(Wm5::Vector4f(0.0, 153.0/255.0, 153.0/255.0, 1.0));
- 
+
         int v_width, v_height;
         m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
         Wm5::Vector4i viewport(0, 0, v_width, v_height);
         m_camera = new iOSCamera(Wm5::APoint(0,0,0), 1.0, 1.0, 2, viewport, true);
         
-        m_timeline = new Timeline(24, 300);
+        m_timeline = new Timeline(40, 300);
         m_timeline->frameChanged = [&](Timeline& timeline, int frame)->void 
         {   
             //RA_LOG_INFO("Frame Change BEGIN");
@@ -1379,10 +1614,12 @@ namespace tyro
         register_console_function("upsample", console_upsample, "");
         register_console_function("taubin_smooth_along_edges", console_taubin_smooth_along_edges, "");
         register_console_function("laplacian_smooth_along_edges", console_laplacian_smooth_along_edges, "");
-
+        register_console_function("console_offset_frame", console_offset_frame, "");
+        register_console_function("plot_error", console_plot_error, "");
+        
         m_state = App::State::Launched;
         // Loop until the user closes the window
-        m_tyro_window->GetGLContext()->swapBuffers();
+       // m_tyro_window->GetGLContext()->swapBuffers();
         
         m_need_rendering = true;
         //render(); //do initial render
@@ -1410,22 +1647,34 @@ namespace tyro
         {   
             if (m_need_rendering) 
            {
-                //RA_LOG_INFO("RENDER BEGIN");
-
                 if (m_state == App::State::Launched) 
                 {
                     m_gl_rend->ClearScreen();
                 }
                 else if (m_state == App::State::LoadedModel) 
                 {   
+                    //RA_LOG_INFO("RENDER BEGIN");
+
                     //create renderable for mesh
                     VisibleSet vis_set;
 
+                    ///render any video first
+                    //play video
+                    {
+                        //if (m_video_texture == nullptr)
+                        //    m_video_texture = ES2VideoTexture::Create("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/Big Buck Bunny-720p.mp4");
+                        
+                        //m_video_texture->showFrame(m_frame_offset + m_frame);
+                        //vis_set.Insert(m_video_texture.get());
+                    }     
+
+                    #if 1
                     //ORIGNAL MODEL
                     render_data.org_mesh = IGLMesh::Create(m_frame_data.v_data[m_frame], 
                                                            m_frame_data.f_data, 
                                                            m_frame_data.n_data[m_frame],
                                                            m_frame_data.fc_data);
+                                                           //m_frame_data.AO[3114]);
                     render_data.org_mesh->Update(true);
                     vis_set.Insert(render_data.org_mesh.get());
                     
@@ -1436,6 +1685,34 @@ namespace tyro
                                                                             m_frame_data.ec_data);
                         render_data.org_mesh_wire->Update(true);
                         vis_set.Insert(render_data.org_mesh_wire.get());
+                    }
+
+                    if (m_computed_error) 
+                    {
+                        //Rendering stuff
+                        render_data.error_meshes.clear();
+                        //render_data.part_meshes_wire.clear();
+                        
+                        for (int i = 0; i < m_stop_motion.size(); ++i) 
+                        {   
+                            auto& sm = m_stop_motion[i];
+                            
+                            if (sm.computed == false) 
+                                continue;
+
+                            auto mesh = IGLMesh::CreateColor(sm.anim.v_data[m_frame], 
+                                                             sm.anim.f_data, 
+                                                             sm.anim.n_data[m_frame],
+                                                             sm.anim.fc_data, 
+                                                             m_error[i][m_frame],
+                                                             max_error);
+                            Wm5::Transform tr;
+                            tr.SetTranslate(Wm5::APoint(3*m_model_offset, 0, 0));
+                            mesh->LocalTransform = tr * mesh->LocalTransform;
+                            mesh->Update(true);
+                            render_data.error_meshes.push_back(mesh);
+                            vis_set.Insert(mesh.get());
+                        } 
                     }
                     
                     if (m_computed_avg) 
@@ -1494,7 +1771,7 @@ namespace tyro
                     }
 
                     //Split Mesh
-                    if (m_computed_parts) 
+                    if (m_computed_parts)
                     {
                         //Rendering stuff
                         render_data.part_meshes.clear();
@@ -1524,7 +1801,7 @@ namespace tyro
                                 render_data.part_meshes_wire.push_back(wire1);
                                 vis_set.Insert(wire1.get());
                             }
-                        }
+                        } 
                     }
 
                     //Stop motion
@@ -1569,10 +1846,12 @@ namespace tyro
                     {
                         vis_set.Insert(object_sptr.get());
                     }
-                    
+                    #endif
                     std::string fstr = std::string("Frame ") + std::to_string(m_frame) + std::string("/") + std::to_string(m_frame_data.v_data.size());
                     m_frame_overlay->SetText(fstr);
                     vis_set.Insert(m_frame_overlay.get());
+
+                    
 
                     if (m_update_camera) 
                     {
@@ -1770,8 +2049,7 @@ namespace tyro
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/03/01/"),
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/03/02/"),
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/03/03/"),
-            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/03/05/"),
-            
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/03/05/"),            
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/03/06/"),
             
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/04/01/"),
@@ -1782,8 +2060,7 @@ namespace tyro
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/05/03/"),
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/05/05/"),
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/05/07/"),
-            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/05/09/"),
-            
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/05/09/"),            
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/05/11/"),
             
             
@@ -1797,7 +2074,7 @@ namespace tyro
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/02B/"),
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/03/"),
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/05/"),
-            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/07/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/07/"),    
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/07B/"),
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/09/"),
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/10/"),
@@ -1805,8 +2082,7 @@ namespace tyro
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/13/"),
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/14/"),
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/16/"),
-            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/18/"),
-            
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/18/"),            
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/08/19/"),
             
             std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/09/05/"),
@@ -1849,6 +2125,7 @@ namespace tyro
         m_timeline->SetFrameRange(m_frame_data.v_data.size()-1);
 
         //align_all_models(offset_vid, offset);
+
                
         //Compute radius of the bounding box of the model
         AxisAlignedBBox bbox;
@@ -1866,6 +2143,29 @@ namespace tyro
         m_weights.FW.setOnes();
 
         compute_average();
+
+
+        //compute ambient_occlusion
+       // Eigen::VectorXd AO;
+        for (int i = 0; i < 0; ++i) 
+        {               
+            m_frame_data.AO.resize(m_frame_data.v_data.size());
+            igl::ambient_occlusion(m_frame_data.v_data[i], 
+                                   m_frame_data.f_data, 
+                                   m_frame_data.v_data[i], 
+                                   m_frame_data.n_data[i], 
+                                   1000, 
+                                   m_frame_data.AO[3114]);
+            RA_LOG_INFO("Computed AO for frame %i", i);
+            //RA_LOG_INFO("AO %f, %f",m_frame_data.AO[339].minCoeff(), m_frame_data.AO[339].maxCoeff());
+        }
+
+        std::vector<std::string> args1 = {"split", "bunny_split"};
+        console_load_serialised_data(this,args1);
+        
+        std::vector<std::string> args2 = {"stop_low", "bunny_stop_200_2_1_kmeans"};
+        console_load_serialised_data(this, args2);
+
         render();
     }
 

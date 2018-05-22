@@ -3,7 +3,7 @@ out vec4 FragColor;
 //in vec2 TexCoords;
 in vec3 WorldPos;
 in vec3 Normal;
-
+in float ao_v;
 // material parameters
 uniform vec3 albedo;
 uniform float metallic;
@@ -115,7 +115,7 @@ void main()
     // this ambient lighting with environment lighting).
     vec3 ambient = vec3(0.03) * albedo * ao;
 
-    vec3 color = ambient + Lo;
+    vec3 color = (1-ao_v) *(ambient + Lo);
 
     // HDR tonemapping
     color = color / (color + vec3(1.0));

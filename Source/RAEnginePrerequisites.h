@@ -74,6 +74,7 @@ namespace tyro
     class IGLMesh;
     class IGLMeshWireframe;
     class ES2PolygonOffset;
+    class ES2VideoTexture;
 
     using DepthProxySPtr = std::shared_ptr<DepthProxy>;
     using DepthProxyWPtr = std::weak_ptr<DepthProxy>;
@@ -196,6 +197,9 @@ namespace tyro
     using ES2PolygonOffsetUPtr = std::unique_ptr<ES2PolygonOffset>;
     using ES2PolygonOffsetWPtr = std::weak_ptr<ES2PolygonOffset>;
 
+    using ES2VideoTextureSPtr = std::shared_ptr<ES2VideoTexture>;
+    using ES2VideoTextureUPtr = std::unique_ptr<ES2VideoTexture>;
+    using ES2VideoTextureWPtr = std::weak_ptr<ES2VideoTexture>;
 }
 
 namespace Wm5

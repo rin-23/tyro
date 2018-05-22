@@ -1,3 +1,4 @@
+#pragma once
 #include <ios>	
 #include <iomanip>	
 #include <sstream>

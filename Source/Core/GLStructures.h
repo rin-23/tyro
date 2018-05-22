@@ -43,6 +43,21 @@ struct VertexNorm
     Wm5::Vector3f normal;
 };
 
+struct VertexNormAO
+{
+    VertexNormAO() {}
+    VertexNormAO(const Wm5::Vector3f& p, const Wm5::Vector3f& n, double t_ao)
+    {
+        position = p;
+        normal = n;
+        ao = t_ao;
+    }
+    
+    Wm5::Vector3f position;
+    Wm5::Vector3f normal;
+    double ao;
+};
+
 struct VertexGeneral
 {
     Wm5::Vector3f position;

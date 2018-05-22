@@ -15,7 +15,11 @@ namespace tyro
     class ES2CoreVisualEffects
     {
     public:
+        static ES2VisualEffectSPtr VideoTexture(); 
+
         static ES2VisualEffectSPtr PBR();
+        
+        static ES2VisualEffectSPtr PBR2();
         
         static ES2VisualEffectSPtr ColorPicking();
         

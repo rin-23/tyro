@@ -51,16 +51,22 @@ namespace tyro
         ES2PolygonOffset()
         :
         Enabled(false),
-        Offset(0.0)
+        Factor(0.0),
+        Units(-5.0),
+        IsSolid(false)
         {}
 
-        ES2PolygonOffset(bool enabled, float offset)
+        ES2PolygonOffset(bool enabled, float offset, float units, bool issolid)
         :
         Enabled(enabled),
-        Offset(offset)
+        Factor(offset),
+        Units(units),
+        IsSolid(issolid)
         {}
 
         bool Enabled;
-        float Offset;
+        float Factor;
+        float Units;
+        bool IsSolid; 
     };
 }

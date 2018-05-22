@@ -1,8 +1,7 @@
 #version 400
 in vec4 aPosition; //local space
 in vec3 aNormal; //local space
-
-//in vec4 aColor;
+in vec4 aColor;
 
 uniform mat4 uMVPMatrix;
 uniform mat3 uNMatrix;
@@ -15,7 +14,6 @@ out vec4 vColor;
 
 void main()
 {   
-    vec4 aColor = vec4(1.0, 0.0, 0.0, 1.0);
     gl_Position = uMVPMatrix * aPosition;
     vec3 eyeNormal = normalize(uNMatrix * aNormal);
     float intensity = max(c_zero, dot(eyeNormal, cLightDir));

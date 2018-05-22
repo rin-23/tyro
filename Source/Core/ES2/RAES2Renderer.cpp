@@ -238,15 +238,34 @@ namespace tyro
 	void ES2Renderer::SetPolygonOffset(const ES2PolygonOffset* offset) const 
 	{
 		if (offset != nullptr && offset->Enabled) 
-		{
-			glEnable(GL_POLYGON_OFFSET_FILL);
-			GL_CHECK_ERROR;
-    		glPolygonOffset(offset->Offset, 1.0);
-			GL_CHECK_ERROR;
+		{	 
+			if (offset->IsSolid) 
+			{	
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				GL_CHECK_ERROR;
+				glEnable(GL_POLYGON_OFFSET_FILL);
+				GL_CHECK_ERROR;
+			}
+			else 
+			{
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				GL_CHECK_ERROR;
+				glEnable(GL_POLYGON_OFFSET_LINE);
+				GL_CHECK_ERROR;
+			}
+
+			glPolygonOffset(offset->Factor, offset->Units);
+			GL_CHECK_ERROR;	
 		}
 		else 
-		{
+		{	
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			GL_CHECK_ERROR;
+
 			glDisable(GL_POLYGON_OFFSET_FILL);
+			GL_CHECK_ERROR;
+
+			glDisable(GL_POLYGON_OFFSET_LINE);
 			GL_CHECK_ERROR;
 		}
 	}

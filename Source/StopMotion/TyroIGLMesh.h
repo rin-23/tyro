@@ -10,12 +10,17 @@ namespace tyro
 class IGLMesh : public ES2TriMesh
 {
 public:
-    IGLMesh() {}
+    IGLMesh() {
+        isPBR = false;
+    }
 
     virtual ~IGLMesh() {}
     
     static IGLMeshSPtr Create(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C);
+    static IGLMeshSPtr Create(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C, const Eigen::VectorXd& AO);
     static IGLMeshSPtr Create(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::Vector3d& color);
+
+    static IGLMeshSPtr CreateColor(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C, const Eigen::VectorXd& error, float max_error);
     
     Eigen::MatrixXd V; //position data
     Eigen::MatrixXi F; //face data
@@ -26,7 +31,11 @@ public:
 
 protected:
     void Init(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C);
+    void Init(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C, const Eigen::VectorXd& AO);
+    void InitColor(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C, const Eigen::VectorXd& Error, float max_error);
+
 private:
+    bool isPBR;
     
 };
 
@@ -46,6 +55,7 @@ public:
     
 protected:
     void Init(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& C);
+
 private:
 
 };

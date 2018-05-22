@@ -196,18 +196,27 @@ int stop_motion_vertex_distance(int num_labels,
 			auto duration = duration_cast<microseconds>(t2 - t1).count();
 			cout << "label time " << duration << "\n";
 
-			if (graphEnergy > lastEnergy)
-			{	
-			    std::cout << "Energy after graph cuts " << graphEnergy << " is higher than previous energy " << lastEnergy << "\n\n";
-				D = lastD;
-				S_vec = lastS_vec;
-				break;
-			}
-			else 
-			{
+			if (kmeans) 
+			{ 
 				lastD = D;
 				lastS_vec = S_vec;
 				lastEnergy = graphEnergy;
+			}
+			else 
+			{
+				//if (graphEnergy > lastEnergy)
+			//	{	
+			//		std::cout << "Energy after graph cuts " << graphEnergy << " is higher than previous energy " << lastEnergy << "\n\n";
+			//		D = lastD;
+			//		S_vec = lastS_vec;
+			//		break;
+			//	}
+			//	else 
+				{
+					lastD = D;
+					lastS_vec = S_vec;
+					lastEnergy = graphEnergy;
+				}
 			}
 
 			t1 = high_resolution_clock::now();

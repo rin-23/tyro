@@ -52,7 +52,7 @@ namespace tyro
                 
                 double periodic_interval = 1000.0/fps; //in ms
                 timer = new Poco::Timer(0, periodic_interval);
-                timer->start(Poco::TimerCallback<Timeline>(*this, &Timeline::frameChangedTimeline));
+                timer->start(Poco::TimerCallback<Timeline>(*this, &Timeline::frameChangedTimeline), Poco::Thread::Priority::PRIO_HIGHEST);
             }
             //else if (state == Paused) 
            // {

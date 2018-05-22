@@ -18,6 +18,7 @@ set(TYRO_SRC_LOCAL
 "StopMotion/load_mesh_sequence.cpp"
 "StopMotion/mesh_split.cpp"
 "StopMotion/kmeans.cpp"
+"StopMotion/ES2VideoTexture.cpp"
 
 "StopMotion/GraphCutMethods/GCOLib/GCoptimization.cpp" 
 "StopMotion/GraphCutMethods/GCOLib/graph.cpp" 
