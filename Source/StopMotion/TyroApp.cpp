@@ -10,7 +10,7 @@
 #include <stdio.h>
 
 #include <functional>
-#include <opencv2/opencv.hpp>
+
 
 #include "Wm5APoint.h"
 #include "Wm5Vector2.h"
@@ -34,6 +34,7 @@
 #include <igl/upsample.h>
 #include <igl/adjacency_list.h>
 #include <igl/ambient_occlusion.h>
+#include <igl/boundary_loop.h>
 #include <filesystem/path.h>
 
 #include "TyroIGLMesh.h"
@@ -164,7 +165,118 @@ void tyro::convert_vertex_to_edge_selection(const std::vector<int>& vid_list,
 namespace tyro
 {   
 namespace
-{     
+{       
+        void console_render_to_video(App* app, const std::vector<std::string>& args) 
+        {   
+            int v_width, v_height;
+            app->m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
+            
+            cv::Size S = cv::Size(v_width, v_height);
+
+            cv::VideoWriter outputVideo;                                        // Open the output
+            outputVideo.open("/home/rinat/bunny.avi",
+                                CV_FOURCC('M','J','P','G'), 
+                                //CV_FOURCC('x', '2', '6', '4'),
+                                24, 
+                                S, 
+                                true);
+            
+            if (!outputVideo.isOpened())
+            {
+                cout  << "Could not open the output video for write" << endl;
+                return;
+            }
+
+            for (int frame = 0; frame < app->ANIM.VD.size(); ++frame) 
+            {   
+                app->m_frame = frame;
+                app->DrawMeshes();
+
+                // Poll for and process events
+                app->m_tyro_window->GetGLContext()->swapBuffers();
+
+                //make sure everything was drawn
+                glFlush();
+                glFinish();
+                GL_CHECK_ERROR;
+                
+                u_int8_t* texture = (u_int8_t*) malloc(4*v_width *v_height);
+                glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                glReadPixels(0, 0, v_width, v_height, GL_RGBA, GL_UNSIGNED_BYTE, texture);
+                GL_CHECK_ERROR;
+
+                cv::Mat image1(v_height, v_width, CV_8UC4, texture);
+                cv::Mat image2, image3;
+                cv::cvtColor(image1, image2, CV_RGBA2BGR);
+                cv::flip(image2, image3, 0);
+
+                outputVideo.write(image3);
+                free(texture);
+                cout << "Saved frame " << frame  << endl;
+
+            }
+            
+            cout << "Finished writing" << endl;
+        }    
+
+        void console_render_to_image(App* app, const std::vector<std::string>& args) 
+        {
+            app->m_frame = 0;
+            
+            app->DrawMeshes();
+
+            // Poll for and process events
+            app->m_tyro_window->GetGLContext()->swapBuffers();
+
+            //make sure everything was drawn
+            glFlush();
+            glFinish();
+            GL_CHECK_ERROR;
+            
+            int v_width, v_height;
+            app->m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
+            u_int8_t* texture = (u_int8_t*) malloc(4*v_width *v_height);
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+            glReadPixels(0, 0, v_width, v_height, GL_RGBA, GL_UNSIGNED_BYTE, texture);
+            GL_CHECK_ERROR;
+
+            cv::Mat image1(v_height, v_width, CV_8UC4, texture);
+            cv::Mat image2, image3;
+            cv::cvtColor(image1, image2, CV_RGBA2BGR);
+            cv::flip(image2, image3, 0);
+            
+            cv::imwrite( "/home/rinat/fuck.jpg", image3);
+            free(texture);
+        }
+
+        void console_show_seam(App* app, const std::vector<std::string>& args) 
+        {
+            app->m_eid_list.clear();
+            app->m_eid_list.resize(app->SMOTION.size());
+            for (int i = 0; i < app->SMOTION.size(); ++i) 
+            {   
+                if (app->SMOTION[i].computed) 
+                {   
+                    const auto & cE = app->SMOTION[i].anim.UE;
+                    const auto & cEMAP = app->SMOTION[i].anim.EMAP;
+                    MatrixXi EF, EI;
+
+                    igl::edge_flaps(app->SMOTION[i].anim.F, cE, cEMAP, EF, EI);
+                    
+                    for (int j = 0; j < EF.rows(); ++j) 
+                    {
+                        int f1 = EF(j,0);
+                        int f2 = EF(j,1);
+
+                        if (f1 == -1 || f2 == -1) 
+                        {
+                            app->m_eid_list[i].push_back(j);
+                        }
+                    }
+                }
+            }
+        }
+
         void console_plot_error(App* app, const std::vector<std::string>& args) 
         {   
             using namespace Eigen;
@@ -373,6 +485,10 @@ namespace
             {
                 archive(app->SMOTION[0]);
             }
+            else if (type == "video") 
+            {
+                archive(app->m_video); 
+            }
         }
 
         void console_load_serialised_data(App* app, const std::vector<std::string>& args) 
@@ -399,7 +515,7 @@ namespace
                 AxisAlignedBBox bbox;
                 MatrixXd VT = app->ANIM.VD[0].transpose();
                 bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
-                app->m_model_offset = bbox.GetRadius(); 
+                app->m_model_offset = 0.8*2* bbox.GetRadius(); 
 
                 app->m_update_camera = true;
                 app->m_state = App::State::LoadedModel;
@@ -700,7 +816,7 @@ namespace
             if (args.size() == 1) 
             {
                 int show = std::stoi(args[0]);
-                app->m_show_wireframe = show;
+                app->m_show_wire = show;
                 app->render();                
             }
         }
@@ -730,20 +846,18 @@ namespace
             
             MatrixXi eid_list;
             VectorXi EI, uEI, DMAP;
-            convert_vertex_to_edge_selection(app->vid_list, 
-                                             app->ANIM.E, 
-                                             app->ANIM.UE, 
-                                             app->ANIM.EMAP,
-                                             eid_list, 
-                                             EI, 
-                                             uEI, 
-                                             DMAP);
-        
+            convert_vertex_to_edge_selection(app->vid_list, app->ANIM.E, app->ANIM.UE, 
+                                             app->ANIM.EMAP, eid_list, EI, 
+                                             uEI, DMAP);
+
+            app->m_eid_list2.clear();
             for (int i = 0; i < uEI.size(); ++i) 
             {   
-                app->ANIM.UEC.row(uEI(i)) = Eigen::Vector3d(0,0.8,0);
+                app->m_eid_list2.push_back(uEI(i));
+                app->ANIM.UEC.row(uEI(i)) = Eigen::Vector3d(0, 0.8, 0);
             }
             
+            //app->m_show_seam = true;
             //debug_show_faces_near_edge_selection(uEI, DMAP);       
                     
             app->render();
@@ -1216,7 +1330,7 @@ namespace
             AxisAlignedBBox bbox;
             MatrixXd VT = app->ANIM.VD[0].transpose();
             bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
-            app->m_model_offset = bbox.GetRadius(); 
+            app->m_model_offset = 0.7*2*bbox.GetRadius(); 
 
             app->m_update_camera = true;
             app->m_state = App::State::LoadedModel;
@@ -1229,6 +1343,15 @@ namespace
             app->m_weights.FW.setOnes();
             
             app->compute_average();
+
+            std::vector<std::string> args1 = {"split", "monka_split"};
+            console_load_serialised_data(app,args1);
+
+            std::vector<std::string> args2 = {"stop_low", "monka_stop_100_1_1_kmeans"};
+            console_load_serialised_data(app, args2);
+            
+            std::vector<std::string> args3 = {"stop_up", "monka_stop_50_1_0_kmeans"};
+            console_load_serialised_data(app, args3);
 
             app->render();
         }
@@ -1311,7 +1434,7 @@ namespace
     m_update_camera(false),
     m_frame_overlay(nullptr),
     m_computed_parts(false),
-    m_show_wireframe(true),
+    m_show_wire(true),
     add_seg_faces(false),
     m_video_texture(nullptr),
     m_frame_offset(0)
@@ -1414,7 +1537,6 @@ namespace
         }
     }
 
-
     int App::Video() 
     {   
         using namespace cv;
@@ -1463,7 +1585,7 @@ namespace
         m_frame_overlay = ES2TextOverlay::Create(strrr, 
                                                  Wm5::Vector2f(0, 0), 
                                                  font, 
-                                                 Wm5::Vector4f(0,0,0,1), 
+                                                 Wm5::Vector4f(1,1,1,1), 
                                                  viewport);
         m_frame_overlay->SetTranslate(Wm5::Vector2i(-viewport[2]/2 + 50,-viewport[3]/2 + 50));
    
@@ -1487,7 +1609,7 @@ namespace
             // Display the resulting frame
             //imshow( "Frame", frame );
             
-            m_video_texture->showFrame(frame, frame_image.data);
+            m_video_texture->showFrame(frame, frame_image);
             VisibleSet vis_set;
             vis_set.Insert(m_video_texture.get());
             vis_set.Insert(m_frame_overlay.get());
@@ -1511,6 +1633,124 @@ namespace
         return 0;
     }
 
+    int App::ParseImages() 
+    {   
+        using namespace cv;
+        
+       
+        int beginning = 2761;
+        m_frame = beginning;
+        int fileAnchor = 2666;
+        int openglAnchor = 2699;
+        int offset = -fileAnchor + openglAnchor ;
+        offset = 0;
+        
+        int num_frames = 5177; //TODO DEPENDS ON MOVIE 
+
+        bool serialised = true;
+        if (serialised) 
+        {
+            auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/video_frames");
+            std::ifstream in = std::ifstream(f.str(), std::ios::binary);
+            cereal::BinaryInputArchive archive_i(in);
+            archive_i(m_video);
+        }
+        else 
+        {               
+            m_video.F.resize(num_frames);
+            for (int f = 0; f < num_frames; ++f) 
+            {
+                m_video.F[f] = cv::Mat::zeros( cv::Size(1280, 720), CV_8UC3 );
+            }
+        }
+        m_video_texture = ES2VideoTexture::Create(1280, 720, num_frames, Texture::TextureFormat::TF_R8G8B8); 
+
+        std::vector<std::string> FOLDERS__ = 
+        {   
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/02/01/"),
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/02/02/"),
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/02/03/"),
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/02/04/"),
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/02/05/"),
+            
+            
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/03/01/"),
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/03/02/"),
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/03/03/"),
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/03/05/"),            
+            
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/03/06/"),
+
+                        
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/04/01/"),
+            
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/04/03/"),
+            
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/05/01/"),
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/05/03/"),
+            
+            
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/05/05_07_09/"),
+            /*
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/05/07/"),
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/05/09/"),            
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/05/11/"),
+            
+            
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/07/01/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/07/02/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/07/05/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/07/06/"),
+
+
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/01/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/02B/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/03/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/05/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/07/"),    
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/07B/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/09/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/10/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/11/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/13/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/14/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/16/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/18/"),            
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/19/"),
+            
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/09/05/"),
+
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/11/10/"),
+
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/12/09/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/12/21/"),
+
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/13/03/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/13/04/")
+            */
+        };
+
+        std::vector<std::string> obj_paths;
+        for (auto& folder : FOLDERS__) 
+        {
+            int num_files_read;
+            RA_LOG_INFO("loading folder %s", folder.data());
+            tyro::obj_file_path_list(folder, "objlist.txt", obj_paths, num_files_read);
+            RA_LOG_INFO("frames read %i", num_files_read);
+        }       
+
+        int f_count = beginning;
+        for (auto& file : obj_paths) 
+        {
+            Mat LoadedImage, image2, image3;
+            LoadedImage = cv::imread(file);
+            cv::cvtColor(LoadedImage, image2, CV_BGR2RGB);
+            cv::flip(image2, image3, 0);
+            m_video.F[f_count + offset] = image3;
+            f_count++;
+        }
+    }
+
     int App::Launch()
     {   
         RA_LOG_INFO("Launching the app");
@@ -1521,7 +1761,8 @@ namespace
                 
         //setup renderer
         m_gl_rend = new ES2Renderer(m_tyro_window->GetGLContext());
-        m_gl_rend->SetClearColor(Wm5::Vector4f(0.0, 153.0/255.0, 153.0/255.0, 1.0));
+        //m_gl_rend->SetClearColor(Wm5::Vector4f(0.0, 153.0/255.0, 153.0/255.0, 1.0));
+        m_gl_rend->SetClearColor(Wm5::Vector4f(0.1, 0.1, 0.1, 1.0));
 
         int v_width, v_height;
         m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
@@ -1615,7 +1856,12 @@ namespace
         register_console_function("laplacian_smooth_along_edges", console_laplacian_smooth_along_edges, "");
         register_console_function("console_offset_frame", console_offset_frame, "");
         register_console_function("plot_error", console_plot_error, "");
-        
+        register_console_function("show_seam", console_show_seam, ""); 
+        register_console_function("render_to_image", console_render_to_image, ""); 
+        register_console_function("render_to_video", console_render_to_video, ""); 
+
+
+
         m_state = App::State::Launched;
         // Loop until the user closes the window
        // m_tyro_window->GetGLContext()->swapBuffers();
@@ -1638,10 +1884,12 @@ namespace
         m_frame_overlay = ES2TextOverlay::Create(strrr, 
                                                  Wm5::Vector2f(0, 0), 
                                                  font, 
-                                                 Wm5::Vector4f(0,0,0,1), 
+                                                 Wm5::Vector4f(1,1,1,1), 
                                                  viewport);
         m_frame_overlay->SetTranslate(Wm5::Vector2i(-viewport[2]/2 + 50,-viewport[3]/2 + 50));
         
+        //ParseImages();
+
         while (!m_tyro_window->ShouldClose())
         {   
             if (m_need_rendering) 
@@ -1652,223 +1900,7 @@ namespace
                 }
                 else if (m_state == App::State::LoadedModel) 
                 {   
-                    //RA_LOG_INFO("RENDER BEGIN");
-
-                    //create renderable for mesh
-                    VisibleSet vis_set;
-
-                    ///render any video first
-                    //play video
-                    {
-                        //if (m_video_texture == nullptr)
-                        //    m_video_texture = ES2VideoTexture::Create("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/Big Buck Bunny-720p.mp4");
-                        
-                        //m_video_texture->showFrame(m_frame_offset + m_frame);
-                        //vis_set.Insert(m_video_texture.get());
-                    }     
-
-                    #if 1
-                    //ORIGNAL MODEL
-                    if (RENDER.mesh == nullptr) 
-                    {
-                        RENDER.mesh = IGLMesh::Create(ANIM.VD[m_frame], 
-                                                                ANIM.F, 
-                                                                ANIM.ND[m_frame],
-                                                                ANIM.FC);
-                    }                                       //ANIM.AO[3114]);
-                    else 
-                    { 
-                        RENDER.mesh->UpdateData(ANIM.VD[m_frame], 
-                                                        ANIM.F, 
-                                                        ANIM.ND[m_frame],
-                                                        ANIM.FC);
-                    }
-
-                    RENDER.mesh->Update(true);
-                    vis_set.Insert(RENDER.mesh.get());
-                    
-                    if (m_show_wireframe)
-                    {
-                        RENDER.mesh_wire = IGLMeshWireframe::Create(ANIM.VD[m_frame], 
-                                                                            ANIM.UE,
-                                                                            ANIM.UEC);
-                        RENDER.mesh_wire->Update(true);
-                        vis_set.Insert(RENDER.mesh_wire.get());
-                    }
-
-                    if (m_computed_error) 
-                    {
-                        //Rendering stuff
-                        RENDER.error.clear();
-                        //RENDER.part_wire.clear();
-                        
-                        for (int i = 0; i < SMOTION.size(); ++i) 
-                        {   
-                            auto& sm = SMOTION[i];
-                            
-                            if (sm.computed == false) 
-                                continue;
-
-                            auto mesh = IGLMesh::CreateColor(sm.anim.VD[m_frame], 
-                                                             sm.anim.F, 
-                                                             sm.anim.ND[m_frame],
-                                                             sm.anim.FC, 
-                                                             m_error[i][m_frame],
-                                                             max_error);
-                            Wm5::Transform tr;
-                            tr.SetTranslate(Wm5::APoint(3*m_model_offset, 0, 0));
-                            mesh->LocalTransform = tr * mesh->LocalTransform;
-                            mesh->Update(true);
-                            RENDER.error.push_back(mesh);
-                            vis_set.Insert(mesh.get());
-                        } 
-                    }
-                    
-                    if (m_computed_avg) 
-                    {
-                        auto mesh = IGLMesh::Create(ANIM.AvgVD, 
-                                                    ANIM.F, 
-                                                    ANIM.ND[0],
-                                                    Eigen::Vector3d(0.5, 0, 0));
-                        Wm5::Transform tr;
-                        tr.SetTranslate(Wm5::APoint(-2*m_model_offset, 0, 0));
-                        mesh->LocalTransform = tr * mesh->LocalTransform;
-                        mesh->Update(true);
-
-                        RENDER.avg = mesh;
-                        vis_set.Insert(mesh.get());
-
-                       //create renderable for mesh wireframe
-                        if (m_show_wireframe)
-                        {
-                            auto wire = IGLMeshWireframe::Create(ANIM.AvgVD, 
-                                                                 ANIM.UE,
-                                                                 ANIM.UEC);
-                            wire->LocalTransform = tr * wire->LocalTransform;
-                            wire->Update(true);
-                            RENDER.avg_wire = wire;
-                            vis_set.Insert(RENDER.avg_wire.get());
-                        }
-                    
-                    }
-
-                    //DEFORMED MODEL
-                    if (m_computed_deformation)
-                    {                        
-                        auto mesh = IGLMesh::Create(DANIM.VD[m_frame], 
-                                                    DANIM.F, 
-                                                    ANIM.ND[m_frame],
-                                                    Eigen::Vector3d(0.5,0.5,0.5));
-                        Wm5::Transform tr;
-                        tr.SetTranslate(Wm5::APoint(-1*m_model_offset, 0, 0));
-                        mesh->LocalTransform = tr * mesh->LocalTransform;
-                        mesh->Update(true);
-                        RENDER.dfm = mesh;
-                        vis_set.Insert(mesh.get());
-
-                        //create renderable for mesh wireframe
-                         if (m_show_wireframe)
-                        {
-                            auto wire = IGLMeshWireframe::Create(DANIM.VD[m_frame], 
-                                                                 DANIM.UE,
-                                                                 ANIM.UEC);
-                            wire->LocalTransform = tr * wire->LocalTransform;
-                            wire->Update(true);
-                            RENDER.dfm_wire = wire;
-                            vis_set.Insert(RENDER.dfm_wire.get());
-                        }
-                    }
-
-                    //Split Mesh
-                    if (m_computed_parts)
-                    {
-                        //Rendering stuff
-                        RENDER.part.clear();
-                        RENDER.part_wire.clear();
-
-                        for (int i = 0; i < PIECES.size(); ++i) 
-                        {                             
-                            auto mesh1 = IGLMesh::Create(PIECES[i].VD[m_frame], 
-                                                         PIECES[i].F, 
-                                                         PIECES[i].ND[m_frame],
-                                                         PIECES[i].FC);
-                            Wm5::Transform tr;
-                            tr.SetTranslate(Wm5::APoint(m_model_offset, 0, 0));
-                            mesh1->LocalTransform = tr * mesh1->LocalTransform;
-                            mesh1->Update(true);
-                            RENDER.part.push_back(mesh1);
-                            vis_set.Insert(mesh1.get());
-
-                            //create renderable for mesh wireframe
-                            if (m_show_wireframe)
-                            {
-                                auto wire1 = IGLMeshWireframe::Create(PIECES[i].VD[m_frame], 
-                                                                    PIECES[i].UE,
-                                                                    PIECES[i].UEC);
-                                wire1->LocalTransform = tr * wire1->LocalTransform;                                                        
-                                wire1->Update(true);
-                                RENDER.part_wire.push_back(wire1);
-                                vis_set.Insert(wire1.get());
-                            }
-                        } 
-                    }
-
-                    //Stop motion
-                    if (m_computed_stop_motion) 
-                    {   
-                        RENDER.stop.clear();
-                        RENDER.stop_wire.clear();
-
-                        for (int i = 0; i < SMOTION.size(); ++i) 
-                        {   
-                            auto& sm = SMOTION[i];
-                            
-                            if (sm.computed == false) 
-                                continue;
-
-                            auto mesh = IGLMesh::Create(sm.anim.VD[m_frame], 
-                                                        sm.anim.F, 
-                                                        sm.anim.ND[m_frame],
-                                                        sm.anim.FC);
-                            Wm5::Transform tr;
-                            tr.SetTranslate(Wm5::APoint(2*m_model_offset, 0, 0));
-                            mesh->LocalTransform = tr * mesh->LocalTransform;
-                            mesh->Update(true);
-                            RENDER.stop.push_back(mesh);
-                            vis_set.Insert(mesh.get());
-
-                            //create renderable for mesh wireframe
-                            if (m_show_wireframe)
-                            {
-                                auto wire  = IGLMeshWireframe::Create(sm.anim.VD[m_frame], 
-                                                                      sm.anim.UE,
-                                                                      sm.anim.UEC);
-                                wire->LocalTransform = tr * wire->LocalTransform;                                                        
-                                wire->Update(true);
-                                RENDER.stop_wire.push_back(wire);
-                                vis_set.Insert(wire.get());
-                            }
-                        }
-                    }
-
-                    for (auto object_sptr : ball_list) 
-                    {
-                        vis_set.Insert(object_sptr.get());
-                    }
-                    #endif
-                    std::string fstr = std::string("Frame ") + std::to_string(m_frame) + std::string("/") + std::to_string(ANIM.VD.size());
-                    m_frame_overlay->SetText(fstr);
-                    vis_set.Insert(m_frame_overlay.get());
-
-                    
-
-                    if (m_update_camera) 
-                    {
-                        update_camera();
-                        m_update_camera = false;
-                    }
-                 
-                    m_gl_rend->RenderVisibleSet(&vis_set, m_camera);         
+                    DrawMeshes();
                 }
                 
                 // Draw console
@@ -1879,8 +1911,7 @@ namespace
                 }
                 // Poll for and process events
                 m_tyro_window->GetGLContext()->swapBuffers();
-                m_need_rendering = false;
-             
+                m_need_rendering = false;             
             }
             
             m_tyro_window->Wait();
@@ -1889,6 +1920,306 @@ namespace
         }
 
 	    return 0;
+    }
+
+    void App::DrawMeshes() 
+    {
+        //RA_LOG_INFO("RENDER BEGIN");
+
+        //create renderable for mesh
+        VisibleSet vis_set;
+        ///render any video first
+        //play video
+        {   
+            /*
+            if (m_video_texture == nullptr)
+                m_video_texture = ES2VideoTexture::Create("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/Big Buck Bunny-720p.mp4");
+            
+            m_video_texture->showFrame(m_frame_offset + m_frame);
+            vis_set.Insert(m_video_texture.get());
+            */
+
+            if (m_video.F.size() > 0 && m_video_texture != nullptr) 
+            {
+                m_video_texture->showFrame(m_frame, m_video.F[m_frame]);
+                vis_set.Insert(m_video_texture.get());
+            }
+        }     
+
+        #if 1
+        //ORIGNAL MODEL
+        if (RENDER.mesh == nullptr) 
+            RENDER.mesh = IGLMesh::Create(ANIM.VD[m_frame], ANIM.F, ANIM.ND[m_frame], ANIM.FC);//ANIM.AO[3114]);
+        else 
+            RENDER.mesh->UpdateData(ANIM.VD[m_frame], ANIM.F, ANIM.ND[m_frame], ANIM.FC);
+
+        RENDER.mesh->Update(true);
+        vis_set.Insert(RENDER.mesh.get());
+        
+        if (m_show_wire)
+        {   
+            if (RENDER.mesh_wire == nullptr)
+                RENDER.mesh_wire = IGLMeshWireframe::Create(ANIM.VD[m_frame], ANIM.UE, ANIM.UEC);
+            else
+                RENDER.mesh_wire->UpdateData(ANIM.VD[m_frame], ANIM.UE, ANIM.UEC);
+            RENDER.mesh_wire->Update(true);
+            vis_set.Insert(RENDER.mesh_wire.get());
+        }
+
+        if (m_eid_list2.size()>0) 
+        {
+            RENDER.seam_on_main = IGLMeshWireframe::Create(ANIM.VD[m_frame], ANIM.UE, ANIM.UEC, m_eid_list2);
+            RENDER.seam_on_main->Update(true);
+            vis_set.Insert(RENDER.seam_on_main.get());
+        }
+
+        if (m_computed_avg) 
+        {   
+            Wm5::Transform tr;
+            tr.SetTranslate(Wm5::APoint(-3*m_model_offset, 0, 0));
+            if (RENDER.avg == nullptr) 
+            {
+                RENDER.avg = IGLMesh::Create(ANIM.AvgVD, ANIM.F, ANIM.ND[0], Eigen::Vector3d(102/255.0, 153/255.0, 255/255.0));
+                RENDER.avg->LocalTransform = tr * RENDER.avg->LocalTransform;
+                RENDER.avg->Update(true);                            
+            }
+            else  
+            {
+                RENDER.avg->UpdateData(ANIM.AvgVD, ANIM.F, ANIM.ND[0], Eigen::Vector3d(102/255.0, 153/255.0, 255/255.0));
+            }
+
+            vis_set.Insert(RENDER.avg.get());
+
+            //create renderable for mesh wireframe
+            if (m_show_wire)
+            {
+                if (RENDER.avg_wire == nullptr) 
+                {
+                    RENDER.avg_wire = IGLMeshWireframe::Create(ANIM.AvgVD, ANIM.UE, ANIM.UEC);
+                    RENDER.avg_wire->LocalTransform = tr * RENDER.avg_wire->LocalTransform;
+                    RENDER.avg_wire->Update(true);
+                }
+                else 
+                    RENDER.avg_wire->UpdateData(ANIM.AvgVD, ANIM.UE, ANIM.UEC);
+                
+                vis_set.Insert(RENDER.avg_wire.get());
+            }                    
+        }
+
+        //DEFORMED MODEL
+        if (m_computed_deformation)
+        {   
+            Wm5::Transform tr;
+            tr.SetTranslate(Wm5::APoint(-2*m_model_offset, 0, 0));
+                                    
+            if (RENDER.dfm == nullptr) 
+            {
+                RENDER.dfm = IGLMesh::Create(DANIM.VD[m_frame], DANIM.F, ANIM.ND[m_frame], Eigen::Vector3d(0.5,0.5,0.5));
+                RENDER.dfm->LocalTransform = tr * RENDER.dfm->LocalTransform;
+                RENDER.dfm->Update(true);
+            }
+            else 
+            {
+                RENDER.dfm->UpdateData(DANIM.VD[m_frame], DANIM.F, ANIM.ND[m_frame], Eigen::Vector3d(0.5,0.5,0.5));                            
+            }
+            vis_set.Insert(RENDER.dfm.get());
+
+            if (m_show_wire)
+            {
+                if (RENDER.dfm_wire==nullptr) 
+                {
+                    RENDER.dfm_wire = IGLMeshWireframe::Create(DANIM.VD[m_frame], DANIM.UE, ANIM.UEC);
+                    RENDER.dfm_wire->LocalTransform = tr * RENDER.dfm_wire->LocalTransform;
+                    RENDER.dfm_wire->Update(true);      
+                }
+                else 
+                    RENDER.dfm_wire->UpdateData(DANIM.VD[m_frame], DANIM.UE, ANIM.UEC);
+                                                
+                vis_set.Insert(RENDER.dfm_wire.get());
+            }
+        }
+
+        //Split Mesh
+        if (m_computed_parts)
+        {
+            //Rendering stuff
+            if (RENDER.part.size() == 0) 
+            {
+                RENDER.part = std::vector<IGLMeshSPtr>(PIECES.size(), nullptr);
+                RENDER.part_wire = std::vector<IGLMeshWireframeSPtr>(PIECES.size(), nullptr);
+            }
+
+            for (int i = 0; i < PIECES.size(); ++i) 
+            {    
+                Wm5::Transform tr;
+                tr.SetTranslate(Wm5::APoint(-3*m_model_offset, 0, 0));
+
+                if (RENDER.part[i] == nullptr) 
+                {
+                    RENDER.part[i] = IGLMesh::Create(PIECES[i].VD[m_frame], PIECES[i].F, PIECES[i].ND[m_frame], PIECES[i].FC);
+                    RENDER.part[i]->LocalTransform = tr * RENDER.part[i]->LocalTransform;
+                    RENDER.part[i]->Update(true);
+                }
+                else
+                    RENDER.part[i]->UpdateData(PIECES[i].VD[m_frame], PIECES[i].F, PIECES[i].ND[m_frame], PIECES[i].FC);
+
+                vis_set.Insert(RENDER.part[i].get());
+
+                //create renderable for mesh wireframe
+                if (m_show_wire)
+                {   
+                    if (RENDER.part_wire[i] == nullptr) 
+                    {
+                        RENDER.part_wire[i] = IGLMeshWireframe::Create(PIECES[i].VD[m_frame], PIECES[i].UE, PIECES[i].UEC);
+                        RENDER.part_wire[i]->LocalTransform = tr * RENDER.part_wire[i]->LocalTransform;                                                        
+                        RENDER.part_wire[i]->Update(true);
+                    }
+                    else
+                        RENDER.part_wire[i]->UpdateData(PIECES[i].VD[m_frame], PIECES[i].UE, PIECES[i].UEC);
+
+                    vis_set.Insert(RENDER.part_wire[i].get());
+                }
+            } 
+        }
+
+        //Stop motion
+        if (m_computed_stop_motion) 
+        {   
+            if (RENDER.stop.size() == 0) 
+            {
+                RENDER.stop = std::vector<IGLMeshSPtr>(SMOTION.size(), nullptr);
+                RENDER.stop_wire = std::vector<IGLMeshWireframeSPtr>(SMOTION.size(), nullptr);
+            }
+
+            for (int i = 0; i < SMOTION.size(); ++i) 
+            {   
+                if (SMOTION[i].computed == false) 
+                    continue;
+                
+                Wm5::Transform tr;
+                tr.SetTranslate(Wm5::APoint(1*m_model_offset, 0, 0));
+
+                if (RENDER.stop[i] == nullptr) 
+                { 
+                    RENDER.stop[i] = IGLMesh::Create(SMOTION[i].anim.VD[m_frame], 
+                                                     SMOTION[i].anim.F, 
+                                                     SMOTION[i].anim.ND[m_frame],
+                                                     SMOTION[i].anim.FC); 
+                    RENDER.stop[i]->LocalTransform = tr * RENDER.stop[i]->LocalTransform;
+                    RENDER.stop[i]->Update(true);
+                }
+                else 
+                {
+                    RENDER.stop[i]->UpdateData(SMOTION[i].anim.VD[m_frame], 
+                                               SMOTION[i].anim.F, 
+                                               SMOTION[i].anim.ND[m_frame],
+                                               SMOTION[i].anim.FC); 
+                } 
+
+                vis_set.Insert(RENDER.stop[i].get());
+
+                //create renderable for mesh wireframe
+                if (m_show_wire)
+                {   
+                    if (RENDER.stop_wire[i] == nullptr) 
+                    {
+                        RENDER.stop_wire[i]  = IGLMeshWireframe::Create(SMOTION[i].anim.VD[m_frame], 
+                                                                        SMOTION[i].anim.UE,
+                                                                        SMOTION[i].anim.UEC);
+                        RENDER.stop_wire[i]->LocalTransform = tr * RENDER.stop_wire[i]->LocalTransform;                                                        
+                        RENDER.stop_wire[i]->Update(true);
+                    } 
+                    else 
+                    {
+                        RENDER.stop_wire[i]->UpdateData(SMOTION[i].anim.VD[m_frame], 
+                                                        SMOTION[i].anim.UE,
+                                                        SMOTION[i].anim.UEC);
+                    }
+
+                    vis_set.Insert(RENDER.stop_wire[i].get());
+                }
+
+                if (m_eid_list.size() > 0) //should replace wiht boolen flag 
+                {   
+                    //if (i == 1)
+                    //{
+                        RENDER.seam[i] = IGLMeshWireframe::Create(SMOTION[i].anim.VD[m_frame], SMOTION[i].anim.UE, SMOTION[i].anim.UEC, m_eid_list[i]);
+                        RENDER.seam[i]->LocalTransform = tr * RENDER.seam[i]->LocalTransform;                                                        
+                        RENDER.seam[i]->Update(true);
+                        vis_set.Insert(RENDER.seam[i].get());
+                    //}
+                }
+            }
+        }
+
+        if (m_computed_error) 
+        {
+                //Rendering stuff
+            if (RENDER.error.size() == 0) 
+            {
+                RENDER.error = std::vector<IGLMeshSPtr>(PIECES.size(), nullptr);
+                // RENDER.part_wire = std::vector<IGLMeshWireframeSPtr>(PIECES.size(), nullptr);
+            }
+
+            for (int i = 0; i < RENDER.error.size(); ++i) 
+            {   
+                if (SMOTION[i].computed == false) continue;
+
+                Wm5::Transform tr;
+                tr.SetTranslate(Wm5::APoint(2*m_model_offset, 0, 0));
+                if (RENDER.error[i] == nullptr) 
+                {
+                    RENDER.error[i] = IGLMesh::CreateColor(SMOTION[i].anim.VD[m_frame], SMOTION[i].anim.F, 
+                                                           SMOTION[i].anim.ND[m_frame], SMOTION[i].anim.FC, 
+                                                           m_error[i][m_frame], max_error);
+                    
+                    RENDER.error[i]->LocalTransform = tr * RENDER.error[i]->LocalTransform;
+                    RENDER.error[i]->Update(true);
+                }
+                else 
+                { 
+                    RENDER.error[i]->UpdateData(SMOTION[i].anim.VD[m_frame], SMOTION[i].anim.F, 
+                                                SMOTION[i].anim.ND[m_frame], SMOTION[i].anim.FC, 
+                                                m_error[i][m_frame], max_error);
+                }
+
+                vis_set.Insert(RENDER.error[i].get());
+            } 
+        }
+
+        for (auto object_sptr : ball_list) 
+        {
+            vis_set.Insert(object_sptr.get());
+        }
+        #endif
+
+        //auto glambda = [](auto FILES, auto&& b) { return a < b; };
+        int start_frame = 0;
+        int scene_id; 
+
+        for (int file = 0; file < ANIM.SIdx.size(); ++file) 
+        {   
+            int num_frames = ANIM.SIdx[file];
+            start_frame += num_frames;
+            if (m_frame < start_frame) 
+            { 
+                scene_id = file;
+                break;
+            }
+        } 
+
+        std::string fstr = std::string("Frame ") + std::to_string(m_frame) + std::string("/") + std::to_string(ANIM.VD.size());
+        fstr =fstr+ std::string(" Scene ") + std::to_string(scene_id);
+        m_frame_overlay->SetText(fstr);
+        vis_set.Insert(m_frame_overlay.get());
+
+        if (m_update_camera) 
+        {
+            update_camera();
+            m_update_camera = false;
+        }
+        
+        m_gl_rend->RenderVisibleSet(&vis_set, m_camera);       
     }
 
     void App::render() 
@@ -1963,13 +2294,19 @@ namespace
         if (m_computed_parts) 
         {
             for (auto& mesh : RENDER.part)
-                WorldBoundBox.Merge(mesh->WorldBoundBox);
+                if (mesh)
+                    WorldBoundBox.Merge(mesh->WorldBoundBox);
         }
 
         if (m_computed_stop_motion) 
         {   
-            for (auto& mesh : RENDER.stop)
-                WorldBoundBox.Merge(mesh->WorldBoundBox);
+            for (int i=0; i < SMOTION.size(); ++i)
+            {
+                if (SMOTION[i].computed && RENDER.stop[i] != nullptr) 
+                {
+                    WorldBoundBox.Merge(RENDER.stop[i]->WorldBoundBox);
+                }
+            }
         }
 
         Wm5::APoint world_center = WorldBoundBox.GetCenter();
@@ -2032,9 +2369,8 @@ namespace
                                  use_igl_loader);
         
         //@TODO need this to update camera
-        Eigen::Vector3d face_color(0.5,0.5,0.5);
-        tyro::color_matrix(ANIM.F.rows(), face_color, ANIM.FC);
-        tyro::color_black_matrix(ANIM.UE.rows(), ANIM.UEC);
+        tyro::color_matrix(ANIM.F.rows(), Eigen::Vector3d(0.5,0.5,0.5), ANIM.FC);
+        tyro::color_matrix(ANIM.UE.rows(), Eigen::Vector3d(0.2,0.2,0.2), ANIM.UEC);
     }
 
     void App::load_bunny(bool serialized)
@@ -2113,6 +2449,7 @@ namespace
             std::ifstream in = std::ifstream(p.str(), std::ios::binary);
             cereal::BinaryInputArchive archive_i(in);
             archive_i(ANIM);
+            tyro::color_matrix(ANIM.UE.rows(), Eigen::Vector3d(0.3,0.3,0.3), ANIM.UEC);
         }
         else
         {   
@@ -2140,7 +2477,7 @@ namespace
         AxisAlignedBBox bbox;
         MatrixXd VT = ANIM.VD[0].transpose();
         bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
-        m_model_offset = bbox.GetRadius(); 
+        m_model_offset = 0.55*2*bbox.GetRadius(); 
 
         m_update_camera = true;
         m_state = App::State::LoadedModel;
@@ -2174,6 +2511,10 @@ namespace
         
         std::vector<std::string> args2 = {"stop_low", "bunny_stop_200_2_1_kmeans"};
         console_load_serialised_data(this, args2);
+
+        std::vector<std::string> args3 = {"stop_up", "bunny_stop_100_1_0_kmeans"};
+        console_load_serialised_data(this, args3);
+
 
         render();
     }

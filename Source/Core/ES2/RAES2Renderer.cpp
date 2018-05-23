@@ -40,10 +40,18 @@ namespace tyro
 		glViewport(0, 0, mViewWidth, mViewHeight);
 		glClearColor(mClearColor[0], mClearColor[1], mClearColor[2], mClearColor[3]);
 
-		glLineWidth(3.0);
+		glEnable(GL_LINE_SMOOTH);
+
+		glLineWidth(2.0);
+		 GLfloat lineWidthRange[2] = {0.0f, 0.0f};
+    	glGetFloatv(GL_SMOOTH_LINE_WIDTH_RANGE, lineWidthRange);
+    	
+		GLfloat a1= lineWidthRange[0];
+		GLfloat a2= lineWidthRange[1];
+		
 		GL_CHECK_ERROR;
 
-		RA_LOG_VERBOSE("Finished creating framebuffers");
+		RA_LOG_INFO("Finished creating framebuffers");
 	}
 
 	ES2Renderer::~ES2Renderer()

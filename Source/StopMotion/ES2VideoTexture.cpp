@@ -81,30 +81,31 @@ void ES2VideoTexture::showFrame(int frame)
         cv::Mat frame_image_grb;
         // Capture frame-by-frame
         capture->read(frame_image_grb);
-        //RA_LOG_INFO("frame %i milliseconds %f", frame, capture->get(CV_CAP_PROP_POS_MSEC));
-
-        cv::Mat frame_image_rgb;
-        cv::Mat frame_image;
-
-        cv::cvtColor(frame_image_grb, frame_image_rgb, CV_BGR2RGB);
-        cv::flip(frame_image_rgb, frame_image, 0);
-
-        //auto tp = type2str(frame_image.type());
-        
         //If the frame is empty, break immediately
-        if (frame_image.empty()) 
+        if (frame_image_grb.empty()) 
         {
             RA_LOG_ERROR_ASSERT("frame data is empty");
             return;
         }
+        //RA_LOG_INFO("frame %i milliseconds %f", frame, capture->get(CV_CAP_PROP_POS_MSEC));
+
+        cv::Mat frame_image_rgb;
+        cv::Mat frame_image;
+        
+        cv::cvtColor(frame_image_grb, frame_image_rgb, CV_BGR2RGB);
+        cv::flip(frame_image_rgb, frame_image, 0);
+       
+        //auto tp = type2str(frame_image.type());
+        
+        
     
         // Display the resulting frame
         //imshow( "Frame", frame );
-        this->showFrame(frame, frame_image.data);
+        this->showFrame(frame, frame_image);
     }
 }
 
-void ES2VideoTexture::showFrame(int frame, const void* data) 
+void ES2VideoTexture::showFrame(int frame, const cv::Mat& mat) 
 {
     assert(frame < mNumFrames);
 
@@ -112,7 +113,13 @@ void ES2VideoTexture::showFrame(int frame, const void* data)
     {
         mCurrentFrame = frame;
         //void* data = nullptr;
-        GetVisualEffect()->GetTexture2D()->LoadSubData(0, 0, mWidth, mHeight, data);
+        cv::Rect roi;
+        roi.x = (1280 - 720)/2;
+        roi.y = 0;
+        roi.width = 720;
+        roi.height = 720;
+        //cv::Mat cropped = mat(roi);
+        GetVisualEffect()->GetTexture2D()->LoadSubData(0, 0, mWidth, mHeight, mat.data);
     }
 }
 
@@ -142,20 +149,23 @@ void ES2VideoTexture::_UpdateGeometry()
     using Wm5::Vector2f;
 
     int numOfVerticies = 6; //6 verticies to draw quad
-    
+    float offset = 0.75;
+    float xoffset = 0.05;
+    float k = 0; //720/1280
     VertexTexture coords[] = 
     {   
         //VertexTexture(Vector3f(0.0f,  0.5f,  0.0f),  Vector2f(0, 0)),
         //VertexTexture(Vector3f(-0.5f, -0.5f,  0.0f),  Vector2f(0, 0)),
         //VertexTexture(Vector3f(0.5f, -0.5f,  0.0f),  Vector2f(0, 0))
         
-        VertexTexture(Vector3f(-1, -1, 0),  Vector2f(0, 0)),
-        VertexTexture(Vector3f( 1, -1, 0),  Vector2f(1, 0)),
-        VertexTexture(Vector3f( 1,  1, 0),  Vector2f(1, 1)),
+        
+        VertexTexture(Vector3f( (-1 + xoffset), -1+offset, 0),  Vector2f(0, 0)),
+        VertexTexture(Vector3f( k+(-0.5 + xoffset), -1+offset, 0),  Vector2f(1, 0)),
+        VertexTexture(Vector3f( k+(-0.5  + xoffset),  -0.5+offset, 0),  Vector2f(1, 1)),
 
-        VertexTexture(Vector3f(-1, -1, 0),  Vector2f(0, 0)),
-        VertexTexture(Vector3f( 1,  1, 0),  Vector2f(1, 1)),
-        VertexTexture(Vector3f(-1,  1, 0),  Vector2f(0, 1))
+        VertexTexture(Vector3f((-1 + xoffset), -1+offset, 0),  Vector2f(0, 0)),
+        VertexTexture(Vector3f( k+(-0.5  + xoffset), -0.5+offset, 0),  Vector2f(1, 1)),
+        VertexTexture(Vector3f((-1 + xoffset), -0.5+offset, 0),  Vector2f(0, 1))
     };
 
     SetVertexBuffer(std::make_shared<ES2VertexHardwareBuffer>(sizeof(VertexTexture), numOfVerticies, coords, HardwareBuffer::BU_STATIC));

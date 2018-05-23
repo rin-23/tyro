@@ -9,9 +9,11 @@
 #include "TyroTimeLine.h"
 #include <atomic>
 
+#include "opencv_serialisation.h"
 #include "eigen_cerealisation.h"
 #include <cereal/types/vector.hpp>
 #include <cereal/cereal.hpp>
+#include <opencv2/opencv.hpp>
 
 namespace tyro
 {   
@@ -31,6 +33,7 @@ namespace tyro
         int Launch();
         int Video();
         int VideoToImages();
+        int ParseImages();
 
         //Commands
         void load_blobby();
@@ -83,7 +86,7 @@ namespace tyro
         bool m_computed_parts;
         Console m_console;
         bool m_update_camera;
-        bool m_show_wireframe;
+        bool m_show_wire;
         bool add_seg_faces;
         //square selection
         int m_square_sel_start_x;
@@ -112,6 +115,9 @@ namespace tyro
             IGLMeshWireframeSPtr dfm_wire;            
             bool dfm_visible;
 
+            IGLMeshWireframeSPtr seam[2];            
+            IGLMeshWireframeSPtr seam_on_main;            
+            
             std::vector<IGLMeshSPtr> stop;
             std::vector<IGLMeshWireframeSPtr> stop_wire;
             bool stop_motion_visible = true;
@@ -120,11 +126,32 @@ namespace tyro
             std::vector<IGLMeshWireframeSPtr> part_wire;
             bool parts_visible = true;
 
+            
+
             std::vector<IGLMeshSPtr> error;
             //std::vector<IGLMeshWireframeSPtr> stop_motion_meshes_wire;
             
         };
         MRenderData RENDER;
+
+        struct VideoCV 
+        {
+            std::vector<cv::Mat> F;
+            template<class Archive>
+            void save(Archive & archive) const
+            {
+                archive(F);
+             
+            }
+            
+            template<class Archive>
+            void load(Archive & archive)
+            {
+                archive(F);
+          
+            }
+        };
+        VideoCV m_video;
 
         struct MAnimation 
         {   
@@ -224,7 +251,9 @@ namespace tyro
         std::vector<int> fid_list2; //fid added with right mouse click
         std::vector<int> fid_list3; //fid added with right mouse click
         
-        std::vector<int> eid_list;
+        std::vector<std::vector<int>> m_eid_list; //seam on stop motion
+        std::vector<int> m_eid_list2; //seam on regular model
+        bool m_show_seam = false;
 
         void register_console_function(const std::string& name,
                                        const std::function<void(App*, const std::vector<std::string>&)>& con_fun,
@@ -237,8 +266,8 @@ namespace tyro
         void setFaceColor(int fid, bool selected);
         void setFaceColor(int fid, const Eigen::Vector3d& clr);
         void selectVertex(Eigen::Vector2f& mouse_pos, int mouse_button, int modifier);
-        
-        
+        void DrawMeshes();
+
     };
 
 

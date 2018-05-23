@@ -120,7 +120,7 @@ int Window::Init()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
-    m_glfw_window = glfwCreateWindow(2320, 1480, "Hello World", NULL, NULL);
+    m_glfw_window = glfwCreateWindow(1980, 1020, "Hello World", NULL, NULL);
     //m_glfw_window = glfwCreateWindow(1200, 1200, "Hello World", NULL, NULL);
     
     if (!m_glfw_window)

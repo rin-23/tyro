@@ -28,7 +28,7 @@ namespace tyro
         
         virtual void UpdateUniformsWithCamera(const Camera* camera) override;
         
-        void showFrame(int frame, const void* data);
+        void showFrame(int frame, const cv::Mat& mat);
         void showFrame(int frame); //asumes cv VideoCapture object is available
     
     protected:
