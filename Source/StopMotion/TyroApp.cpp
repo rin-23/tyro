@@ -114,21 +114,38 @@ void tyro::convert_vertex_to_edge_selection(const std::vector<int>& vid_list,
                                             const Eigen::MatrixXi& E, //all directed edges
                                             const Eigen::MatrixXi& uE, //all unique edges
                                             const Eigen::VectorXi& EMAP, // map from directed to unique edge index 
+                                            bool isClosed,
                                             Eigen::MatrixXi& eid_list, // edges from vid_list
                                             Eigen::VectorXi& EI, // indicies into directed edges matrix
                                             Eigen::VectorXi& uEI, // indicies into undirected edges matrix
                                             Eigen::VectorXi& DMAP) // checks which directions where switched HACKY
 {
     //create a closed edge loop from vertex selection
-    int num_edges = vid_list.size(); //assumes its a closed loop
-    eid_list.resize(num_edges, 2);
-    for (int i = 0; i < num_edges; ++i) 
-    {   
-        if (i == num_edges - 1) //last edge
-            eid_list.row(i) = Eigen::Vector2i(vid_list[i], vid_list[0]);
-        else
-            eid_list.row(i) = Eigen::Vector2i(vid_list[i], vid_list[i+1]);
+    int num_edges;
+    if (isClosed) 
+    {
+        num_edges = vid_list.size(); //assumes its a closed loop
+        eid_list.resize(num_edges, 2);
+        for (int i = 0; i < vid_list.size(); ++i) 
+        {   
+            if (i == vid_list.size() - 1) //last edge
+                eid_list.row(i) = Eigen::Vector2i(vid_list[i], vid_list[0]);
+            else
+                eid_list.row(i) = Eigen::Vector2i(vid_list[i], vid_list[i+1]);
+        }
     }
+    else 
+    {
+ 
+        num_edges = vid_list.size() - 1; //assumes its a closed loop
+        eid_list.resize(num_edges, 2);
+        for (int i = 0; i < vid_list.size(); ++i) 
+        {   
+            if (i < vid_list.size() - 1) //last edge
+                eid_list.row(i) = Eigen::Vector2i(vid_list[i], vid_list[i+1]);
+        }
+    }
+   
 
     EI.resize(num_edges);
     uEI.resize(num_edges);
@@ -164,8 +181,189 @@ void tyro::convert_vertex_to_edge_selection(const std::vector<int>& vid_list,
 
 namespace tyro
 {   
+
 namespace
-{       
+{       void console_load_serialised_data(App* app, const std::vector<std::string>& args); 
+
+        void console_load_bunny_stop(App* app, const std::vector<std::string>& args) 
+        {
+            auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
+            auto p = f/filesystem::path("subanimaton");
+
+            std::ifstream in = std::ifstream(p.str(), std::ios::binary);
+            cereal::BinaryInputArchive archive_i(in);
+            archive_i(app->ANIM);
+            tyro::color_matrix(app->ANIM.UE.rows(), Eigen::Vector3d(0,0,0), app->ANIM.UEC);
+
+            app->m_timeline->SetFrameRange(app->ANIM.VD.size()-1);
+
+                
+            //Compute radius of the bounding box of the model
+            AxisAlignedBBox bbox;
+            MatrixXd VT = app->ANIM.VD[0].transpose();
+            bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
+            app->m_model_offset = 0.55*2*bbox.GetRadius(); 
+
+            app->m_update_camera = true;
+            app->m_state = App::State::LoadedModel;
+            
+            app->m_weights.VW.resize(app->ANIM.VD[0].rows());
+            app->m_weights.VW.setOnes();
+
+            app->m_weights.FW.resize(app->ANIM.F.rows());
+            app->m_weights.FW.setOnes();
+
+            app->compute_average();
+
+            std::vector<std::string> args1 = {"split", "SUBPIECES"};
+            console_load_serialised_data(app, args1);
+            
+            std::vector<std::string> args2 = {"stop_low", "bunny_stop_200_2_1_kmeans"};
+            //console_load_serialised_data(this, args2);
+
+            std::vector<std::string> args3 = {"stop_up", "bunny_stop_100_1_0_kmeans"};
+            //console_load_serialised_data(this, args3);
+
+            app->render();
+        }
+
+        void console_save_sub_video(App* app, const std::vector<std::string>& args) 
+        {
+            int frame[] = {1042,1597,1738,1947};  
+            App::VideoCV video;
+
+             //main animation
+            int total_size = 0;
+            for (int s  = 0; s < 4; s+=2) 
+            { 
+                total_size += frame[s+1] - frame[s] + 1;
+            } 
+
+            video.F.resize(total_size);
+            
+            int cur_frame = 0;
+            for (int s  = 0; s < 4; s+=2) 
+            {   
+                int start = frame[s];
+                int end = frame[s+1];
+                for (int f = start; f <= end; ++f) 
+                {
+                    video.F[cur_frame] = app->m_video.F[f];
+                    cur_frame += 1;
+                }
+            } 
+
+            auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
+            auto p = f/filesystem::path(std::string("subvideo_frames"));
+            std::ofstream os(p.str(), std::ios::binary);
+            cereal::BinaryOutputArchive archive(os);
+            archive(video);
+
+        }
+        void copy_sub(App::MAnimation& subanimaton, int *frame, App::MAnimation& sourceAnim) 
+        {
+            using namespace Eigen;
+            using namespace std;
+            
+            //main animation
+            int total_size = 0;
+            for (int s  = 0; s < 4; s+=2) 
+            { 
+                total_size += frame[s+1] - frame[s] + 1;
+            } 
+
+            //main animation
+            subanimaton.VD.resize(total_size);
+            subanimaton.ND.resize(total_size);
+
+            int cur_frame = 0;
+            for (int s  = 0; s < 4; s+=2) 
+            {   int start = frame[s];
+                int end = frame[s+1];
+                for (int f = start; f <= end; ++f) 
+                {
+                    subanimaton.VD[cur_frame] = sourceAnim.VD[f];
+                    subanimaton.ND[cur_frame] = sourceAnim.ND[f];
+                    cur_frame += 1;
+                }
+            } 
+
+            subanimaton.F = sourceAnim.F.eval();
+            subanimaton.E = sourceAnim.E.eval();
+            subanimaton.UE = sourceAnim.UE.eval();
+            subanimaton.EMAP = sourceAnim.EMAP.eval();
+            subanimaton.FC = sourceAnim.FC.eval();
+            subanimaton.UEC = sourceAnim.UEC.eval();
+            subanimaton.AvgVD = sourceAnim.AvgVD.eval();
+            subanimaton.SIdx.push_back(sourceAnim.VD.size());
+        }
+        
+        void console_save_sub_split(App* app, const std::vector<std::string>& args) 
+        {
+            int frame[] = {1042,1597,1738,1947};    
+
+            std::vector<App::MAnimation> SUBPIECES; // Break deformed mesh into pieces along seam(s).
+            SUBPIECES.resize(app->PIECES.size());
+           
+            for (int i=0; i<SUBPIECES.size(); ++i) 
+            {   
+                copy_sub(SUBPIECES[i], frame, app->PIECES[i]);
+            }
+            
+
+            auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
+            auto p = f/filesystem::path(std::string("SUBPIECES"));
+            std::ofstream os(p.str(), std::ios::binary);
+            cereal::BinaryOutputArchive archive(os);
+            archive(SUBPIECES);
+        }
+
+        void console_save_sub_animation(App* app, const std::vector<std::string>& args) 
+        {
+    
+            int frame[] = {1042,1597,1738,1947};    
+            
+            //main animation
+            App::MAnimation subanimaton;
+            copy_sub(subanimaton, frame, app->ANIM);
+
+            auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
+            auto p = f/filesystem::path(std::string("subanimaton"));
+            std::ofstream os(p.str(), std::ios::binary);
+            cereal::BinaryOutputArchive archive(os);
+            archive(subanimaton);
+        }
+
+        void console_save_for_printing(App* app, const std::vector<std::string>& args) 
+        {
+            auto path = std::string("/home/rinat/Workspace/Tyro/Source/tmp/suckmydick");
+            std::ofstream outFile(path);
+            for (int i = 0; i < app->SMOTION[1].L.size(); ++i)
+            { 
+                outFile << app->SMOTION[1].L[i] << "\n";
+            }
+            /*
+            auto& part = app->SMOTION[1];
+            auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
+            auto p = f/filesystem::path(std::string("test.obj"));
+            for (int i = 0; i < part.D.size(); ++i) 
+            {
+                MatrixXd N;
+                MatrixXd TC;
+                MatrixXi FTC;
+    
+                N.resize(part.D[i].rows(), 3);
+                N.setOnes();
+                igl::writeOBJ(
+                p.str(), 
+                part.D[i], 
+                part.anim.F);
+                break;
+            }*/
+
+
+        }
+
         void console_render_to_video(App* app, const std::vector<std::string>& args) 
         {   
             int v_width, v_height;
@@ -277,24 +475,38 @@ namespace
             }
         }
 
+        void console_plot_error_vel(App* app, const std::vector<std::string>& args) 
+        {
+            using namespace Eigen;
+       
+            int num_parts = app->SMOTION.size();
+            int num_frames = app->ANIM.VD.size();
+            app->m_error_velocity.resize(num_parts);
+            app->max_error_velocity = std::numeric_limits<float>::min();
+            for (int p = 0; p < num_parts; ++p) 
+            {   
+                if (app->SMOTION[p].computed) 
+                {
+                    app->m_error_velocity[p].resize(num_frames); 
+                    for (int frame = 1; frame < num_frames; ++frame) 
+                    {                   
+                        //VC[frame].resize(FD.VD[0].rows());
+                        VectorXd lul = ((app->PIECES[p].VD[frame] - app->PIECES[p].VD[frame-1]) - 
+                                        (app->SMOTION[p].anim.VD[frame] - app->SMOTION[p].anim.VD[frame-1])) .rowwise().squaredNorm();  
+                        float max = lul.maxCoeff();
+                        app->max_error_velocity = std::max(app->max_error, max); 
+                        app->m_error_velocity[p][frame] = lul;                          
+                    }
+                }
+            }
+            app->m_computed_vel_error =true;
+        }
+
+
         void console_plot_error(App* app, const std::vector<std::string>& args) 
         {   
             using namespace Eigen;
             
-            Eigen::MatrixXf m1(2,3);
-            Eigen::MatrixXf m2(2,3);
-            Eigen::VectorXf v(2);
-  
-            m1 << 1, 2, 3,
-                  4, 5, 6;
-            
-            m2 << 1, 0, 0,
-                  0, 0, 0;
-            
-            VectorXf m = (m1-m2).rowwise().squaredNorm();
-
-            std::cout << m.rows() << " " << m.cols() <<  std::endl;
-
             int num_parts = app->SMOTION.size();
             int num_frames = app->ANIM.VD.size();
             app->m_error.resize(num_parts);
@@ -391,6 +603,12 @@ namespace
         {   
             using Eigen::Vector3d;
             //Taubian smoothing
+            if (args.size() != 1) 
+            {
+                return;
+            }
+
+            bool isClosed = std::stoi(args[0]);
             if (app->vid_list.size() > 0) 
             {   
 
@@ -409,12 +627,14 @@ namespace
                         
                         //check if v is boundary, then dont smooth
                         if (i==0) 
-                        {
+                        {   
+                            if (!isClosed) continue;
                             left = app->vid_list.size()-1;
                             right = 1;  
                         }
                         else if (i == app->vid_list.size()-1) 
-                        {
+                        {   
+                            if (!isClosed) continue;
                             left = i-1;
                             right = 0;  
                         }
@@ -472,6 +692,14 @@ namespace
             else if (type == "split") 
             {
                 archive(app->PIECES);
+            }
+            else if (type == "split_up") 
+            {
+                archive(app->PIECES[0]);
+            }
+            else if (type == "split_low") 
+            {
+                archive(app->PIECES[1]);
             }
             else if (type == "stop") 
             {
@@ -844,10 +1072,12 @@ namespace
         {
             RA_LOG_INFO("Converting vertex to edge selection");
             
+            if (args.size() != 1)  return;
+
             MatrixXi eid_list;
             VectorXi EI, uEI, DMAP;
             convert_vertex_to_edge_selection(app->vid_list, app->ANIM.E, app->ANIM.UE, 
-                                             app->ANIM.EMAP, eid_list, EI, 
+                                             app->ANIM.EMAP, std::stoi(args[0]), eid_list, EI, 
                                              uEI, DMAP);
 
             app->m_eid_list2.clear();
@@ -876,6 +1106,13 @@ namespace
                 return;
             }
 
+            if (args.size() != 1) 
+            {
+                RA_LOG_INFO("Need type of loop to cut");
+                return;
+            }
+            
+            /*
             if (!igl::is_edge_manifold(app->DANIM.F)) 
             {   
                 Eigen::MatrixXi P;
@@ -905,13 +1142,15 @@ namespace
                 RA_LOG_ERROR("Mesh is not edge manifold");
                 return;
             }
-
+            */
             MatrixXi eid_list;
             VectorXi EI, uEI, DMAP;
+            bool isClosedSeam = std::stoi(args[0]);
             convert_vertex_to_edge_selection(app->vid_list, 
                                              app->DANIM.E, 
                                              app->DANIM.UE, 
                                              app->DANIM.EMAP,
+                                             isClosedSeam,
                                              eid_list, 
                                              EI, 
                                              uEI, 
@@ -1017,11 +1256,12 @@ namespace
                     auto& piece = app->PIECES[i];
                     bool kmeans = false;
                     if (initmethod == "kmeans") kmeans = true; 
+
                     tyro::stop_motion_vertex_distance(num_labels, 
                                                       smooth_weight,
                                                       kmeans,
                                                       piece.VD,
-                                                      piece.SIdx,
+                                                      app->ANIM.SIdx,
                                                       piece.F,
                                                       sm.D, //dictionary
                                                       sm.L, //labels,  
@@ -1177,10 +1417,32 @@ namespace
         {
             RA_LOG_INFO("Loading selected faces from tmp folder");
 
-            if (args.size() == 1)
+            if (args.size() == 2)
             {   
-                app->load_selected_faces(args[0]);
-                return;
+                auto filename = args[0];
+                bool append = std::stoi(args[1]);
+
+                RA_LOG_INFO("Load selected faces");
+                auto path = std::string("/home/rinat/Workspace/Tyro/Source/tmp/") + filename;
+
+                if (append)
+                    app->fid_list.clear();
+                
+                std::fstream myfile(path, std::ios_base::in);
+                int fid;
+                while (myfile >> fid)
+                {
+                    //printf("%i ", fid);
+                    
+                    auto it = std::find(app->fid_list.begin(), app->fid_list.end(), fid);
+                    if (it == app->fid_list.end()) 
+                    {
+                        app->fid_list.push_back(fid);
+                        app->setFaceColor(fid, true);
+                    }              
+                }
+                app->render();
+                glfwPostEmptyEvent();        
             }
         }
 
@@ -1210,9 +1472,27 @@ namespace
         {
             RA_LOG_INFO("Loading selected verticies from tmp folder");
 
-            if (args.size() == 1)
+
+            if (args.size() == 2)
             {   
-                app->load_selected_verticies(args[0]);
+                auto filename = args[0];
+                bool append = std::stoi(args[1]);
+                RA_LOG_INFO("Load selected verticies");
+                auto path = std::string("/home/rinat/Workspace/Tyro/Source/tmp/") + filename;
+
+                if (append)
+                    app->vid_list.clear();
+                
+                std::fstream myfile(path, std::ios_base::in);
+                int vid;
+                while (myfile >> vid)
+                {
+                    //printf("%i ", vid);
+                    app->vid_list.push_back(vid);
+                    app->addSphere(vid);
+                }
+                app->render();
+                glfwPostEmptyEvent();        
                 return;
             }
         }
@@ -1541,7 +1821,7 @@ namespace
     {   
         using namespace cv;
 
-         //setup windowshapes
+         //setup windowOdpes
         m_tyro_window = new Window();
         m_tyro_window->Init();
                 
@@ -1638,14 +1918,13 @@ namespace
         using namespace cv;
         
        
-        int beginning = 2761;
+        int beginning = 0;
         m_frame = beginning;
         int fileAnchor = 2666;
         int openglAnchor = 2699;
         int offset = -fileAnchor + openglAnchor ;
         offset = 0;
         
-        int num_frames = 5177; //TODO DEPENDS ON MOVIE 
 
         bool serialised = true;
         if (serialised) 
@@ -1657,12 +1936,15 @@ namespace
         }
         else 
         {               
+            int num_frames = 5177; //TODO DEPENDS ON MOVIE 
+
             m_video.F.resize(num_frames);
             for (int f = 0; f < num_frames; ++f) 
             {
                 m_video.F[f] = cv::Mat::zeros( cv::Size(1280, 720), CV_8UC3 );
             }
         }
+        int num_frames = m_video.F.size();
         m_video_texture = ES2VideoTexture::Create(1280, 720, num_frames, Texture::TextureFormat::TF_R8G8B8); 
 
         std::vector<std::string> FOLDERS__ = 
@@ -1738,7 +2020,7 @@ namespace
             tyro::obj_file_path_list(folder, "objlist.txt", obj_paths, num_files_read);
             RA_LOG_INFO("frames read %i", num_files_read);
         }       
-
+        /*
         int f_count = beginning;
         for (auto& file : obj_paths) 
         {
@@ -1749,6 +2031,7 @@ namespace
             m_video.F[f_count + offset] = image3;
             f_count++;
         }
+        */
     }
 
     int App::Launch()
@@ -1856,10 +2139,17 @@ namespace
         register_console_function("laplacian_smooth_along_edges", console_laplacian_smooth_along_edges, "");
         register_console_function("console_offset_frame", console_offset_frame, "");
         register_console_function("plot_error", console_plot_error, "");
+        register_console_function("plot_error_vel", console_plot_error_vel, "");
+
         register_console_function("show_seam", console_show_seam, ""); 
         register_console_function("render_to_image", console_render_to_image, ""); 
         register_console_function("render_to_video", console_render_to_video, ""); 
 
+        register_console_function("save_sub_split", console_save_sub_split, "");
+        register_console_function("save_sub_animation", console_save_sub_animation, "");
+        register_console_function("save_for_printing", console_save_for_printing, "");
+        register_console_function("save_sub_video", console_save_sub_video, "");
+        register_console_function("load_bunny_stop", console_load_bunny_stop, "");
 
 
         m_state = App::State::Launched;
@@ -1888,7 +2178,7 @@ namespace
                                                  viewport);
         m_frame_overlay->SetTranslate(Wm5::Vector2i(-viewport[2]/2 + 50,-viewport[3]/2 + 50));
         
-        //ParseImages();
+       // ParseImages();
 
         while (!m_tyro_window->ShouldClose())
         {   
@@ -1949,7 +2239,7 @@ namespace
         #if 1
         //ORIGNAL MODEL
         if (RENDER.mesh == nullptr) 
-            RENDER.mesh = IGLMesh::Create(ANIM.VD[m_frame], ANIM.F, ANIM.ND[m_frame], ANIM.FC);//ANIM.AO[3114]);
+            RENDER.mesh = IGLMesh::Create(ANIM.VD[m_frame], ANIM.F, ANIM.ND[m_frame], ANIM.FC); //ANIM.AO[3114]);
         else 
             RENDER.mesh->UpdateData(ANIM.VD[m_frame], ANIM.F, ANIM.ND[m_frame], ANIM.FC);
 
@@ -1976,7 +2266,7 @@ namespace
         if (m_computed_avg) 
         {   
             Wm5::Transform tr;
-            tr.SetTranslate(Wm5::APoint(-3*m_model_offset, 0, 0));
+            tr.SetTranslate(Wm5::APoint(-4*m_model_offset, 0, 0));
             if (RENDER.avg == nullptr) 
             {
                 RENDER.avg = IGLMesh::Create(ANIM.AvgVD, ANIM.F, ANIM.ND[0], Eigen::Vector3d(102/255.0, 153/255.0, 255/255.0));
@@ -2325,7 +2615,8 @@ namespace
     void App::addSphere(int vid, Wm5::Vector4f color) 
     {   
         Eigen::RowVector3d new_c = ANIM.VD[m_frame].row(vid);
-        ES2SphereSPtr object = ES2Sphere::Create(10, 10, 0.007);
+        float s =  (ANIM.VD.size() > 3000) ? 0.0005 : 0.007;
+        ES2SphereSPtr object = ES2Sphere::Create(10, 10, s);
         Wm5::Transform tr;
         tr.SetTranslate(Wm5::APoint(new_c(0), new_c(1), new_c(2)));
         object->LocalTransform = tr * object->LocalTransform;
@@ -2372,6 +2663,8 @@ namespace
         tyro::color_matrix(ANIM.F.rows(), Eigen::Vector3d(0.5,0.5,0.5), ANIM.FC);
         tyro::color_matrix(ANIM.UE.rows(), Eigen::Vector3d(0.2,0.2,0.2), ANIM.UEC);
     }
+
+
 
     void App::load_bunny(bool serialized)
     {
@@ -2445,11 +2738,19 @@ namespace
         if (serialized) 
         {   
             auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
-            auto p = f/filesystem::path("bunny_frames_upsampled");
+            //auto p = f/filesystem::path("bunny_frames_upsampled");
+            auto p = f/filesystem::path("bunny_frames_front");
+            
+            //auto p = f/filesystem::path("subanimaton");
+
+
             std::ifstream in = std::ifstream(p.str(), std::ios::binary);
             cereal::BinaryInputArchive archive_i(in);
             archive_i(ANIM);
-            tyro::color_matrix(ANIM.UE.rows(), Eigen::Vector3d(0.3,0.3,0.3), ANIM.UEC);
+            tyro::color_matrix(ANIM.UE.rows(), Eigen::Vector3d(0,0,0), ANIM.UEC);
+
+            //TODO REMOVE FOR FULL MOVIE
+           // ANIM.SIdx = {106, 450, 210};
         }
         else
         {   
@@ -2506,7 +2807,8 @@ namespace
             //RA_LOG_INFO("AO %f, %f",ANIM.AO[339].minCoeff(), ANIM.AO[339].maxCoeff());
         }
 
-        std::vector<std::string> args1 = {"split", "bunny_split"};
+        ParseImages();
+        std::vector<std::string> args1 = {"split", "bunny_split_vertical"};
         console_load_serialised_data(this,args1);
         
         std::vector<std::string> args2 = {"stop_low", "bunny_stop_200_2_1_kmeans"};
@@ -2514,7 +2816,6 @@ namespace
 
         std::vector<std::string> args3 = {"stop_up", "bunny_stop_100_1_0_kmeans"};
         console_load_serialised_data(this, args3);
-
 
         render();
     }
@@ -2565,50 +2866,6 @@ namespace
         { 
             outFile << e << "\n";
         }
-    }
-    
-
-    void App::load_selected_faces(const std::string& filename) 
-    {
-        RA_LOG_INFO("Load selected faces");
-        auto path = std::string("/home/rinat/Workspace/Tyro/Source/tmp/") + filename;
-
-        fid_list.clear();
-        std::fstream myfile(path, std::ios_base::in);
-        int fid;
-        while (myfile >> fid)
-        {
-            //printf("%i ", fid);
-            
-            auto it = std::find(fid_list.begin(), fid_list.end(), fid);
-            if (it == fid_list.end()) 
-            {
-                fid_list.push_back(fid);
-                setFaceColor(fid, true);
-            }              
-        }
-        render();
-        glfwPostEmptyEvent();        
-        //getchar();
-    }
-
-    void App::load_selected_verticies(const std::string& filename) 
-    {
-        RA_LOG_INFO("Load selected verticies");
-        auto path = std::string("/home/rinat/Workspace/Tyro/Source/tmp/") + filename;
-
-        vid_list.clear();
-        std::fstream myfile(path, std::ios_base::in);
-        int vid;
-        while (myfile >> vid)
-        {
-            //printf("%i ", vid);
-            vid_list.push_back(vid);
-            addSphere(vid);
-        }
-        render();
-        glfwPostEmptyEvent();        
-        //getchar();
     }
     
     void App::set_sel_primitive(App::SelectionPrimitive sel_state) 

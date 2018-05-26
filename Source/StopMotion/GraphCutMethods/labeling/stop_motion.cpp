@@ -134,7 +134,7 @@ int stop_motion_vertex_distance(int num_labels,
                             	double& result_energy)
 {
 	//double w_s = 2.0f; //smooth weight
-	int num_steps = 50;// 150;
+	int num_steps = 30;// 150;
 	double tolerance = 0.0001;
 	int n_init = 5; // number of times the clustering algorithm will be run
 

@@ -70,7 +70,7 @@ namespace tyro
         int numTriangles = F.rows();
         int numIndices = 3*numTriangles;
         int numNormals = N.rows();
-        int stride = sizeof(VertexNorm);
+        int stride = sizeof(VertexGeneral);
 
         if (numNormals != numVertices)
             RA_LOG_ERROR_ASSERT("Number of verticies and normals doesnt match");
@@ -88,7 +88,7 @@ namespace tyro
                 int vid = F(fid,j);
                 vba.Position<Wm5::Float3>(vIndex) = Wm5::Float3(V(vid,0), V(vid,1), V(vid,2));
                 vba.Normal<Wm5::Float3>(vIndex) = Wm5::Float3(N(vid, 0), N(vid, 1), N(vid, 2));
-                //vba.Color<Wm5::Float3>(vIndex) = Wm5::Float3(C(fid, 0), C(fid, 1), C(fid, 2));
+                vba.Color<Wm5::Float3>(vIndex) = Wm5::Float3(C(fid, 0), C(fid, 1), C(fid, 2));
                 vIndex++;
             }                
         }
@@ -107,7 +107,7 @@ namespace tyro
         int numTriangles = F.rows();
         int numIndices = 3*numTriangles;
         int numNormals = N.rows();
-        int stride = sizeof(VertexNorm);
+        int stride = sizeof(VertexGeneral);
 
         if (numNormals != numVertices)
             RA_LOG_ERROR_ASSERT("Number of verticies and normals doesnt match");
@@ -295,20 +295,20 @@ namespace tyro
             GetVisualEffect()->GetUniforms()->UpdateFloatUniform(2, modelMatrix.Transpose());
 
             //uniforms->SetUniform(3, shader->GetUniformLocation("albedo"), 1, "albedo", ES2ShaderUniforms::Uniform3fv);
-            GetVisualEffect()->GetUniforms()->UpdateFloatUniform(3, Wm5::Vector3f(255/255.0, 148/255.0, 135/255.0));
+            //GetVisualEffect()->GetUniforms()->UpdateFloatUniform(3, Wm5::Vector3f(255/255.0, 148/255.0, 135/255.0));
             //GetVisualEffect()->GetUniforms()->UpdateFloatUniform(3, Wm5::Vector3f(200/255.0, 10/255.0, 10/255.0));
             
             //uniforms->SetUniform(4, shader->GetUniformLocation("metallic"), 1, "metallic", ES2ShaderUniforms::Uniform1fv);
             float metallic[1] = {0.1f};
-            GetVisualEffect()->GetUniforms()->UpdateFloatUniform(4, metallic);
+            GetVisualEffect()->GetUniforms()->UpdateFloatUniform(3, metallic);
 
             //uniforms->SetUniform(5, shader->GetUniformLocation("roughness"), 1, "roughness", ES2ShaderUniforms::Uniform1fv);
             float roughness[1] = {0.7f};
-            GetVisualEffect()->GetUniforms()->UpdateFloatUniform(5, roughness);
+            GetVisualEffect()->GetUniforms()->UpdateFloatUniform(4, roughness);
 
             //uniforms->SetUniform(6, shader->GetUniformLocation("ao"), 1, "ao", ES2ShaderUniforms::Uniform1fv);
             float ao[1] = {0.5f};
-            GetVisualEffect()->GetUniforms()->UpdateFloatUniform(6, ao);
+            GetVisualEffect()->GetUniforms()->UpdateFloatUniform(5, ao);
 
             
             //uniforms->SetUniform(7, shader->GetUniformLocation("lightPositions"), 1, "lightPositions", ES2ShaderUniforms::Uniform3fv);
@@ -331,14 +331,14 @@ namespace tyro
             };
             int s = 7;
             for (int i =0;i<4;++i)
-                GetVisualEffect()->GetUniforms()->UpdateFloatUniform(7+i, lightPositions[i]);
+                GetVisualEffect()->GetUniforms()->UpdateFloatUniform(6+i, lightPositions[i]);
 
     //        uniforms->SetUniform(8, shader->GetUniformLocation("lightColors"), 1, "lightColors", ES2ShaderUniforms::Uniform3fv);
-            GetVisualEffect()->GetUniforms()->UpdateFloatUniform(11, Wm5::Vector3f(210.0f, 210.0f, 210.0f));
+            GetVisualEffect()->GetUniforms()->UpdateFloatUniform(10, Wm5::Vector3f(210.0f, 210.0f, 210.0f));
 
             Wm5::Vector3f pos = camera->GetPosition();
             //uniforms->SetUniform(9, shader->GetUniformLocation("camPos"), 1, "camPos", ES2ShaderUniforms::Uniform3fv);
-            GetVisualEffect()->GetUniforms()->UpdateFloatUniform(12, pos);
+            GetVisualEffect()->GetUniforms()->UpdateFloatUniform(11, pos);
 
             //GetVisualEffect()->GetUniforms()->UpdateFloatUniform(10, normalMatrix.Transpose());
         

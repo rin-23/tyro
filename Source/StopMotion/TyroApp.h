@@ -44,8 +44,6 @@ namespace tyro
         
         void save_selected_faces(const std::string& filename);
         void save_selected_verticies(const std::string& filename);
-        void load_selected_faces(const std::string& filename);
-        void load_selected_verticies(const std::string& filename); 
         void set_sel_primitive(App::SelectionPrimitive sel_state);
         void set_sel_method(App::SelectionMethod sel_state);
         void clear_all_selection();
@@ -92,6 +90,7 @@ namespace tyro
         int m_square_sel_start_x;
         int m_square_sel_start_y;
         bool m_computed_error = false;
+        bool m_computed_vel_error = false;
         int m_frame_offset;
 
         std::vector<SpatialSPtr> ball_list;
@@ -129,6 +128,7 @@ namespace tyro
             
 
             std::vector<IGLMeshSPtr> error;
+            std::vector<IGLMeshSPtr> errorVel;
             //std::vector<IGLMeshWireframeSPtr> stop_motion_meshes_wire;
             
         };
@@ -167,6 +167,7 @@ namespace tyro
             Eigen::MatrixXd AvgVD; // average of v_data
             std::vector<int> SIdx; //
             std::vector<Eigen::VectorXd> AO;
+            
             template<class Archive>
             void save(Archive & archive) const
             {
@@ -238,7 +239,9 @@ namespace tyro
         std::vector<MAnimation> PIECES; // Break deformed mesh into pieces along seam(s).
         std::vector<MStopMotion> SMOTION; // Stop motion animate pieces
         std::vector<std::vector<Eigen::VectorXd>> m_error;
+        std::vector<std::vector<Eigen::VectorXd>> m_error_velocity;
         float max_error;
+        float max_error_velocity;
         std::vector<std::string> FOLDERS;
         //std::vector<std::string> FOLDERS_MONKA;
         
@@ -278,6 +281,7 @@ namespace tyro
                                           const Eigen::MatrixXi& E, //all directed edges
                                           const Eigen::MatrixXi& uE, //all unique edges
                                           const Eigen::VectorXi& EMAP, // map from directed to unique edge index 
+                                          bool isClosedLoop,
                                           Eigen::MatrixXi& eid_list, // edges from vid_list
                                           Eigen::VectorXi& EI, // indicies into directed edges matrix
                                           Eigen::VectorXi& uEI, // indicies into undirected edges matrix
