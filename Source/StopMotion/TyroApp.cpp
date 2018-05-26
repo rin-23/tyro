@@ -338,29 +338,29 @@ namespace
         void console_save_for_printing(App* app, const std::vector<std::string>& args) 
         {
             auto path = std::string("/home/rinat/Workspace/Tyro/Source/tmp/suckmydick");
-            std::ofstream outFile(path);
-            for (int i = 0; i < app->SMOTION[1].L.size(); ++i)
-            { 
-                outFile << app->SMOTION[1].L[i] << "\n";
-            }
-            /*
-            auto& part = app->SMOTION[1];
+            //std::ofstream outFile(path);
+            //for (int i = 0; i < app->PIECES[1].V.size(); ++i)
+            //{ 
+                //outFile << app->PIECES[1].VF[0] << "\n";
+            //}
+            
+            auto& part = app->PIECES[1];
             auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
-            auto p = f/filesystem::path(std::string("test.obj"));
-            for (int i = 0; i < part.D.size(); ++i) 
+            auto p = f/filesystem::path(std::string("alec_btm.obj"));
+            for (int i = 0; i < part.VD.size(); ++i) 
             {
                 MatrixXd N;
                 MatrixXd TC;
                 MatrixXi FTC;
     
-                N.resize(part.D[i].rows(), 3);
+                N.resize(part.VD[app->m_frame].rows(), 3);
                 N.setOnes();
                 igl::writeOBJ(
                 p.str(), 
-                part.D[i], 
-                part.anim.F);
+                part.VD[app->m_frame], 
+                part.F);
                 break;
-            }*/
+            }
 
 
         }
@@ -500,13 +500,19 @@ namespace
                 if (app->SMOTION[p].computed) 
                 {
                     app->m_error_velocity[p].resize(num_frames); 
+                    VectorXd zero;
+                    zero.resize(app->PIECES[p].VD[0].rows());
+                    zero.setZero();
+
+                    app->m_error_velocity[p][0] = zero;
+
                     for (int frame = 1; frame < num_frames; ++frame) 
                     {                   
                         //VC[frame].resize(FD.VD[0].rows());
                         VectorXd lul = ((app->PIECES[p].VD[frame] - app->PIECES[p].VD[frame-1]) - 
                                         (app->SMOTION[p].anim.VD[frame] - app->SMOTION[p].anim.VD[frame-1])).rowwise().squaredNorm();  
                         float max = lul.maxCoeff();
-                        app->max_error_velocity = std::max(app->max_error, max); 
+                        app->max_error_velocity = std::max(app->max_error_velocity, max); 
                         app->m_error_velocity[p][frame] = lul;                          
                     }
                 }
@@ -2495,6 +2501,7 @@ namespace
             for (int i = 0; i < RENDER.error.size(); ++i) 
             {   
                 if (SMOTION[i].computed == false) continue;
+                                Eigen::Vector3f maxColor = Eigen::Vector3f(255/255.0, 0/255.0, 0/255.0);
 
                 Wm5::Transform tr;
                 tr.SetTranslate(Wm5::APoint(2*m_model_offset, -m_model_offset/2, 0));
@@ -2502,7 +2509,7 @@ namespace
                 {
                     RENDER.error[i] = IGLMesh::CreateColor(SMOTION[i].anim.VD[m_frame], SMOTION[i].anim.F, 
                                                            SMOTION[i].anim.ND[m_frame], SMOTION[i].anim.FC, 
-                                                           m_error[i][m_frame], max_error);
+                                                           m_error[i][m_frame], max_error,maxColor);
                     
                     RENDER.error[i]->LocalTransform = tr * RENDER.error[i]->LocalTransform;
                     RENDER.error[i]->Update(true);
@@ -2511,7 +2518,7 @@ namespace
                 { 
                     RENDER.error[i]->UpdateData(SMOTION[i].anim.VD[m_frame], SMOTION[i].anim.F, 
                                                 SMOTION[i].anim.ND[m_frame], SMOTION[i].anim.FC, 
-                                                m_error[i][m_frame], max_error);
+                                                m_error[i][m_frame], max_error,maxColor);
                 }
 
                 vis_set.Insert(RENDER.error[i].get());
@@ -2530,14 +2537,16 @@ namespace
             for (int i = 0; i < RENDER.errorVel.size(); ++i) 
             {   
                 if (SMOTION[i].computed == false) continue;
-
+                Eigen::Vector3f maxColor = Eigen::Vector3f(104/255.0, 34/255.0, 139/255.0);
                 Wm5::Transform tr;
                 tr.SetTranslate(Wm5::APoint(2*m_model_offset, m_model_offset/2, 0));
                 if (RENDER.errorVel[i] == nullptr) 
                 {
+                    
                     RENDER.errorVel[i] = IGLMesh::CreateColor(SMOTION[i].anim.VD[m_frame], SMOTION[i].anim.F, 
                                                               SMOTION[i].anim.ND[m_frame], SMOTION[i].anim.FC, 
-                                                              m_error_velocity[i][m_frame], max_error_velocity);
+                                                              m_error_velocity[i][m_frame], max_error_velocity, 
+                                                              maxColor);
                     
                     RENDER.errorVel[i]->LocalTransform = tr * RENDER.errorVel[i]->LocalTransform;
                     RENDER.errorVel[i]->Update(true);
@@ -2546,7 +2555,8 @@ namespace
                 { 
                     RENDER.errorVel[i]->UpdateData(SMOTION[i].anim.VD[m_frame], SMOTION[i].anim.F, 
                                                    SMOTION[i].anim.ND[m_frame], SMOTION[i].anim.FC, 
-                                                   m_error_velocity[i][m_frame], max_error_velocity);
+                                                   m_error_velocity[i][m_frame], max_error_velocity,
+                                                   maxColor);
                 }
 
                 vis_set.Insert(RENDER.errorVel[i].get());
@@ -2888,7 +2898,7 @@ namespace
 
         //ParseImages();
         std::vector<std::string> args1 = {"split", "bunny_split"};
-        console_load_serialised_data(this,args1);
+        //console_load_serialised_data(this,args1);
         
         std::vector<std::string> args2 = {"stop_low", "bunny_stop_200_2_1_kmeans"};
         //console_load_serialised_data(this, args2);
@@ -3319,7 +3329,7 @@ namespace
         current_mouse_x = mouse_x;
         current_mouse_y = mouse_y;
 
-        if (mouse_is_down && m_modifier == TYRO_MOD_SHIFT && m_modifier == TYRO_MOD_ALT && m_sel_method == App::SelectionMethod::OneClick) 
+        if (mouse_is_down && m_modifier == TYRO_MOD_SHIFT && m_sel_method == App::SelectionMethod::OneClick) 
         {
             // Cast a ray in the view direction starting from the mouse position
             double x = current_mouse_x;

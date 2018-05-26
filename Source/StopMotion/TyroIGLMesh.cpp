@@ -11,7 +11,7 @@ namespace tyro
 {   
     //void UpdateData(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C, const Eigen::VectorXd& AO){}
     
-    void IGLMesh::UpdateData(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C, const Eigen::VectorXd& Error, float max_error)
+    void IGLMesh::UpdateData(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C, const Eigen::VectorXd& Error, float max_error, Eigen::Vector3f& EmaxColor)
     {
  
         int numVertices = V.rows();
@@ -27,10 +27,10 @@ namespace tyro
         VertexBufferAccessor vba(GetVisualEffect()->GetVertexFormat(), GetVertexBuffer().get());
         vba.MapWrite();
         int vIndex = 0;
-        Wm5::Vector3f minColor(0.5, 0.5, 0.5);
+        Wm5::Vector3f minColor(0.8, 0.8, 0.8);
         //Wm5::Vector3f maxColor(147,112,219);
-        Wm5::Vector3f maxColor(250,0,0);
-        maxColor *= 1/255.0;
+        Wm5::Vector3f maxColor = Wm5::Vector3f(EmaxColor(0),EmaxColor(1),EmaxColor(2));
+        //maxColor *= 1/255.0;
         
         for (int fid = 0; fid < numTriangles; ++fid) 
         {   
@@ -188,7 +188,8 @@ namespace tyro
                             const Eigen::MatrixXd& N, 
                             const Eigen::MatrixXd& C, 
                             const Eigen::VectorXd& Error,
-                            float max_error) 
+                            float max_error, 
+                            Eigen::Vector3f& maxColor) 
     {
         ES2TriMesh::Init();
 
@@ -209,8 +210,8 @@ namespace tyro
         auto vbuffer = std::make_shared<tyro::ES2VertexHardwareBuffer>(stride, numIndices, nullptr, HardwareBuffer::BU_DYNAMIC);
         SetVertexBuffer(vbuffer);
         
-        this->UpdateData(V, F, N, C, Error, max_error);
-        
+        this->UpdateData(V, F, N, C, Error, max_error, maxColor);
+
         //compute bounding box
         LocalBoundBox.ComputeExtremes(vbuffer->GetNumOfVerticies(), vbuffer->GetVertexSize(), vbuffer->MapRead());
         vbuffer->Unmap();
@@ -249,10 +250,10 @@ namespace tyro
         return sptr;
     }
     
-    IGLMeshSPtr IGLMesh::CreateColor(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C, const Eigen::VectorXd& error, float max_error)
+    IGLMeshSPtr IGLMesh::CreateColor(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C, const Eigen::VectorXd& error, float max_error, Eigen::Vector3f& maxColor)
     {
-         IGLMeshSPtr sptr = std::make_shared<IGLMesh>();
-        sptr->InitColor(V,F,N,C,error, max_error);
+        IGLMeshSPtr sptr = std::make_shared<IGLMesh>();
+        sptr->InitColor(V,F,N,C,error, max_error, maxColor);
         return sptr;
     }
 
