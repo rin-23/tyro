@@ -123,10 +123,20 @@ void flatten_frames(const std::vector<Eigen::MatrixXd>& v_data, MatrixXd& F)
 	}
 }
 
+void flatten_weights(const Eigen::VectorXd& VW_per_vertex, Eigen::VectorXd& VW) 
+{
+	VW.resize(VW_per_vertex.size() * 3);
+	for (int i = 0; i < VW.size(); ++i) 
+	{
+		VW(i) = VW_per_vertex(i%3);
+	}
+}
+
 int stop_motion_vertex_distance(int num_labels,
 								double w_s,
 								bool kmeans,
                             	const std::vector<Eigen::MatrixXd>& v_data,
+								Eigen::VectorXd& VW_per_vertex,
 								std::vector<int>& sequenceIdx,
                             	const Eigen::MatrixXi& f_data,
 								std::vector<Eigen::MatrixXd>& d_data,
@@ -140,7 +150,8 @@ int stop_motion_vertex_distance(int num_labels,
 
 	MatrixXd F; //,  SAVED_FACES; //frame data
 	flatten_frames(v_data, F);
-
+	VectorXd VW;
+	flatten_weights(VW_per_vertex, VW);
 	std::vector<Eigen::MatrixXd> n_init_D;
 	std::vector<Eigen::VectorXi> n_init_S;
 	std::vector<double> n_init_energy;
@@ -191,7 +202,7 @@ int stop_motion_vertex_distance(int num_labels,
 			std::cout << "Iteration " << i << "\n";
 
 			high_resolution_clock::time_point t1 = high_resolution_clock::now();
-			labelFacesTRUEVertex(F, D, S_vec, sequenceIdx, w_s, graphEnergy);
+			labelFacesTRUEVertex(F, VW, D, S_vec, sequenceIdx, w_s, graphEnergy);
 			high_resolution_clock::time_point t2 = high_resolution_clock::now();
 			auto duration = duration_cast<microseconds>(t2 - t1).count();
 			cout << "label time " << duration << "\n";
@@ -220,7 +231,7 @@ int stop_motion_vertex_distance(int num_labels,
 			}
 
 			t1 = high_resolution_clock::now();
-			updateStepTRUEVertex(F, D, S_vec, sequenceIdx, w_s, oldEnergy, newEnergy);
+			updateStepTRUEVertex(F, VW, D, S_vec, sequenceIdx, w_s, oldEnergy, newEnergy);
 			t2 = high_resolution_clock::now();
 			duration = duration_cast<milliseconds>(t2 - t1).count();
 			cout << "update time " << duration << "\n";

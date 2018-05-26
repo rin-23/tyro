@@ -14,6 +14,8 @@
 #include <cereal/types/vector.hpp>
 #include <cereal/cereal.hpp>
 #include <opencv2/opencv.hpp>
+#include "Wm5Transform.h"
+
 
 namespace tyro
 {   
@@ -167,7 +169,7 @@ namespace tyro
             Eigen::MatrixXd AvgVD; // average of v_data
             std::vector<int> SIdx; //
             std::vector<Eigen::VectorXd> AO;
-            
+            Eigen::VectorXd VW; //weight into stop motion for each vertex
             template<class Archive>
             void save(Archive & archive) const
             {
@@ -225,15 +227,7 @@ namespace tyro
             }
         };
 
-
-        struct PrimitiveWeights 
-        {
-            //VectorXd V;
-            Eigen::VectorXd FW; //face weights same size as F.rows
-            Eigen::VectorXd VW; //vertex weights same size as V.rows
-        };
-        PrimitiveWeights m_weights;
-
+ 
         MAnimation ANIM; //Original animation data        
         MAnimation DANIM; // Animation data after we smooth the seam(s)
         std::vector<MAnimation> PIECES; // Break deformed mesh into pieces along seam(s).
@@ -250,6 +244,8 @@ namespace tyro
         //Movie movie;            
         
         std::vector<int> vid_list;
+        std::vector<int> vid_list2; //verteicies selected for part 1 and assign weight
+
         std::vector<int> fid_list; //fid added with left mouse click
         std::vector<int> fid_list2; //fid added with right mouse click
         std::vector<int> fid_list3; //fid added with right mouse click
@@ -264,11 +260,13 @@ namespace tyro
         void load_mesh_sequence(const std::vector<std::string>& obj_list, bool use_igl_loader = true); 
         void update_camera();
         void render();
-        void addSphere(int vid, Wm5::Vector4f color = Wm5::Vector4f(1,0,0,1));        
+        void addSphere(int vid, const Eigen::MatrixXd& V, Wm5::Vector4f color = Wm5::Vector4f(1,0,0,1), Wm5::Transform worldT = Wm5::Transform::IDENTITY);        
         void removeSpheres(std::vector<int> vids);
         void setFaceColor(int fid, bool selected);
         void setFaceColor(int fid, const Eigen::Vector3d& clr);
         void selectVertex(Eigen::Vector2f& mouse_pos, int mouse_button, int modifier);
+        void selectVertexPart(Eigen::Vector2f& mouse_pos, int mouse_button, int modifier, int whichpart); 
+    
         void DrawMeshes();
 
     };

@@ -6,4 +6,4 @@
 
 void labelFacesVertex(Eigen::DiagonalMatrix<double, Eigen::Dynamic>& M, Eigen::MatrixXd& W, Eigen::MatrixXd& B, Eigen::MatrixXd& D, Eigen::VectorXi& S_vec, double w_s, double& energy);
 void labelFacesBShape(Eigen::MatrixXd& F, Eigen::MatrixXd& L, Eigen::MatrixXd& M, Eigen::VectorXi& S_vec, double w_s, double& energy);
-void labelFacesTRUEVertex(Eigen::MatrixXd& F, Eigen::MatrixXd& D, Eigen::VectorXi& S_vec, std::vector<int>& sequenceIdx, double w_s, double& energy);
+void labelFacesTRUEVertex(Eigen::MatrixXd& F,  Eigen::VectorXd& VW, Eigen::MatrixXd& D, Eigen::VectorXi& S_vec, std::vector<int>& sequenceIdx, double w_s, double& energy);

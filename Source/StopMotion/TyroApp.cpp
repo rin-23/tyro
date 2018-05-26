@@ -207,11 +207,12 @@ namespace
             app->m_update_camera = true;
             app->m_state = App::State::LoadedModel;
             
-            app->m_weights.VW.resize(app->ANIM.VD[0].rows());
-            app->m_weights.VW.setOnes();
+            app->ANIM.VW.setOnes();
+            //app->m_weights.VW.resize(app->ANIM.VD[0].rows());
+            //app->m_weights.VW.setOnes();
 
-            app->m_weights.FW.resize(app->ANIM.F.rows());
-            app->m_weights.FW.setOnes();
+            //app->m_weights.FW.resize(app->ANIM.F.rows());
+            //app->m_weights.FW.setOnes();
 
             app->compute_average();
 
@@ -475,6 +476,16 @@ namespace
             }
         }
 
+        void console_plot_total_error_data(App* app, const std::vector<std::string>& args) 
+        {
+
+        } 
+
+        void console_plot_total_error_vel(App* app, const std::vector<std::string>& args) 
+        {
+            
+        } 
+
         void console_plot_error_vel(App* app, const std::vector<std::string>& args) 
         {
             using namespace Eigen;
@@ -483,6 +494,7 @@ namespace
             int num_frames = app->ANIM.VD.size();
             app->m_error_velocity.resize(num_parts);
             app->max_error_velocity = std::numeric_limits<float>::min();
+            
             for (int p = 0; p < num_parts; ++p) 
             {   
                 if (app->SMOTION[p].computed) 
@@ -492,7 +504,7 @@ namespace
                     {                   
                         //VC[frame].resize(FD.VD[0].rows());
                         VectorXd lul = ((app->PIECES[p].VD[frame] - app->PIECES[p].VD[frame-1]) - 
-                                        (app->SMOTION[p].anim.VD[frame] - app->SMOTION[p].anim.VD[frame-1])) .rowwise().squaredNorm();  
+                                        (app->SMOTION[p].anim.VD[frame] - app->SMOTION[p].anim.VD[frame-1])).rowwise().squaredNorm();  
                         float max = lul.maxCoeff();
                         app->max_error_velocity = std::max(app->max_error, max); 
                         app->m_error_velocity[p][frame] = lul;                          
@@ -590,12 +602,10 @@ namespace
                     }
                     app->ANIM.AvgVD = Voriginal.eval();
                 }
-
                 
                 app->render();
                 glfwPostEmptyEvent;
             }
-            
         }
         
 
@@ -717,6 +727,10 @@ namespace
             {
                 archive(app->m_video); 
             }
+            else if (type == "weights_low") 
+            {
+                archive(app->PIECES[1].VW);
+            }
         }
 
         void console_load_serialised_data(App* app, const std::vector<std::string>& args) 
@@ -793,6 +807,17 @@ namespace
                 app->m_computed_stop_motion = true;
                 app->m_update_camera = true;
             }
+            else if (type == "weights_low") 
+            {
+                archive(app->PIECES[1].VW);
+                for (int i = 0; i < app->PIECES[1].VW.size(); ++i) 
+                {
+                    if (app->PIECES[1].VW[i] > 1)
+                        app->addSphere(i, app->PIECES[1].VD[app->m_frame], Wm5::Vector4f(0,1,0,1), app->RENDER.part[1]->WorldTransform);
+                }                
+            }
+
+
             app->render();
             glfwPostEmptyEvent();
         }
@@ -800,6 +825,7 @@ namespace
         void console_clear_selection(App* app, const std::vector<std::string>& args) 
         {
             app->vid_list.clear();
+            app->vid_list2.clear();
             app->ball_list.clear();
             
             for (int fid = 0; fid < app->ANIM.F.rows(); ++fid) 
@@ -829,17 +855,26 @@ namespace
             app->fid_list2.clear();
             app->fid_list3.clear();
             app->render();
-        }
-
+        }   
+        
         void console_set_vertex_weight(App* app, const std::vector<std::string>& args) 
         {
-            if (args.size()>0) 
+            if (args.size() == 2) 
             {   
                 float w = std::stof(args[0]);
-                for (auto vid : app->vid_list) 
+                int part_id = std::stoi(args[1]); 
+                if (app->PIECES[part_id].VW.size() == 0) 
                 {
-                    app->m_weights.VW(vid) = w;
+                    app->PIECES[part_id].VW.resize(app->PIECES[part_id].VD[0].rows());
+                    app->PIECES[part_id].VW.setOnes();                    
                 }
+
+                for (auto vid : app->vid_list2) 
+                {
+                    app->PIECES[part_id].VW[vid] = w;
+                    
+                }
+                    
             }
         }
 
@@ -850,13 +885,14 @@ namespace
                 float w = std::stof(args[0]);
                 for (auto fid : app->fid_list) 
                 {
-                    app->m_weights.FW(fid) = w;
+                    //app->m_weights.FW(fid) = w;
                 }
             }
         }
 
         void console_draw_vertex_weight_map(App* app, const std::vector<std::string>& args) 
         {   
+            /*
             double maxC = app->m_weights.VW.maxCoeff();
             double minC = app->m_weights.VW.minCoeff(); //should be 1
             
@@ -866,13 +902,15 @@ namespace
                 if (w > 1) 
                 {   
                     double red = w / (maxC - minC); 
-                    app->addSphere(vid, Wm5::Vector4f(red, 0, 0, 1));
+                    app->addSphere(vid,  ANIM.VD[m_frame], Wm5::Vector4f(red, 0, 0, 1));
                 }
             }
+            */
         }
 
         void console_draw_face_weight_map(App* app, const std::vector<std::string>& args) 
         {   
+            /*
             double maxC = app->m_weights.FW.maxCoeff();
             double minC = app->m_weights.FW.minCoeff(); //should be 1
             
@@ -886,6 +924,7 @@ namespace
                     app->setFaceColor(fid, clr);
                 //}
             }
+            */
         } 
 
         void console_segmentation(App* app, const std::vector<std::string>& args) 
@@ -1257,14 +1296,16 @@ namespace
                     bool kmeans = false;
                     if (initmethod == "kmeans") kmeans = true; 
 
+                    Eigen::VectorXd VW = piece.VW.cwiseSqrt();
                     tyro::stop_motion_vertex_distance(num_labels, 
                                                       smooth_weight,
                                                       kmeans,
-                                                      piece.VD,
+                                                      piece.VD, 
+                                                      VW, 
                                                       app->ANIM.SIdx,
                                                       piece.F,
                                                       sm.D, //dictionary
-                                                      sm.L, //labels,  
+                                                      sm.L, //labels  
                                                       result_energy);
                     
                     sm.anim.F = piece.F;
@@ -1489,7 +1530,7 @@ namespace
                 {
                     //printf("%i ", vid);
                     app->vid_list.push_back(vid);
-                    app->addSphere(vid);
+                    app->addSphere(vid, app->ANIM.VD[app->m_frame]);
                 }
                 app->render();
                 glfwPostEmptyEvent();        
@@ -1616,11 +1657,11 @@ namespace
             app->m_state = App::State::LoadedModel;
             app->compute_average();
 
-            app->m_weights.VW.resize(app->ANIM.VD[0].rows());
-            app->m_weights.VW.setOnes();
+            //app->m_weights.VW.resize(app->ANIM.VD[0].rows());
+            //app->m_weights.VW.setOnes();
 
-            app->m_weights.FW.resize(app->ANIM.F.rows());
-            app->m_weights.FW.setOnes();
+            //app->m_weights.FW.resize(app->ANIM.F.rows());
+            //app->m_weights.FW.setOnes();
             
             app->compute_average();
 
@@ -1766,7 +1807,7 @@ namespace
 
         // Create a VideoCapture object and open the input file
         // If the input is the web camera, pass 0 instead of the video file name
-        VideoCapture cap("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/Big Buck Bunny-720p.mp4"); 
+        VideoCapture cap("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monka/monka.mp4"); 
             
         // Check if camera opened successfully
         if(!cap.isOpened())
@@ -1778,8 +1819,8 @@ namespace
         int width = cap.get(CV_CAP_PROP_FRAME_WIDTH);
         int height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
         int num_frames = cap.get(CV_CAP_PROP_FRAME_COUNT);
-           int frame = 0;
-           int fcount = 0;
+        int frame = 0;
+        int fcount = 0;
         while(1)
         {   
 
@@ -1801,12 +1842,12 @@ namespace
             //imshow( "Frame", frame );
             string folder = "images";
             
-            if (frame%500 == 0) 
+            if (frame%400 == 0) 
             {
                 fcount++;
             }
             folder = folder + std::to_string(fcount);
-            auto a = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/images");
+            auto a = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monka/monka_images");
             a = a/folder;
             if (!a.exists())
                 filesystem::create_directory(a);
@@ -2456,7 +2497,7 @@ namespace
                 if (SMOTION[i].computed == false) continue;
 
                 Wm5::Transform tr;
-                tr.SetTranslate(Wm5::APoint(2*m_model_offset, 0, 0));
+                tr.SetTranslate(Wm5::APoint(2*m_model_offset, -m_model_offset/2, 0));
                 if (RENDER.error[i] == nullptr) 
                 {
                     RENDER.error[i] = IGLMesh::CreateColor(SMOTION[i].anim.VD[m_frame], SMOTION[i].anim.F, 
@@ -2476,6 +2517,42 @@ namespace
                 vis_set.Insert(RENDER.error[i].get());
             } 
         }
+
+         if (m_computed_vel_error) 
+        {
+            //Rendering stuff
+            if (RENDER.errorVel.size() == 0) 
+            {
+                RENDER.errorVel = std::vector<IGLMeshSPtr>(PIECES.size(), nullptr);
+                // RENDER.part_wire = std::vector<IGLMeshWireframeSPtr>(PIECES.size(), nullptr);
+            }
+
+            for (int i = 0; i < RENDER.errorVel.size(); ++i) 
+            {   
+                if (SMOTION[i].computed == false) continue;
+
+                Wm5::Transform tr;
+                tr.SetTranslate(Wm5::APoint(2*m_model_offset, m_model_offset/2, 0));
+                if (RENDER.errorVel[i] == nullptr) 
+                {
+                    RENDER.errorVel[i] = IGLMesh::CreateColor(SMOTION[i].anim.VD[m_frame], SMOTION[i].anim.F, 
+                                                              SMOTION[i].anim.ND[m_frame], SMOTION[i].anim.FC, 
+                                                              m_error_velocity[i][m_frame], max_error_velocity);
+                    
+                    RENDER.errorVel[i]->LocalTransform = tr * RENDER.errorVel[i]->LocalTransform;
+                    RENDER.errorVel[i]->Update(true);
+                }
+                else 
+                { 
+                    RENDER.errorVel[i]->UpdateData(SMOTION[i].anim.VD[m_frame], SMOTION[i].anim.F, 
+                                                   SMOTION[i].anim.ND[m_frame], SMOTION[i].anim.FC, 
+                                                   m_error_velocity[i][m_frame], max_error_velocity);
+                }
+
+                vis_set.Insert(RENDER.errorVel[i].get());
+            } 
+        }
+
 
         for (auto object_sptr : ball_list) 
         {
@@ -2612,14 +2689,15 @@ namespace
         m_camera = new iOSCamera(world_center, radius, aspect, 2, viewport, true);
     }
 
-    void App::addSphere(int vid, Wm5::Vector4f color) 
+    void App::addSphere(int vid, const Eigen::MatrixXd& V, Wm5::Vector4f color, Wm5::Transform world) 
     {   
-        Eigen::RowVector3d new_c = ANIM.VD[m_frame].row(vid);
-        float s =  (ANIM.VD.size() > 3000) ? 0.0005 : 0.007;
+        Eigen::RowVector3d new_c = V.row(vid);
+        //float s =  (V.size() > 3000) ? 0.0005 : 0.007;
+        float s = 0.001;
         ES2SphereSPtr object = ES2Sphere::Create(10, 10, s);
         Wm5::Transform tr;
         tr.SetTranslate(Wm5::APoint(new_c(0), new_c(1), new_c(2)));
-        object->LocalTransform = tr * object->LocalTransform;
+        object->LocalTransform = world * tr * object->LocalTransform;
         object->Update(true);
         object->SetColor(color);
         ball_list.push_back(object);
@@ -2738,8 +2816,8 @@ namespace
         if (serialized) 
         {   
             auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
-            //auto p = f/filesystem::path("bunny_frames_upsampled");
-            auto p = f/filesystem::path("bunny_frames_front");
+            auto p = f/filesystem::path("bunny_frames_upsampled");
+            //auto p = f/filesystem::path("bunny_frames_front");
             
             //auto p = f/filesystem::path("subanimaton");
 
@@ -2783,11 +2861,12 @@ namespace
         m_update_camera = true;
         m_state = App::State::LoadedModel;
         
-        m_weights.VW.resize(ANIM.VD[0].rows());
-        m_weights.VW.setOnes();
+        ANIM.VW.setOnes();
+        //m_weights.VW.resize(ANIM.VD[0].rows());
+        //m_weights.VW.setOnes();
 
-        m_weights.FW.resize(ANIM.F.rows());
-        m_weights.FW.setOnes();
+        //m_weights.FW.resize(ANIM.F.rows());
+        //m_weights.FW.setOnes();
 
         compute_average();
 
@@ -2807,15 +2886,15 @@ namespace
             //RA_LOG_INFO("AO %f, %f",ANIM.AO[339].minCoeff(), ANIM.AO[339].maxCoeff());
         }
 
-        ParseImages();
-        std::vector<std::string> args1 = {"split", "bunny_split_vertical"};
+        //ParseImages();
+        std::vector<std::string> args1 = {"split", "bunny_split"};
         console_load_serialised_data(this,args1);
         
         std::vector<std::string> args2 = {"stop_low", "bunny_stop_200_2_1_kmeans"};
-        console_load_serialised_data(this, args2);
+        //console_load_serialised_data(this, args2);
 
         std::vector<std::string> args3 = {"stop_up", "bunny_stop_100_1_0_kmeans"};
-        console_load_serialised_data(this, args3);
+        //console_load_serialised_data(this, args3);
 
         render();
     }
@@ -2917,8 +2996,62 @@ namespace
         glfwPostEmptyEvent();
     }
 
+    void App::selectVertexPart(Eigen::Vector2f& mouse_pos, int mouse_button, int modifier, int which_part) 
+    {   
+        int fid;
+        Eigen::Vector3f bc;
+        Wm5::HMatrix modelViewMatrix = m_camera->GetViewMatrix() * RENDER.part[which_part]->WorldTransform.Matrix();
+        Wm5::HMatrix projectMatrix = m_camera->GetProjectionMatrix();
+        Eigen::Matrix4f e1 = Eigen::Map<Eigen::Matrix4f>(modelViewMatrix.mEntry);
+        Eigen::Matrix4f e2 = Eigen::Map<Eigen::Matrix4f>(projectMatrix.mEntry);
+        Eigen::Vector4f e3 = Eigen::Vector4f(m_camera->GetViewport()[0],
+                                             m_camera->GetViewport()[1],
+                                             m_camera->GetViewport()[2],
+                                             m_camera->GetViewport()[3]);
+
+        if (igl::unproject_onto_mesh(mouse_pos, 
+                                     e1.transpose(),
+                                     e2.transpose(),
+                                     e3,
+                                     PIECES[which_part].VD[m_frame],
+                                     PIECES[which_part].F,
+                                     fid,
+                                     bc))
+        {
+            if (m_sel_primitive == App::SelectionPrimitive::Vertex) 
+            {
+                long c;
+                bc.maxCoeff(&c);
+                int vid = PIECES[which_part].F(fid, c);
+                auto it = std::find(vid_list2.begin(), vid_list2.end(), vid);
+                if (it == vid_list2.end()) 
+                {       
+                    Eigen::Vector3d vec = PIECES[which_part].VD[m_frame].row(vid);
+                        RA_LOG_INFO("Picked part face_id %i vertex_id %i coord %f %f %f", fid, vid, vec(0), vec(1), vec(2));
+                        addSphere(vid, PIECES[which_part].VD[m_frame], Wm5::Vector4f(0,1,0,1), RENDER.part[which_part]->WorldTransform);
+                        vid_list2.push_back(vid);
+                }  
+                else
+                {   
+                    RA_LOG_INFO("remove vertex %i %i", fid, vid);
+                    auto index = std::distance(vid_list2.begin(), it);
+                    ball_list.erase(ball_list.begin() + index);
+                    vid_list2.erase(vid_list2.begin() + index);
+                }
+                render();
+            }
+        }   
+    }
+
     void App::selectVertex(Eigen::Vector2f& mouse_pos, int mouse_button, int modifier) 
-    {
+    {   
+        if (modifier == TYRO_MOD_ALT) 
+        { 
+            selectVertexPart(mouse_pos, mouse_button, modifier, 1);
+            return;
+        }
+
+
         int fid;
         Eigen::Vector3f bc;
         Wm5::HMatrix modelViewMatrix = m_camera->GetViewMatrix() * RENDER.mesh->WorldTransform.Matrix();
@@ -2929,7 +3062,7 @@ namespace
                                              m_camera->GetViewport()[1],
                                              m_camera->GetViewport()[2],
                                              m_camera->GetViewport()[3]);
-        
+
         if (igl::unproject_onto_mesh(mouse_pos, 
                                      e1.transpose(),
                                      e2.transpose(),
@@ -2947,10 +3080,10 @@ namespace
                 auto it = std::find(vid_list.begin(), vid_list.end(), vid);
                 if (it == vid_list.end()) 
                 {       
-                Eigen::Vector3d vec = ANIM.VD[m_frame].row(vid);
-                    RA_LOG_INFO("Picked face_id %i vertex_id %i coord %f %f %f", fid, vid, vec(0), vec(1), vec(2));
-                    addSphere(vid);
-                    vid_list.push_back(vid);
+                    Eigen::Vector3d vec = ANIM.VD[m_frame].row(vid);
+                        RA_LOG_INFO("Picked face_id %i vertex_id %i coord %f %f %f", fid, vid, vec(0), vec(1), vec(2));
+                        addSphere(vid,  ANIM.VD[m_frame]);
+                        vid_list.push_back(vid);
                 }  
                 else
                 {   
@@ -3123,7 +3256,7 @@ namespace
             {   
                 for (auto vid : vid_selected) 
                 {
-                    addSphere(vid);
+                    addSphere(vid,  ANIM.VD[m_frame]);
                     vid_list.push_back(vid);
                 }
             }
@@ -3186,7 +3319,7 @@ namespace
         current_mouse_x = mouse_x;
         current_mouse_y = mouse_y;
 
-        if (mouse_is_down && m_modifier == TYRO_MOD_SHIFT && m_sel_method == App::SelectionMethod::OneClick) 
+        if (mouse_is_down && m_modifier == TYRO_MOD_SHIFT && m_modifier == TYRO_MOD_ALT && m_sel_method == App::SelectionMethod::OneClick) 
         {
             // Cast a ray in the view direction starting from the mouse position
             double x = current_mouse_x;

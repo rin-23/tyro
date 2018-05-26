@@ -128,7 +128,7 @@ GCoptimization::EnergyTermType smoothFnTRUEVertex(int p1, int p2, int l1, int l2
 	void** data = (void**)extraData;
 	MatrixXd* F = (MatrixXd*)data[0];
 	MatrixXd* D = (MatrixXd*)data[1];
-
+	VectorXd* VW = (VectorXd*) data[2];
 	//VectorXd l1Obj = ;
 	//VectorXd l2Obj = ;
 	//VectorXd p1Obj = ;
@@ -138,11 +138,10 @@ GCoptimization::EnergyTermType smoothFnTRUEVertex(int p1, int p2, int l1, int l2
 	double diff = 0;
 	for (int i = 0; i < D->rows(); ++i) 
 	{
-		double a = (*D)(i, l1) - (*D)(i, l2) - (*F)(i, p1) + (*F)(i, p2);
+		double a =  (*VW)(i%3) *((*D)(i, l1) - (*D)(i, l2) - (*F)(i, p1) + (*F)(i, p2));
 		diff += a*a;
 	}
 	
-
 	//double diff = (D->col(l1) - D->col(l2) - F->col(p1) + F->col(p2)).squaredNorm();
 	GCoptimization::EnergyTermType sum = (GCoptimization::EnergyTermType) (global_w * diff);
 	//high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -262,7 +261,7 @@ void labelFacesBShape(Eigen::MatrixXd& F, Eigen::MatrixXd& L, Eigen::MatrixXd& M
 	}
 }
 
-void prepareDataMatrixTRUEVertex(Eigen::MatrixXd& F, Eigen::MatrixXd& D, double*& dataArray) 
+void prepareDataMatrixTRUEVertex(Eigen::MatrixXd& F, Eigen::VectorXd& VW, Eigen::MatrixXd& D, double*& dataArray) 
 {	
 	int num_frames = F.cols();
 	int num_labels = D.cols();
@@ -279,15 +278,15 @@ void prepareDataMatrixTRUEVertex(Eigen::MatrixXd& F, Eigen::MatrixXd& D, double*
 			double diff = 0;
 			for (int v = 0; v < num_vertex; ++v) 
 			{
-				double a = F(v, i) - D(v, j);
-				diff += a*a;
+				double a = VW(v%3) * (F(v, i) - D(v, j));
+				diff +=  a*a;
 			}
 			dataArray[i*num_labels+j] = diff;
 		}
 	}
 }
 
-void labelFacesTRUEVertex(Eigen::MatrixXd& F, Eigen::MatrixXd& D, Eigen::VectorXi& S_vec, std::vector<int>& sequenceIdx, double w_s, double& energy) 
+void labelFacesTRUEVertex(Eigen::MatrixXd& F, Eigen::VectorXd& VW, Eigen::MatrixXd& D,  Eigen::VectorXi& S_vec, std::vector<int>& sequenceIdx, double w_s, double& energy) 
 {
 	global_w = w_s;
 	int num_frames = F.cols();
@@ -297,10 +296,10 @@ void labelFacesTRUEVertex(Eigen::MatrixXd& F, Eigen::MatrixXd& D, Eigen::VectorX
 	try
 	{
 		GCoptimizationGeneralGraph *gc = new GCoptimizationGeneralGraph(num_frames, num_labels);
-		void* extraData[2] = {&F, &D};
+		void* extraData[3] = {&F, &D, &VW};
 		double* dataArray;
 		high_resolution_clock::time_point t1 = high_resolution_clock::now();
-		prepareDataMatrixTRUEVertex(F,D, dataArray);
+		prepareDataMatrixTRUEVertex(F, VW, D, dataArray);
 		high_resolution_clock::time_point t2 = high_resolution_clock::now();
 		auto duration = duration_cast<milliseconds>(t2 - t1).count();
 		RA_LOG_INFO("data matrix computation %i msec", duration);
