@@ -35,7 +35,9 @@
 #include <igl/adjacency_list.h>
 #include <igl/ambient_occlusion.h>
 #include <igl/boundary_loop.h>
+#include <igl/doublearea.h>
 #include <filesystem/path.h>
+#include <igl/per_vertex_attribute_smoothing.h>
 
 #include "TyroIGLMesh.h"
 #include "TyroFileUtils.h"
@@ -45,7 +47,7 @@
 #include "stop_motion.h"
 #include "mesh_split.h"
 #include "segmentation.h"
-
+#include "slice_isoline.h"
 
 
 using namespace std;
@@ -184,6 +186,177 @@ namespace tyro
 
 namespace
 {       void console_load_serialised_data(App* app, const std::vector<std::string>& args); 
+
+        void console_show_labels(App* app, const std::vector<std::string>& args) 
+        {   
+            if (args.size()!=1)  
+            {
+                RA_LOG_WARN("Need to specify type of the curve");
+                return; 
+            }
+            MatrixXi eid_list;
+            VectorXi EI, uEI, DMAP;
+            bool isClosedSeam = std::stoi(args[0]);
+            convert_vertex_to_edge_selection(app->vid_list, 
+                                             app->ANIM.E, 
+                                             app->ANIM.UE, 
+                                             app->ANIM.EMAP,
+                                             isClosedSeam,
+                                             eid_list, 
+                                             EI, 
+                                             uEI, 
+                                             DMAP);
+
+            VectorXi F1idx, F2idx;
+            tyro::mesh_split(app->ANIM.F,
+                             uEI,
+                             DMAP, 
+                             F1idx, 
+                             F2idx);
+            
+            for (int i=0; i < F1idx.size(); ++i) 
+            {
+                app->setFaceColor(F1idx(i), Eigen::Vector3d(0.9,0.5,0.5));
+            }
+            app->render();
+        }
+
+        void console_show_iso(App* app, const std::vector<std::string>& args) 
+        {
+            /*
+            W = repmat(doublearea(Vavg,F),3,1);
+            W = sparse(repmat(1:size(F,1), 1, 3), F(:), W, size(F,1), size(Vavg,1));
+            W = W./sum(W,1);
+            W = W';
+            LV = W*L;
+            */
+            if (args.size()!=1)  
+            {
+                RA_LOG_WARN("Need to specify type of the curve");
+                return; 
+            }
+            using namespace Eigen;
+            VectorXd DA; //double area
+            igl::doublearea(app->ANIM.AvgVD, app->ANIM.F, DA);
+
+            int num_vert = app->ANIM.AvgVD.rows();
+            int num_faces = app->ANIM.F.rows();
+            std::vector<std::vector<int>> VF, VI;
+            igl::vertex_triangle_adjacency(num_vert, app->ANIM.F, VF, VI);
+            SparseMatrix<double> W;
+            W.resize(num_vert, num_faces);
+            for (int vid = 0; vid < VF.size(); ++vid) 
+            {
+                double area_total = 0;
+                for (auto& fid : VF[vid]) 
+                {
+                    area_total += DA[fid];
+                }
+
+                for (auto& fid : VF[vid]) 
+                {
+                    double area_w = DA[fid];
+                    W.coeffRef(vid, fid) = area_w/area_total;
+                }                 
+            }
+
+                        /*
+            int main(int argc, char *argv[])
+            {
+            Eigen::MatrixXd V;
+            Eigen::MatrixXi F;
+            igl::read_triangle_mesh(argv[1],V,F);
+            Eigen::VectorXd S = V.col(1);
+            S.array() -= S.minCoeff();
+            S /= S.maxCoeff();
+            Eigen::VectorXd val(1);
+            val(0) = 0.5;
+            
+            Eigen::MatrixXd U;
+            Eigen::MatrixXi G;
+            Eigen::VectorXi J;
+            Eigen::SparseMatrix<double> BC;
+            Eigen::VectorXd SU,L;
+            slice_isolines(V,F,S,val, U,G,J,BC,SU,L);
+            //igl::opengl::glfw::Viewer v;
+            //v.data().set_mesh(U,G);
+            //v.data().set_colors(L);
+            //v.launch();
+            }
+            */
+            MatrixXi eid_list;
+            VectorXi EI, uEI, DMAP;
+            bool isClosedSeam = std::stoi(args[0]);
+            convert_vertex_to_edge_selection(app->vid_list, 
+                                             app->ANIM.E, 
+                                             app->ANIM.UE, 
+                                             app->ANIM.EMAP,
+                                             isClosedSeam,
+                                             eid_list, 
+                                             EI, 
+                                             uEI, 
+                                             DMAP);
+
+            VectorXi F1idx, F2idx;
+            tyro::mesh_split(app->ANIM.F,
+                             uEI,
+                             DMAP, 
+                             F1idx, 
+                             F2idx);
+
+            app->LABELS.resize(app->ANIM.F.rows());
+            app->LABELS.setZero();
+            for (int i =0; i < F1idx.size(); ++i) app->LABELS(F1idx(i)) = 1;
+            //other label is zero 
+
+            MatrixXd LV = W * app->LABELS;
+            MatrixXd sLV; //smoothed
+
+            int smooth_iter = 10;
+            for (int i = 0; i < smooth_iter; ++i) 
+            {
+                igl::per_vertex_attribute_smoothing(LV, app->ANIM.F, sLV);
+                LV = sLV.eval();
+            }
+            Eigen::VectorXd val(1);
+            val(0) = 0.5;
+            Eigen::MatrixXd U;
+            Eigen::MatrixXi G;
+            Eigen::VectorXi J;
+            Eigen::SparseMatrix<double> BC;
+            Eigen::VectorXd SU, L;
+            
+            app->ISOCOLORS = LV.col(0);
+            app->m_computed_iso_color = true;
+
+            slice_isolines(app->ANIM.AvgVD, app->ANIM.F, LV, val, U, G, J, BC, SU, L);
+            std::cout << L <<std::endl;
+            app->FCSPLIT.resize(G.rows(), 3);
+            
+            for (int i = 0; i < L.size(); ++i) 
+            {
+                if (L(i) == 0) 
+                    app->FCSPLIT.row(i) = Vector3d(0,1,0);
+                else
+                    app->FCSPLIT.row(i) =  Vector3d(1,0,0);
+            }
+
+            app->VSPLIT = U;
+            app->FSPLIT = G;
+            igl::per_vertex_normals(U, G, app->NSPLIT);
+
+            MatrixXi E;
+            MatrixXi uE;
+            VectorXi EMAP;
+            std::vector<std::vector<int>> uE2E;
+            igl::unique_edge_map(G, E, uE, EMAP, uE2E);
+            
+            app->UESPLIT = uE;
+            app->UCSPLIT.resize(uE.rows(), 3);
+            app->UCSPLIT.setConstant(0.5);
+
+            RA_LOG_INFO("done");
+        }
 
         void console_load_bunny_stop(App* app, const std::vector<std::string>& args) 
         {
@@ -878,9 +1051,7 @@ namespace
                 for (auto vid : app->vid_list2) 
                 {
                     app->PIECES[part_id].VW[vid] = w;
-                    
                 }
-                    
             }
         }
 
@@ -1002,8 +1173,10 @@ namespace
                                smooth_weight,
                                L);
             
+            app->LABELS.resize(L.size());
             for (int i = 0; i < L.size(); ++i) 
-            {
+            {   
+                app->LABELS(i) = (double)L(i);
                 if (L(i) == 1) 
                 {
                     app->setFaceColor(flist1[i], Eigen::Vector3d(0,0.5,0));
@@ -1081,7 +1254,8 @@ namespace
                 tyro::color_black_matrix(app->ANIM.UE.rows(), app->ANIM.UEC);
             }
 
-            app->compute_average();                       
+            app->compute_average(); 
+            console_save_serialised_data(app, args);                      
         }
 
         void console_show_wireframe(App* app, const std::vector<std::string> & args) 
@@ -1203,11 +1377,15 @@ namespace
         
 
             MatrixXi F1, F2;
+            VectorXi F1idx, F2idx;
             tyro::mesh_split(app->DANIM.F,
                              uEI,
                              DMAP, 
-                             F1, 
-                             F2);
+                             F1idx, 
+                             F2idx);
+            igl::slice(app->DANIM.F, F1idx, 1, F1); 
+            igl::slice(app->DANIM.F, F2idx, 1, F2); 
+
             
             app->PIECES.resize(2);
             auto& A1 = app->PIECES[0];
@@ -1581,7 +1759,181 @@ namespace
             app->load_oldman();
             return;
         }
+
+        void console_load_agent(App* app, const std::vector<std::string> & args) 
+        {
+            RA_LOG_INFO("load agent");
+            bool serialized = false;
+            if (args.size() == 1) 
+                serialized = std::stoi(args[0]);
+
+            //Picked face_id 26093 vertex_id 13681 coord 11.950990 2.934150 16.501955
+            //face_id 40217 vertex_id 10585 coord -1.194749 -0.823966 1.658947
+            //Picked face_id 31779 vertex_id 12996 coord 0.012255 1.557947 0.744930
+            int offset_vid = 638; // 1222;
+            auto offset = Eigen::Vector3d(-0.000000, 1.379708, 0.009046) ; //Eigen::Vector3d(0.613322, 2.613381, 2.238946);
+            
+            app->FOLDERS = 
+            {   
+                std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/agent327/obj/04"),
+                std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/agent327/obj/07"),
+                std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/agent327/obj/08_05"),
+                std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/agent327/obj/10_03"),
+                std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/agent327/obj/11_02"),
+                std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/agent327/obj/14_01")
+            };
+
+            if (serialized) 
+            {
+                auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
+                auto p = f/filesystem::path("agent_frames");
+                std::ifstream in = std::ifstream(p.str(), std::ios::binary);
+                cereal::BinaryInputArchive archive_i(in);
+                archive_i(app->ANIM);
+            }
+            else
+            {   std::vector<std::string> obj_paths;
+                for (int i = 0; i < app->FOLDERS.size(); ++i) 
+                {
+                    int num_files_read;
+                    //Add smth
+                    auto folder = app->FOLDERS[i];
+                    //folder += std::string("face/");
+
+                    RA_LOG_INFO("loading folder %s", folder.data());
+                    tyro::obj_file_path_list(folder, "objlist.txt", obj_paths, num_files_read);
+                    RA_LOG_INFO("frames read %i", num_files_read);
+                    app->ANIM.SIdx.push_back(num_files_read);
+                }
+                app->load_mesh_sequence(obj_paths, false); //use IGL obj loader
+            }
+ 
+            if (!igl::is_edge_manifold(app->ANIM.F)) 
+            {   
+                RA_LOG_ERROR_ASSERT("not manifold");
+                return;
+            }
+            app->m_timeline->SetFrameRange(app->ANIM.VD.size()-1);
+
+            //app->align_all_models(offset_vid, offset);
+                
+            //Compute radius of the bounding box of the model
+            AxisAlignedBBox bbox;
+            MatrixXd VT = app->ANIM.VD[0].transpose();
+            bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
+            app->m_model_offset = 0.7*2*bbox.GetRadius(); 
+
+            app->m_update_camera = true;
+            app->m_state = App::State::LoadedModel;
+            //app->m_weights.VW.resize(app->ANIM.VD[0].rows());
+            //app->m_weights.VW.setOnes();
+
+            //app->m_weights.FW.resize(app->ANIM.F.rows());
+            //app->m_weights.FW.setOnes();
+            
+            app->compute_average();
+
+            std::vector<std::string> args1 = {"split", "monka_split"};
+            //console_load_serialised_data(app,args1);
+
+            std::vector<std::string> args2 = {"stop_low", "monka_stop_100_1_1_kmeans"};
+            //console_load_serialised_data(app, args2);
+            
+            std::vector<std::string> args3 = {"stop_up", "monka_stop_50_1_0_kmeans"};
+            //console_load_serialised_data(app, args3);
+
+            app->render();
+        }
+
         
+        void console_load_bartender(App* app, const std::vector<std::string> & args) 
+        {
+            RA_LOG_INFO("load bart");
+            bool serialized = true;
+            if (args.size() == 1) 
+                serialized = std::stoi(args[0]);
+
+            //Picked face_id 26093 vertex_id 13681 coord 11.950990 2.934150 16.501955
+            //face_id 40217 vertex_id 10585 coord -1.194749 -0.823966 1.658947
+            //Picked face_id 31779 vertex_id 12996 coord 0.012255 1.557947 0.744930
+            int offset_vid = 12996; // 1222;
+            auto offset = Eigen::Vector3d(0.012255, 1.557947, 0.744930) ; //Eigen::Vector3d(0.613322, 2.613381, 2.238946);
+        
+            app->FOLDERS = 
+            {   
+                std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/osipa/obj/01"),
+            };
+
+            if (serialized) 
+            {
+                auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
+                auto p = f/filesystem::path("bart_frames_upsample");
+                std::ifstream in = std::ifstream(p.str(), std::ios::binary);
+                cereal::BinaryInputArchive archive_i(in);
+                archive_i(app->ANIM);
+            }
+            else
+            {   
+                std::vector<std::string> obj_paths;
+
+                for (int i = 0; i < app->FOLDERS.size(); ++i) 
+                {
+                    int num_files_read;
+
+                    //Add smth
+                    auto folder = app->FOLDERS[i];
+                    //folder += std::string("face/");
+
+                    RA_LOG_INFO("loading folder %s", folder.data());
+                    tyro::obj_file_path_list(folder, "objlist.txt", obj_paths, num_files_read);
+                    RA_LOG_INFO("frames read %i", num_files_read);
+                    app->ANIM.SIdx.push_back(num_files_read);
+                }
+                
+                app->load_mesh_sequence(obj_paths, false); //use IGL obj loader
+
+            }
+
+            
+            if (!igl::is_edge_manifold(app->ANIM.F)) 
+            {   
+                RA_LOG_ERROR_ASSERT("not manifold");
+                return;
+            }
+            app->m_timeline->SetFrameRange(app->ANIM.VD.size()-1);
+
+            //app->align_all_models(offset_vid, offset);
+                
+            //Compute radius of the bounding box of the model
+            AxisAlignedBBox bbox;
+            MatrixXd VT = app->ANIM.VD[0].transpose();
+            bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
+            app->m_model_offset = 0.7*2*bbox.GetRadius(); 
+
+            app->m_update_camera = true;
+            app->m_state = App::State::LoadedModel;
+            app->compute_average();
+
+            //app->m_weights.VW.resize(app->ANIM.VD[0].rows());
+            //app->m_weights.VW.setOnes();
+
+            //app->m_weights.FW.resize(app->ANIM.F.rows());
+            //app->m_weights.FW.setOnes();
+            
+            app->compute_average();
+
+            std::vector<std::string> args1 = {"split", "monka_split"};
+            //console_load_serialised_data(app,args1);
+
+            std::vector<std::string> args2 = {"stop_low", "monka_stop_100_1_1_kmeans"};
+            //console_load_serialised_data(app, args2);
+            
+            std::vector<std::string> args3 = {"stop_up", "monka_stop_50_1_0_kmeans"};
+            //console_load_serialised_data(app, args3);
+
+            app->render();
+        }
+
         void console_load_monka(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("load monka");
@@ -1627,10 +1979,10 @@ namespace
             else
             {
                 std::vector<std::string> obj_paths;
+
                 for (int i = 0; i < app->FOLDERS.size(); ++i) 
                 {
                     int num_files_read;
-
                     //Add smth
                     auto folder = app->FOLDERS[i];
                     folder += std::string("face/");
@@ -1639,8 +1991,9 @@ namespace
                     tyro::obj_file_path_list(folder, "objlist.txt", obj_paths, num_files_read);
                     RA_LOG_INFO("frames read %i", num_files_read);
                     app->ANIM.SIdx.push_back(num_files_read);
-                    app->load_mesh_sequence(obj_paths, true); //use IGL obj loader
                 }
+                
+                app->load_mesh_sequence(obj_paths, true); //use IGL obj loader
             }
 
             
@@ -1702,7 +2055,86 @@ namespace
         void console_load_blobby(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("Loading blobby obj sequence");
-            app->load_blobby();
+            bool serialized = false;
+            if (args.size() == 1) 
+                serialized = std::stoi(args[0]);
+
+            //Picked face_id 26093 vertex_id 13681 coord 11.950990 2.934150 16.501955
+            //face_id 40217 vertex_id 10585 coord -1.194749 -0.823966 1.658947
+            //Picked face_id 31779 vertex_id 12996 coord 0.012255 1.557947 0.744930
+            int offset_vid = 12996; // 1222;
+            auto offset = Eigen::Vector3d(0.012255, 1.557947, 0.744930) ; //Eigen::Vector3d(0.613322, 2.613381, 2.238946);
+        
+            app->FOLDERS = {   
+                std::string("/home/rinat/GDrive/StopMotionProject/Claymation/data/hello/FramesOBJ/objlist2.txt")
+            };
+
+            if (serialized) 
+            {
+                auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
+                auto p = f/filesystem::path("monka_manifold");
+                std::ifstream in = std::ifstream(p.str(), std::ios::binary);
+                cereal::BinaryInputArchive archive_i(in);
+                archive_i(app->ANIM);
+            }
+            else
+            {
+                std::vector<std::string> obj_paths;
+                for (int i = 0; i < app->FOLDERS.size(); ++i) 
+                {
+                    int num_files_read;
+
+                    //Add smth
+                    auto folder = app->FOLDERS[i];
+                    folder += std::string("face/");
+
+                    RA_LOG_INFO("loading folder %s", folder.data());
+                    tyro::obj_file_path_list(folder, "objlist.txt", obj_paths, num_files_read);
+                    RA_LOG_INFO("frames read %i", num_files_read);
+                    app->ANIM.SIdx.push_back(num_files_read);
+                }
+                app->load_mesh_sequence(obj_paths, true); //use IGL obj loader
+
+            }
+
+            
+            if (!igl::is_edge_manifold(app->ANIM.F)) 
+            {   
+                RA_LOG_ERROR_ASSERT("not manifold");
+                return;
+            }
+            app->m_timeline->SetFrameRange(app->ANIM.VD.size()-1);
+
+            //app->align_all_models(offset_vid, offset);
+                
+            //Compute radius of the bounding box of the model
+            AxisAlignedBBox bbox;
+            MatrixXd VT = app->ANIM.VD[0].transpose();
+            bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
+            app->m_model_offset = 0.7*2*bbox.GetRadius(); 
+
+            app->m_update_camera = true;
+            app->m_state = App::State::LoadedModel;
+            app->compute_average();
+
+            //app->m_weights.VW.resize(app->ANIM.VD[0].rows());
+            //app->m_weights.VW.setOnes();
+
+            //app->m_weights.FW.resize(app->ANIM.F.rows());
+            //app->m_weights.FW.setOnes();
+            
+            app->compute_average();
+
+            std::vector<std::string> args1 = {"split", "monka_split"};
+            console_load_serialised_data(app,args1);
+
+            std::vector<std::string> args2 = {"stop_low", "monka_stop_100_1_1_kmeans"};
+            console_load_serialised_data(app, args2);
+            
+            std::vector<std::string> args3 = {"stop_up", "monka_stop_50_1_0_kmeans"};
+            console_load_serialised_data(app, args3);
+
+            app->render();
         }
 
         void console_compute_average(App* app, const std::vector<std::string> & args) 
@@ -1813,7 +2245,7 @@ namespace
 
         // Create a VideoCapture object and open the input file
         // If the input is the web camera, pass 0 instead of the video file name
-        VideoCapture cap("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monka/monka.mp4"); 
+        VideoCapture cap("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/movies/monka.mp4"); 
             
         // Check if camera opened successfully
         if(!cap.isOpened())
@@ -1853,7 +2285,7 @@ namespace
                 fcount++;
             }
             folder = folder + std::to_string(fcount);
-            auto a = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monka/monka_images");
+            auto a = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/images");
             a = a/folder;
             if (!a.exists())
                 filesystem::create_directory(a);
@@ -2145,7 +2577,8 @@ namespace
         {
             this->mouse_scroll(window, ydelta);
         };
-
+        register_console_function("load_agent", console_load_agent, "");
+        register_console_function("load_bartender", console_load_bartender, "");
         register_console_function("load_blobby", console_load_blobby, "");
         register_console_function("load_oldman", console_load_oldman, "");
         register_console_function("load_bunny", console_load_bunny, "");
@@ -2197,6 +2630,8 @@ namespace
         register_console_function("save_for_printing", console_save_for_printing, "");
         register_console_function("save_sub_video", console_save_sub_video, "");
         register_console_function("load_bunny_stop", console_load_bunny_stop, "");
+        register_console_function("show_iso", console_show_iso, "");
+        register_console_function("show_label", console_show_labels, "");
 
 
         m_state = App::State::Launched;
@@ -2508,8 +2943,8 @@ namespace
                 if (RENDER.error[i] == nullptr) 
                 {
                     RENDER.error[i] = IGLMesh::CreateColor(SMOTION[i].anim.VD[m_frame], SMOTION[i].anim.F, 
-                                                           SMOTION[i].anim.ND[m_frame], SMOTION[i].anim.FC, 
-                                                           m_error[i][m_frame], max_error,maxColor);
+                                                           SMOTION[i].anim.ND[m_frame],  
+                                                           m_error[i][m_frame], max_error, maxColor);
                     
                     RENDER.error[i]->LocalTransform = tr * RENDER.error[i]->LocalTransform;
                     RENDER.error[i]->Update(true);
@@ -2517,7 +2952,7 @@ namespace
                 else 
                 { 
                     RENDER.error[i]->UpdateData(SMOTION[i].anim.VD[m_frame], SMOTION[i].anim.F, 
-                                                SMOTION[i].anim.ND[m_frame], SMOTION[i].anim.FC, 
+                                                SMOTION[i].anim.ND[m_frame], 
                                                 m_error[i][m_frame], max_error,maxColor);
                 }
 
@@ -2544,7 +2979,7 @@ namespace
                 {
                     
                     RENDER.errorVel[i] = IGLMesh::CreateColor(SMOTION[i].anim.VD[m_frame], SMOTION[i].anim.F, 
-                                                              SMOTION[i].anim.ND[m_frame], SMOTION[i].anim.FC, 
+                                                              SMOTION[i].anim.ND[m_frame],  
                                                               m_error_velocity[i][m_frame], max_error_velocity, 
                                                               maxColor);
                     
@@ -2554,15 +2989,51 @@ namespace
                 else 
                 { 
                     RENDER.errorVel[i]->UpdateData(SMOTION[i].anim.VD[m_frame], SMOTION[i].anim.F, 
-                                                   SMOTION[i].anim.ND[m_frame], SMOTION[i].anim.FC, 
+                                                   SMOTION[i].anim.ND[m_frame],  
                                                    m_error_velocity[i][m_frame], max_error_velocity,
                                                    maxColor);
                 }
 
                 vis_set.Insert(RENDER.errorVel[i].get());
-            } 
-        }
+            }
 
+        }
+        
+        if (m_computed_iso_color) 
+        {
+            Eigen::Vector3f maxColor = Eigen::Vector3f(255/255.0, 0/255.0, 0/255.0);
+
+            Wm5::Transform tr;
+            tr.SetTranslate(Wm5::APoint(3*m_model_offset, -m_model_offset/2, 0));
+            if (RENDER.isoline == nullptr) 
+            {
+                RENDER.isoline = IGLMesh::CreateColor(ANIM.AvgVD, ANIM.F, ANIM.ND[0], ISOCOLORS, 1, maxColor);
+                
+                RENDER.isoline->LocalTransform = tr * RENDER.isoline->LocalTransform;
+                RENDER.isoline->Update(true);
+            }
+            vis_set.Insert(RENDER.isoline.get());
+        } 
+
+        if (m_computed_iso_color) 
+        {
+            Wm5::Transform tr;
+            tr.SetTranslate(Wm5::APoint(3*m_model_offset, m_model_offset/2, 0));
+            if (RENDER.isolineSplit == nullptr) 
+            {
+                RENDER.isolineSplit = IGLMesh::Create(VSPLIT, FSPLIT, NSPLIT, FCSPLIT);
+                RENDER.isolineSplit->LocalTransform = tr * RENDER.isolineSplit->LocalTransform;
+                RENDER.isolineSplit->Update(true);
+
+                RENDER.isolineSplitWire = IGLMeshWireframe::Create(VSPLIT, UESPLIT, UCSPLIT);
+                RENDER.isolineSplitWire->LocalTransform = tr * RENDER.isolineSplitWire->LocalTransform;                                                        
+                RENDER.isolineSplitWire->Update(true);
+            }
+            vis_set.Insert(RENDER.isolineSplit.get());
+            vis_set.Insert(RENDER.isolineSplitWire.get());
+
+        } 
+        
 
         for (auto object_sptr : ball_list) 
         {
@@ -2826,8 +3297,8 @@ namespace
         if (serialized) 
         {   
             auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
-            auto p = f/filesystem::path("bunny_frames_upsampled");
-            //auto p = f/filesystem::path("bunny_frames_front");
+            //auto p = f/filesystem::path("bunny_frames_upsampled");
+            auto p = f/filesystem::path("bunny_frames_front");
             
             //auto p = f/filesystem::path("subanimaton");
 
@@ -2849,7 +3320,7 @@ namespace
 
                 //Add smth
                 //folder += std::string("no_mouth/");
-
+                
                 RA_LOG_INFO("loading folder %s", folder.data());
                 tyro::obj_file_path_list(folder, "objlist2.txt", obj_paths, num_files_read);
                 RA_LOG_INFO("frames read %i", num_files_read);
@@ -2897,7 +3368,7 @@ namespace
         }
 
         //ParseImages();
-        std::vector<std::string> args1 = {"split", "bunny_split"};
+        std::vector<std::string> args1 = {"split", "bunny_jaggy_split"};
         //console_load_serialised_data(this,args1);
         
         std::vector<std::string> args2 = {"stop_low", "bunny_stop_200_2_1_kmeans"};
@@ -2909,17 +3380,7 @@ namespace
         render();
     }
 
-    //load mexican blobby guy
-    void App::load_blobby() 
-    {   
-        RA_LOG_INFO("load blobby");
-        auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/Claymation/data/hello/FramesOBJ/objlist2.txt");
-        //load_mesh_sequence(obj_list_file);
-        m_update_camera = true;
-        
-        m_state = App::State::LoadedModel;
-        render();
-    }
+
 
     //load oldman (will you go to lunch)
     void App::load_oldman() 

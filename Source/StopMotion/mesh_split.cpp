@@ -9,8 +9,8 @@ using namespace Eigen;
 void tyro::mesh_split(const Eigen::MatrixXi& F, 
                       const Eigen::VectorXi& uEI, // indicies of seam edges into unique edges matrix 
                       const Eigen::VectorXi& DMAP, // checks which directions where switched HACKY
-                      Eigen::MatrixXi& F1, 
-                      Eigen::MatrixXi& F2) 
+                      Eigen::VectorXi& F1idx, //indicies of faces into F that belong to part1 
+                      Eigen::VectorXi& F2idx)  // indicies of face into F that belong to part2
 {   
     //MatrixXi E;
     //igl::oriented_facets(F, E);
@@ -72,31 +72,6 @@ void tyro::mesh_split(const Eigen::MatrixXi& F,
             } 
         }    
     }
-      /*
-
-        for (int j =0; j < 2; ++j) 
-        {
-            int f = fEF(ue_idx, j);
-
-           
-            face_set[j].insert(f);
-            
-            for(int v = 0; v < 3; ++v) // loop over edges
-            {
-                // get edge id
-                const int e = fEMAP(v*F.rows()+f);
-                if (e != ue_idx) 
-                {
-                    edge_queue[j].push(e);
-                } 
-                else 
-                {
-                    edge_set[j].insert(e);
-                }
-            } 
-        }
-    }
-    */
 
     auto glambda = [](const MatrixXi& F,
                       const VectorXi& fEMAP, 
@@ -139,17 +114,18 @@ void tyro::mesh_split(const Eigen::MatrixXi& F,
     glambda(F, fEMAP, fEF, edge_queue[0], edge_set[0], face_set[0]); //one side
     glambda(F, fEMAP, fEF, edge_queue[1], edge_set[1], face_set[1]); //another side
 
-    F1.resize(face_set[0].size(), 3);
+    
+    F1idx.resize(face_set[0].size());
     int rowid = 0;
     for (auto& fid : face_set[0]) 
     {
-        F1.row(rowid++) = F.row(fid);
+        F1idx(rowid++) = fid;
     }
 
-    F2.resize(face_set[1].size(), 3);
+    F2idx.resize(face_set[1].size());
     rowid = 0;
     for (auto& fid : face_set[1]) 
     {
-        F2.row(rowid++) = F.row(fid);
+        F2idx(rowid++) = fid;
     }
 }

@@ -11,7 +11,7 @@ namespace tyro
 {   
     //void UpdateData(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C, const Eigen::VectorXd& AO){}
     
-    void IGLMesh::UpdateData(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C, const Eigen::VectorXd& Error, float max_error, Eigen::Vector3f& EmaxColor)
+    void IGLMesh::UpdateData(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N,  const Eigen::VectorXd& Error, float max_error, Eigen::Vector3f& EmaxColor)
     {
  
         int numVertices = V.rows();
@@ -186,7 +186,7 @@ namespace tyro
     void IGLMesh::InitColor(const Eigen::MatrixXd& V, 
                             const Eigen::MatrixXi& F, 
                             const Eigen::MatrixXd& N, 
-                            const Eigen::MatrixXd& C, 
+                            
                             const Eigen::VectorXd& Error,
                             float max_error, 
                             Eigen::Vector3f& maxColor) 
@@ -210,7 +210,7 @@ namespace tyro
         auto vbuffer = std::make_shared<tyro::ES2VertexHardwareBuffer>(stride, numIndices, nullptr, HardwareBuffer::BU_DYNAMIC);
         SetVertexBuffer(vbuffer);
         
-        this->UpdateData(V, F, N, C, Error, max_error, maxColor);
+        this->UpdateData(V, F, N, Error, max_error, maxColor);
 
         //compute bounding box
         LocalBoundBox.ComputeExtremes(vbuffer->GetNumOfVerticies(), vbuffer->GetVertexSize(), vbuffer->MapRead());
@@ -250,10 +250,10 @@ namespace tyro
         return sptr;
     }
     
-    IGLMeshSPtr IGLMesh::CreateColor(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C, const Eigen::VectorXd& error, float max_error, Eigen::Vector3f& maxColor)
+    IGLMeshSPtr IGLMesh::CreateColor(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::VectorXd& error, float max_error, Eigen::Vector3f& maxColor)
     {
         IGLMeshSPtr sptr = std::make_shared<IGLMesh>();
-        sptr->InitColor(V,F,N,C,error, max_error, maxColor);
+        sptr->InitColor(V,F,N,error, max_error, maxColor);
         return sptr;
     }
 

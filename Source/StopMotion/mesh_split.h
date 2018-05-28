@@ -14,6 +14,6 @@ namespace tyro
 void mesh_split(const Eigen::MatrixXi& F, 
                 const Eigen::VectorXi& uEI, // indicies of seam edges into unique edges matrix
                 const Eigen::VectorXi& DMAP, // checks which directions where switched HACKY
-                Eigen::MatrixXi& F1, 
-                Eigen::MatrixXi& F2);
+                Eigen::VectorXi& F1idx, 
+                Eigen::VectorXi& F2idx);
 }

@@ -60,7 +60,7 @@ namespace tyro
         else //use tinyobjloader
         {   
             bool saved_faces = false;
-            std::string shape_name("monkey_Plane.002");
+            std::string shape_name("GEO-Agent_head");
 
             for (auto& line : obj_paths)
             {

@@ -38,7 +38,6 @@ namespace tyro
         int ParseImages();
 
         //Commands
-        void load_blobby();
         void load_oldman();
         void load_bunny(bool serialized = true);
         
@@ -126,11 +125,14 @@ namespace tyro
             std::vector<IGLMeshSPtr> part;
             std::vector<IGLMeshWireframeSPtr> part_wire;
             bool parts_visible = true;
-
             
 
             std::vector<IGLMeshSPtr> error;
             std::vector<IGLMeshSPtr> errorVel;
+            IGLMeshSPtr isoline;
+            IGLMeshSPtr isolineSplit;
+            IGLMeshWireframeSPtr isolineSplitWire;
+
             //std::vector<IGLMeshWireframeSPtr> stop_motion_meshes_wire;
             
         };
@@ -227,7 +229,16 @@ namespace tyro
             }
         };
 
- 
+        Eigen::MatrixXd VSPLIT;
+        Eigen::MatrixXi FSPLIT;
+        Eigen::MatrixXd NSPLIT;
+        Eigen::MatrixXi UESPLIT;
+        Eigen::MatrixXd UCSPLIT;
+        Eigen::MatrixXd FCSPLIT;
+        Eigen::VectorXd LABELS;
+        Eigen::VectorXd ISOCOLORS;
+        bool m_computed_iso_color = false;
+        
         MAnimation ANIM; //Original animation data        
         MAnimation DANIM; // Animation data after we smooth the seam(s)
         std::vector<MAnimation> PIECES; // Break deformed mesh into pieces along seam(s).
