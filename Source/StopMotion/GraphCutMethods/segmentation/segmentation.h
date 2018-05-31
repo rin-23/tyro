@@ -8,5 +8,6 @@ void segmentation(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 				  const Eigen::VectorXi& S1, //seeds(indicies of faces that must belong to a label)
                   const Eigen::VectorXi& S2,
                   double smooth_weight,
-                  Eigen::VectorXi& L);  //labeling of faces 
+                  Eigen::VectorXi& L, //labeling of faces
+                  const Eigen::VectorXi& isBoundary);   
 }

@@ -138,7 +138,7 @@ GCoptimization::EnergyTermType smoothFnTRUEVertex(int p1, int p2, int l1, int l2
 	double diff = 0;
 	for (int i = 0; i < D->rows(); ++i) 
 	{
-		double a =  (*VW)(i%3) *((*D)(i, l1) - (*D)(i, l2) - (*F)(i, p1) + (*F)(i, p2));
+		double a =  (*VW)(i) *((*D)(i, l1) - (*D)(i, l2) - (*F)(i, p1) + (*F)(i, p2));
 		diff += a*a;
 	}
 	
@@ -277,8 +277,11 @@ void prepareDataMatrixTRUEVertex(Eigen::MatrixXd& F, Eigen::VectorXd& VW, Eigen:
 		{	
 			double diff = 0;
 			for (int v = 0; v < num_vertex; ++v) 
-			{
-				double a = VW(v%3) * (F(v, i) - D(v, j));
+			{	
+				//if (VW(v) > 1)
+			//		RA_LOG_INFO("WEIGHT IS %f", VW(v));
+
+				double a = VW(v) * (F(v, i) - D(v, j));
 				diff +=  a*a;
 			}
 			dataArray[i*num_labels+j] = diff;
@@ -292,6 +295,12 @@ void labelFacesTRUEVertex(Eigen::MatrixXd& F, Eigen::VectorXd& VW, Eigen::Matrix
 	int num_frames = F.cols();
 	int num_labels = D.cols();
 	S_vec.resize(num_frames);
+
+	for (int i=0; i < VW.size(); ++i) 
+	{
+		//if (VW(i) > 1) 
+		//	RA_LOG_INFO("SUKA %f", VW(i));
+	}
 
 	try
 	{

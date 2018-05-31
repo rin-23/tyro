@@ -93,7 +93,7 @@ namespace tyro
         bool m_computed_error = false;
         bool m_computed_vel_error = false;
         int m_frame_offset;
-
+        SelectionType m_selection_type = SelectionType::Select;
         std::vector<SpatialSPtr> ball_list;
         std::atomic<int> m_frame;
         std::atomic<bool> m_need_rendering;
@@ -249,12 +249,14 @@ namespace tyro
         float max_error_velocity;
         std::vector<std::string> FOLDERS;
         //std::vector<std::string> FOLDERS_MONKA;
-        
+        float m_ball_size = 0.01;
         //using Shot = std::tuple<int, int>; // start and end frame
         //using Movie = std::vector<Shot>;  // collection of shots. Each shot are indicies into m_frame_data.v_data
         //Movie movie;            
         
         std::vector<int> vid_list;
+        std::vector<int> vid_list_second;
+        std::vector<int> vid_list_third;
         std::vector<int> vid_list2; //verteicies selected for part 1 and assign weight
 
         std::vector<int> fid_list; //fid added with left mouse click
@@ -279,7 +281,9 @@ namespace tyro
         void selectVertexPart(Eigen::Vector2f& mouse_pos, int mouse_button, int modifier, int whichpart); 
     
         void DrawMeshes();
-
+        int ShowMonkaMovieStop(); 
+        int ShowBunnyMovieStop();
+    
     };
 
 
@@ -287,6 +291,8 @@ namespace tyro
     //in vid_list - list of vertex ids (ORDERED RIGHT NOW, ASSUME CLOSED LOOP)
     //out E - vid_list.size() by 2 matrix of edges
     void convert_vertex_to_edge_selection(const std::vector<int>& vid_list,
+                                          const std::vector<int>& vid_list_second,
+                                          const std::vector<int>& vid_list_third,
                                           const Eigen::MatrixXi& E, //all directed edges
                                           const Eigen::MatrixXi& uE, //all unique edges
                                           const Eigen::VectorXi& EMAP, // map from directed to unique edge index 

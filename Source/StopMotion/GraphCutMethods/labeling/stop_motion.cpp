@@ -9,7 +9,7 @@
 #include <limits>
 #include <opencv2/opencv.hpp>
 //#include <opencv2/viz/vizcore.hpp>
-
+#include "RALogManager.h"
 //#include "KMeansRexCore.cpp"
 
 using namespace Eigen;
@@ -125,10 +125,19 @@ void flatten_frames(const std::vector<Eigen::MatrixXd>& v_data, MatrixXd& F)
 
 void flatten_weights(const Eigen::VectorXd& VW_per_vertex, Eigen::VectorXd& VW) 
 {
+	for (int i=0; i < VW_per_vertex.size(); ++i) 
+	{
+		//if (VW_per_vertex(i) > 1) 
+			//RA_LOG_INFO("Horray %f", VW_per_vertex(i));
+	}
+	
 	VW.resize(VW_per_vertex.size() * 3);
 	for (int i = 0; i < VW.size(); ++i) 
-	{
-		VW(i) = VW_per_vertex(i%3);
+	{	
+		int idx =i/3;
+//		if (VW_per_vertex(idx) > 1) 
+			//RA_LOG_INFO("STMH");
+		VW(i) = VW_per_vertex(idx);
 	}
 }
 
@@ -144,14 +153,21 @@ int stop_motion_vertex_distance(int num_labels,
                             	double& result_energy)
 {
 	//double w_s = 2.0f; //smooth weight
-	int num_steps = 30;// 150;
-	double tolerance = 0.0001;
+	int num_steps = 50;// 150;
+	double tolerance = 0.001;
 	int n_init = 5; // number of times the clustering algorithm will be run
+
+	for (int i=0; i < VW_per_vertex.size(); ++i) 
+	{
+		if (VW_per_vertex(i) > 1) 
+			RA_LOG_INFO("WEight %f", VW_per_vertex(i));
+	}
 
 	MatrixXd F; //,  SAVED_FACES; //frame data
 	flatten_frames(v_data, F);
 	VectorXd VW;
 	flatten_weights(VW_per_vertex, VW);
+	assert(F.rows() == VW.rows());
 	std::vector<Eigen::MatrixXd> n_init_D;
 	std::vector<Eigen::VectorXi> n_init_S;
 	std::vector<double> n_init_energy;
@@ -207,29 +223,20 @@ int stop_motion_vertex_distance(int num_labels,
 			auto duration = duration_cast<microseconds>(t2 - t1).count();
 			cout << "label time " << duration << "\n";
 
-			if (kmeans) 
-			{ 
+			if (graphEnergy > lastEnergy)
+			{	
+				std::cout << "Energy after graph cuts " << graphEnergy << " is higher than previous energy " << lastEnergy << "\n\n";
+				D = lastD;
+				S_vec = lastS_vec;
+				break;
+			}
+			else 
+			{
 				lastD = D;
 				lastS_vec = S_vec;
 				lastEnergy = graphEnergy;
 			}
-			else 
-			{
-				//if (graphEnergy > lastEnergy)
-			//	{	
-			//		std::cout << "Energy after graph cuts " << graphEnergy << " is higher than previous energy " << lastEnergy << "\n\n";
-			//		D = lastD;
-			//		S_vec = lastS_vec;
-			//		break;
-			//	}
-			//	else 
-				{
-					lastD = D;
-					lastS_vec = S_vec;
-					lastEnergy = graphEnergy;
-				}
-			}
-
+		
 			t1 = high_resolution_clock::now();
 			updateStepTRUEVertex(F, VW, D, S_vec, sequenceIdx, w_s, oldEnergy, newEnergy);
 			t2 = high_resolution_clock::now();

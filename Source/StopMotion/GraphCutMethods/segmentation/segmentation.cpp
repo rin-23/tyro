@@ -65,9 +65,6 @@ GCoptimization::EnergyTermType smoothFnVertex(int p1, int p2, int l1, int l2, vo
 
 	SegmentationData* data = (SegmentationData*)extraData;
 	GCoptimization::EnergyTermType cost = data->S.coeffRef(p1, p2);
-	if (cost > 0) {
-		RA_LOG_INFO("omegalul");
-	}
 	return cost;
 }
 
@@ -78,7 +75,7 @@ void prepareSmoothMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex da
                         const Eigen::MatrixXi& uE, //unique edges
 						const std::vector<Eigen::VectorXd>& uEL, //edge length
 						double smooth_weight,
-						Eigen::SparseMatrix<double>& A) // sparse matrix of smooth cost
+						Eigen::SparseMatrix<double>& A, const Eigen::VectorXi& isBoundary) // sparse matrix of smooth cost
 {		
 	A.resize(F.rows(), F.rows());
 	A.setZero();
@@ -90,6 +87,15 @@ void prepareSmoothMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex da
 		int v1idx = uE(e,0);
 		int v2idx = uE(e,1);
 		
+		/*
+		if ((isBoundary(f1idx) && !isBoundary(f2idx)) ||
+			(isBoundary(f2idx) && !isBoundary(f1idx))) 
+		{
+			A.coeffRef(f1idx, f2idx) = 1000000;   
+			A.coeffRef(f2idx, f1idx) = 1000000;
+			continue;
+		}			
+		*/
 		double cost = 0;
 		for (int frame = 0; frame < v_data.size(); ++frame) 
 		{
@@ -102,7 +108,7 @@ void prepareSmoothMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex da
 			VectorXd v1diff = v1 - v1avg;
 			VectorXd v2diff = v2 - v2avg;
 
-			cost += uEL[frame](e) * (v1diff.norm() + v2diff.norm());
+			cost += uEL[frame](e) * (v1diff.norm() + v2diff.norm() + 0.01);
 		    //cost += (v1diff.norm() + v2diff.norm() + 1);
 		}
 
@@ -203,7 +209,8 @@ void segmentation(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 				  const Eigen::VectorXi& seeds2,
 				  //const Eigen::VectorXi& face_map,
 				  double smooth_weight,
-				  Eigen::VectorXi& L)  
+				  Eigen::VectorXi& L, 
+				  const Eigen::VectorXi& isBoundary)  
 {
 	//assert(seeds.size() == 2); //only support 2 labels right now
 	assert(igl::is_edge_manifold(F));
@@ -252,7 +259,8 @@ void segmentation(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
                         uE,       //unique edges
             			uEL,      //edge length
 						smooth_weight,
-    		 			data->S); // sparse matrix of smooth cost
+    		 			data->S, 
+						isBoundary); // sparse matrix of smooth cost
 	
 	prepareDataMatrix(v_data,
 					  F, 

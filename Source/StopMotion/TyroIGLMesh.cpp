@@ -41,7 +41,12 @@ namespace tyro
                 int vid = F(fid,j);
                 vba.Position<Wm5::Float3>(vIndex) = Wm5::Float3(V(vid,0), V(vid,1), V(vid,2));
                 vba.Normal<Wm5::Float3>(vIndex) = Wm5::Float3(N(vid, 0), N(vid, 1), N(vid, 2));
-                float err = Error(vid);
+                float err = 0;
+                if (vid < Error.size())
+                    err = Error(vid);
+                else
+                    RA_LOG_ERROR_ASSERT("Error out of bounds");
+                    
                 float weight = err/max_error;
                 //std::cout << weight << " ";
                 Wm5::Vector3f finalColor = (1-weight)*minColor + weight*maxColor;
@@ -94,7 +99,7 @@ namespace tyro
         }
         vba.Unmap();
     }
-
+    
     void IGLMesh::Init(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C)
     {
         ES2TriMesh::Init();
@@ -315,10 +320,10 @@ namespace tyro
             //uniforms->SetUniform(7, shader->GetUniformLocation("lightPositions"), 1, "lightPositions", ES2ShaderUniforms::Uniform3fv);
             Wm5::Vector3f lightPositions[] = {
             
-            Wm5::Vector3f(10.0f,  10.0f, 20.0f),
-            Wm5::Vector3f(-10.0f,  10.0f, 20.0f),
-            Wm5::Vector3f(-10.0f,  10.0f, 20.0f),
-            Wm5::Vector3f(-10.0f,  10.0f, 20.0f),
+            Wm5::Vector3f(10.0f,  10.0f, 10.0f),
+            Wm5::Vector3f(-10.0f,  10.0f, 10.0f),
+            Wm5::Vector3f(-10.0f,  10.0f, 10.0f),
+            Wm5::Vector3f(-10.0f,  10.0f, 10.0f),
             
             //BUNNY LIGHTS
             //Wm5::Vector3f(10.0f,  10.0f, 10.0f),

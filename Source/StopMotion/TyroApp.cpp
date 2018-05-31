@@ -1,5 +1,5 @@
 #include "TyroApp.h"
-
+#include <igl/facet_components.h>
 #include "RAEnginePrerequisites.h"
 #include "RAES2TextOverlay.h"
 #include "RAFont.h"
@@ -11,11 +11,11 @@
 
 #include <functional>
 
-
+#include <igl/avg_edge_length.h>
 #include "Wm5APoint.h"
 #include "Wm5Vector2.h"
 #include "Wm5Vector4.h"
-
+#include <igl/is_boundary_edge.h>
 #include <igl/extract_manifold_patches.h>
 #include <igl/unproject_onto_mesh.h>
 #include <igl/readOBJ.h>
@@ -38,6 +38,10 @@
 #include <igl/doublearea.h>
 #include <filesystem/path.h>
 #include <igl/per_vertex_attribute_smoothing.h>
+#include <igl/edges_to_path.h>
+#include <igl/on_boundary.h>
+#include <igl/remove_duplicates.h>
+#include <igl/collapse_small_triangles.h>
 
 #include "TyroIGLMesh.h"
 #include "TyroFileUtils.h"
@@ -48,7 +52,7 @@
 #include "mesh_split.h"
 #include "segmentation.h"
 #include "slice_isoline.h"
-
+#include "data_smooth.h"
 
 using namespace std;
 
@@ -113,6 +117,8 @@ void tyro::color_matrix(int rows, const Eigen::Vector3d& cv, Eigen::MatrixXd& uC
 }
 
 void tyro::convert_vertex_to_edge_selection(const std::vector<int>& vid_list,
+                                            const std::vector<int>& vid_second,
+                                            const std::vector<int>& vid_third,
                                             const Eigen::MatrixXi& E, //all directed edges
                                             const Eigen::MatrixXi& uE, //all unique edges
                                             const Eigen::VectorXi& EMAP, // map from directed to unique edge index 
@@ -126,7 +132,7 @@ void tyro::convert_vertex_to_edge_selection(const std::vector<int>& vid_list,
     int num_edges;
     if (isClosed) 
     {
-        num_edges = vid_list.size(); //assumes its a closed loop
+        num_edges = vid_list.size() + vid_second.size()+ vid_third.size(); //assumes its a closed loop
         eid_list.resize(num_edges, 2);
         for (int i = 0; i < vid_list.size(); ++i) 
         {   
@@ -135,17 +141,43 @@ void tyro::convert_vertex_to_edge_selection(const std::vector<int>& vid_list,
             else
                 eid_list.row(i) = Eigen::Vector2i(vid_list[i], vid_list[i+1]);
         }
+        
+        for (int i = 0; i < vid_second.size(); ++i) 
+        {   
+            if (i == vid_second.size() - 1) //last edge
+                eid_list.row(i+vid_list.size()) = Eigen::Vector2i(vid_second[i], vid_second[0]);
+            else
+                eid_list.row(i+vid_list.size()) = Eigen::Vector2i(vid_second[i], vid_second[i+1]);
+        }
+
+        for (int i = 0; i < vid_third.size(); ++i) 
+        {   
+            if (i == vid_third.size() - 1) //last edge
+                eid_list.row(i+vid_list.size() + vid_second.size()) = Eigen::Vector2i(vid_third[i], vid_third[0]);
+            else
+                eid_list.row(i+vid_list.size()+ vid_second.size()) = Eigen::Vector2i(vid_third[i], vid_third[i+1]);
+        }
     }
     else 
-    {
- 
-        num_edges = vid_list.size() - 1; //assumes its a closed loop
+    {   num_edges = vid_list.size() - 1;
+        if (vid_second.size()>0)
+            num_edges += vid_second.size() - 1; //assumes its a closed loop
+        
+        if (vid_third.size()>0)
+            num_edges += vid_third.size() - 1; //assumes its a closed loop
+        
         eid_list.resize(num_edges, 2);
-        for (int i = 0; i < vid_list.size(); ++i) 
-        {   
-            if (i < vid_list.size() - 1) //last edge
-                eid_list.row(i) = Eigen::Vector2i(vid_list[i], vid_list[i+1]);
-        }
+        
+        for (int i = 0; i < vid_list.size()-1; ++i) 
+            eid_list.row(i) = Eigen::Vector2i(vid_list[i], vid_list[i+1]);
+
+        if (vid_second.size() > 0) 
+            for (int i = 0; i < vid_second.size() - 1; ++i) 
+                eid_list.row(i + vid_list.size() - 1) = Eigen::Vector2i(vid_second[i], vid_second[i+1]);
+
+        if (vid_third.size() > 0) 
+            for (int i = 0; i < vid_third.size() - 1; ++i) 
+                eid_list.row(i + vid_list.size() - 1 + vid_second.size() - 1) = Eigen::Vector2i(vid_third[i], vid_third[i+1]);
     }
    
 
@@ -187,6 +219,84 @@ namespace tyro
 namespace
 {       void console_load_serialised_data(App* app, const std::vector<std::string>& args); 
 
+        
+        void console_collapse_small_triangles(App* app, const std::vector<std::string>&args) 
+        {   
+            Eigen::MatrixXi FF;
+            igl::collapse_small_triangles(app->ANIM.AvgVD,app->ANIM.F, 0.0000001, FF);
+            RA_LOG_INFO("After %i Before %i collapse", FF.rows(), app->ANIM.F.rows());
+            
+            MatrixXi I1; 
+            for (int i=0;i<app->ANIM.VD.size();++i) 
+            {   
+                MatrixXd newVD;                
+                igl::remove_unreferenced(app->ANIM.VD[i], 
+                                         FF, 
+                                         newVD, 
+                                         app->ANIM.F, 
+                                         I1);
+
+                app->ANIM.VD[i] =  newVD;
+                igl::per_vertex_normals(app->ANIM.VD[i], app->ANIM.F, app->ANIM.ND[i]);
+            }
+            
+            std::vector<std::vector<int>> uE2E;
+            igl::unique_edge_map(app->ANIM.F, app->ANIM.E, app->ANIM.UE, app->ANIM.EMAP, uE2E);
+
+            tyro::color_matrix(app->ANIM.F.rows(), Eigen::Vector3d(0.5,0.5,0.5), app->ANIM.FC);
+            tyro::color_matrix(app->ANIM.UE.rows(), Eigen::Vector3d(0.2,0.2,0.2), app->ANIM.UEC);
+            
+            app->ANIM.VW.resize(app->ANIM.VD[0].rows());
+            app->ANIM.VW.setOnes();
+
+            app->compute_average();
+
+            app->RENDER.mesh = nullptr;
+            app->RENDER.mesh_wire = nullptr;
+            
+            app->RENDER.avg = nullptr;
+            app->RENDER.avg_wire = nullptr;
+        }
+
+        void console_visualize_seams(App* app, const std::vector<std::string>& args) 
+        {   
+            std::vector<std::vector<int>> L;
+            igl::boundary_loop(app->ANIM.F,L);
+        }
+
+        void console_scale(App* app, const std::vector<std::string>& args) 
+        {
+            //double avg_length = igl::avg_edge_length(app->ANIM.AvgVD, app->ANIM.F);
+            AxisAlignedBBox bbox;
+            MatrixXd VT = app->ANIM.AvgVD.transpose();
+            bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
+            double scale = 2/bbox.GetRadius();   ;//0.5 / avg_length;
+
+            for (int i = 0; i < app->ANIM.VD.size(); ++i) 
+            {
+                app->ANIM.VD[i] = scale * app->ANIM.VD[i];
+                app->PIECES[0].VD[i] = scale * app->PIECES[0].VD[i];
+                app->PIECES[1].VD[i] = scale * app->PIECES[1].VD[i];
+            }
+            app->compute_average();
+
+            app->RENDER.mesh = nullptr;
+            app->RENDER.mesh_wire = nullptr;
+            
+            app->RENDER.avg = nullptr;
+            app->RENDER.avg_wire = nullptr;
+
+            app->RENDER.part[0] = nullptr;
+            app->RENDER.part[1] = nullptr;
+            
+            app->RENDER.part_wire[0]=nullptr;
+            app->RENDER.part_wire[1]=nullptr;
+            
+            app->m_update_camera = true;
+
+            app->render();
+        }
+
         void console_show_labels(App* app, const std::vector<std::string>& args) 
         {   
             if (args.size()!=1)  
@@ -197,7 +307,8 @@ namespace
             MatrixXi eid_list;
             VectorXi EI, uEI, DMAP;
             bool isClosedSeam = std::stoi(args[0]);
-            convert_vertex_to_edge_selection(app->vid_list, 
+            convert_vertex_to_edge_selection(app->vid_list,
+            app->vid_list_second, app->vid_list_third,
                                              app->ANIM.E, 
                                              app->ANIM.UE, 
                                              app->ANIM.EMAP,
@@ -221,15 +332,232 @@ namespace
             app->render();
         }
 
-        void console_show_iso(App* app, const std::vector<std::string>& args) 
+        void propogate_changes_to_frames(App* app, Eigen::SparseMatrix<double>& BC, Eigen::MatrixXi& newF) 
+        {   
+            //App::MAnimation newAnim; 
+            //newAnim.VD.resize(app->ANIM.VD.size());
+            
+            app->ANIM.F = newF;
+            for (int i=0;i<app->ANIM.VD.size();++i) 
+            {   
+                app->ANIM.VD[i] =  BC * app->ANIM.VD[i];
+                igl::per_vertex_normals(app->ANIM.VD[i], app->ANIM.F, app->ANIM.ND[i]);
+            }
+            
+            std::vector<std::vector<int>> uE2E;
+            igl::unique_edge_map(app->ANIM.F, app->ANIM.E, app->ANIM.UE, app->ANIM.EMAP, uE2E);
+
+            tyro::color_matrix(app->ANIM.F.rows(), Eigen::Vector3d(0.5,0.5,0.5), app->ANIM.FC);
+            tyro::color_matrix(app->ANIM.UE.rows(), Eigen::Vector3d(0.2,0.2,0.2), app->ANIM.UEC);
+            
+            app->ANIM.VW.resize(app->ANIM.VD[0].rows());
+            app->ANIM.VW.setOnes();
+
+            app->compute_average();
+
+            app->RENDER.mesh = nullptr;
+            app->RENDER.mesh_wire = nullptr;
+            
+            app->RENDER.avg = nullptr;
+            app->RENDER.avg_wire = nullptr;
+            
+        }
+
+        void console_mesh_split_final(App* app, const std::vector<std::string>& args) 
         {
-            /*
-            W = repmat(doublearea(Vavg,F),3,1);
-            W = sparse(repmat(1:size(F,1), 1, 3), F(:), W, size(F,1), size(Vavg,1));
-            W = W./sum(W,1);
-            W = W';
-            LV = W*L;
-            */
+            std::vector<int> F1idx_vec, F2idx_vec;
+            for (int i=0;i<app->ANIM.F.rows(); ++i) 
+            {   
+                auto it = std::find(app->fid_list.begin(), app->fid_list.end(), i);
+                if (it == app->fid_list.end()) 
+                    F1idx_vec.push_back(i);
+                else 
+                    F2idx_vec.push_back(i);
+            }
+            
+            VectorXi F1idx = Eigen::Map<VectorXi>(F1idx_vec.data(), F1idx_vec.size());
+            VectorXi F2idx = Eigen::Map<VectorXi>(F2idx_vec.data(), F2idx_vec.size());
+            MatrixXi F1, F2;
+            igl::slice(app->DANIM.F, F1idx, 1, F1); 
+            igl::slice(app->DANIM.F, F2idx, 1, F2); 
+            
+            app->PIECES.resize(2);
+            auto& A1 = app->PIECES[0];
+            auto& A2 = app->PIECES[1];
+            A1.VD.resize(app->DANIM.VD.size());
+            A2.VD.resize(app->DANIM.VD.size());
+            A1.ND.resize(app->DANIM.VD.size());
+            A2.ND.resize(app->DANIM.VD.size());
+            
+            A1.SIdx = app->ANIM.SIdx;
+            A2.SIdx = app->ANIM.SIdx;
+            
+            for (int i = 0; i < app->ANIM.VD.size(); ++i) 
+            {                   
+                MatrixXi I1, I2;    
+                igl::remove_unreferenced(app->DANIM.VD[i], 
+                                         F1, 
+                                         A1.VD[i], 
+                                         A1.F, 
+                                         I1);
+
+                igl::per_vertex_normals(A1.VD[i], A1.F, A1.ND[i]);
+                std::vector<std::vector<int> > uE2E1;
+                igl::unique_edge_map(A1.F,A1.E,A1.UE,A1.EMAP,uE2E1);
+                tyro::color_matrix(A1.F.rows(), Eigen::Vector3d(0.2,0.2,0.2), A1.FC);
+                tyro::color_black_matrix(A1.UE.rows(), A1.UEC);
+
+                igl::remove_unreferenced(app->DANIM.VD[i], 
+                                         F2, 
+                                         A2.VD[i], 
+                                         A2.F, 
+                                         I2);
+                
+                igl::per_vertex_normals(A2.VD[i], A2.F, A2.ND[i]);
+                std::vector<std::vector<int> > uE2E2;
+                igl::unique_edge_map(A2.F, A2.E, A2.UE, A2.EMAP,uE2E2);
+                tyro::color_matrix(A2.F.rows(), Eigen::Vector3d(0.6,0.6,0.6), A2.FC);
+                tyro::color_black_matrix(A2.E.rows(), A2.UEC);
+            }
+                
+            app->m_computed_parts = true;            
+            app->m_update_camera = true;
+        }
+
+        void console_mesh_split_bndr(App* app, const std::vector<std::string>& args) 
+        {
+            assert(app->LABELS.size()>0);
+
+            std::vector<int> F1idx_vec, F2idx_vec;
+            for (int i=0;i<app->LABELS.size(); ++i) 
+            {
+                if (app->LABELS(i)== 1) 
+                    F1idx_vec.push_back(i);
+                else 
+                    F2idx_vec.push_back(i);
+            }
+            
+            VectorXi F1idx = Eigen::Map<VectorXi>(F1idx_vec.data(), F1idx_vec.size());
+            VectorXi F2idx = Eigen::Map<VectorXi>(F2idx_vec.data(), F2idx_vec.size());
+            MatrixXi F1, F2;
+            igl::slice(app->DANIM.F, F1idx, 1, F1); 
+            igl::slice(app->DANIM.F, F2idx, 1, F2); 
+            
+            app->PIECES.resize(2);
+            auto& A1 = app->PIECES[0];
+            auto& A2 = app->PIECES[1];
+            A1.VD.resize(app->DANIM.VD.size());
+            A2.VD.resize(app->DANIM.VD.size());
+            A1.ND.resize(app->DANIM.VD.size());
+            A2.ND.resize(app->DANIM.VD.size());
+            
+            A1.SIdx = app->ANIM.SIdx;
+            A2.SIdx = app->ANIM.SIdx;
+            
+            for (int i = 0; i < app->ANIM.VD.size(); ++i) 
+            {                   
+                MatrixXi I1, I2;    
+                igl::remove_unreferenced(app->DANIM.VD[i], 
+                                         F1, 
+                                         A1.VD[i], 
+                                         A1.F, 
+                                         I1);
+
+                igl::per_vertex_normals(A1.VD[i], A1.F, A1.ND[i]);
+                std::vector<std::vector<int> > uE2E1;
+                igl::unique_edge_map(A1.F,A1.E,A1.UE,A1.EMAP,uE2E1);
+                tyro::color_matrix(A1.F.rows(), Eigen::Vector3d(0.2,0.2,0.2), A1.FC);
+                tyro::color_black_matrix(A1.UE.rows(), A1.UEC);
+
+                igl::remove_unreferenced(app->DANIM.VD[i], 
+                                         F2, 
+                                         A2.VD[i], 
+                                         A2.F, 
+                                         I2);
+                
+                igl::per_vertex_normals(A2.VD[i], A2.F, A2.ND[i]);
+                std::vector<std::vector<int> > uE2E2;
+                igl::unique_edge_map(A2.F, A2.E, A2.UE, A2.EMAP,uE2E2);
+                tyro::color_matrix(A2.F.rows(), Eigen::Vector3d(0.6,0.6,0.6), A2.FC);
+                tyro::color_black_matrix(A2.E.rows(), A2.UEC);
+            }
+                
+            app->m_computed_parts = true;            
+            app->m_update_camera = true;
+        }
+
+        void console_seam_from_selection(App* app, const std::vector<std::string>& args) 
+        {            
+            MatrixXi EI, EF;
+            igl::edge_flaps(app->ANIM.F, app->ANIM.E, app->ANIM.EMAP, EF, EI);
+
+            std::set<int> V;
+            for (int i=0; i < EF.rows(); ++i) 
+            {
+                int fid1 = EF(i,0), fid2 = EF(i,1);
+                if (fid1 == -1 || fid2 == -1) continue; 
+
+                auto it1 = std::find(app->fid_list.begin(), app->fid_list.end(), fid1);
+                auto it2 = std::find(app->fid_list.begin(), app->fid_list.end(), fid2);
+                
+                if (  (it1 == app->fid_list.end() && it2 != app->fid_list.end()) 
+                        || 
+                      (it1 != app->fid_list.end() && it2 == app->fid_list.end()) 
+                    )                     
+                {
+                    V.insert(app->ANIM.UE(i,0));
+                    V.insert(app->ANIM.UE(i,1));
+                }
+            }
+
+            app->vid_list.clear();
+            app->vid_list.resize(V.size());
+            std::copy(V.begin(), V.end(), app->vid_list.begin());
+            app->ball_list.clear();
+
+            for (auto vid : app->vid_list) 
+            {
+                app->addSphere(vid, app->ANIM.VD[app->m_frame]);
+            }
+            app->render();
+        }
+        
+        void console_compute_vertex_bndr(App* app, const std::vector<std::string>& args) 
+        {
+            assert(app->LABELS.size()>0);
+
+            MatrixXi EI, EF;
+            igl::edge_flaps(app->ANIM.F, app->ANIM.E, app->ANIM.EMAP, EF, EI);
+
+            std::set<int> V;
+            for (int i=0; i < EF.rows(); ++i) 
+            {
+                int fid1 = EF(i,0), fid2 = EF(i,1);
+                if (fid1 == -1 || fid2 == -1) continue; 
+                       
+                if (app->LABELS(fid1) != app->LABELS(fid2)) 
+                {
+                    V.insert(app->ANIM.UE(i,0));
+                    V.insert(app->ANIM.UE(i,1));
+                }
+            }
+
+            app->vid_list.clear();
+            app->vid_list.resize(V.size());
+            std::copy(V.begin(), V.end(), app->vid_list.begin());
+            app->ball_list.clear();
+
+            for (auto vid : app->vid_list) 
+            {
+                app->addSphere(vid, app->ANIM.VD[app->m_frame]);
+            }
+            app->render();
+        }
+
+        
+
+        void console_show_iso_2(App* app, const std::vector<std::string>& args) 
+        {
             if (args.size()!=1)  
             {
                 RA_LOG_WARN("Need to specify type of the curve");
@@ -249,73 +577,43 @@ namespace
             {
                 double area_total = 0;
                 for (auto& fid : VF[vid]) 
-                {
+                {   
                     area_total += DA[fid];
                 }
+                RA_LOG_INFO ("Area %f", area_total);
+                assert(area_total > 0.000001);
 
                 for (auto& fid : VF[vid]) 
                 {
-                    double area_w = DA[fid];
+                    double area_w = DA[fid];                    
                     W.coeffRef(vid, fid) = area_w/area_total;
                 }                 
             }
 
-                        /*
-            int main(int argc, char *argv[])
-            {
-            Eigen::MatrixXd V;
-            Eigen::MatrixXi F;
-            igl::read_triangle_mesh(argv[1],V,F);
-            Eigen::VectorXd S = V.col(1);
-            S.array() -= S.minCoeff();
-            S /= S.maxCoeff();
-            Eigen::VectorXd val(1);
-            val(0) = 0.5;
-            
-            Eigen::MatrixXd U;
-            Eigen::MatrixXi G;
-            Eigen::VectorXi J;
-            Eigen::SparseMatrix<double> BC;
-            Eigen::VectorXd SU,L;
-            slice_isolines(V,F,S,val, U,G,J,BC,SU,L);
-            //igl::opengl::glfw::Viewer v;
-            //v.data().set_mesh(U,G);
-            //v.data().set_colors(L);
-            //v.launch();
-            }
-            */
-            MatrixXi eid_list;
-            VectorXi EI, uEI, DMAP;
-            bool isClosedSeam = std::stoi(args[0]);
-            convert_vertex_to_edge_selection(app->vid_list, 
-                                             app->ANIM.E, 
-                                             app->ANIM.UE, 
-                                             app->ANIM.EMAP,
-                                             isClosedSeam,
-                                             eid_list, 
-                                             EI, 
-                                             uEI, 
-                                             DMAP);
-
-            VectorXi F1idx, F2idx;
-            tyro::mesh_split(app->ANIM.F,
-                             uEI,
-                             DMAP, 
-                             F1idx, 
-                             F2idx);
-
             app->LABELS.resize(app->ANIM.F.rows());
-            app->LABELS.setZero();
-            for (int i =0; i < F1idx.size(); ++i) app->LABELS(F1idx(i)) = 1;
+            app->LABELS.setOnes();
+            for (int i =0; i < app->fid_list.size(); ++i)
+            {      
+                 app->LABELS(app->fid_list[i]) = 0;
+            }
             //other label is zero 
 
             MatrixXd LV = W * app->LABELS;
             MatrixXd sLV; //smoothed
 
-            int smooth_iter = 10;
+            if(!igl::is_edge_manifold(app->ANIM.F)) 
+            {   
+                RA_LOG_ERROR_ASSERT("Not edge manifold");
+                exit(0);
+            }
+
+            int smooth_iter = 1;
             for (int i = 0; i < smooth_iter; ++i) 
             {
-                igl::per_vertex_attribute_smoothing(LV, app->ANIM.F, sLV);
+                //igl::per_vertex_attribute_smoothing(LV, app->ANIM.F, sLV);
+                tyro::smooth2(app->ANIM.AvgVD, app->ANIM.F, LV, 2, sLV);
+                //tyro::smooth(app->ANIM.AvgVD, app->ANIM.F, LV, 0.001, sLV);
+                
                 LV = sLV.eval();
             }
             Eigen::VectorXd val(1);
@@ -326,15 +624,16 @@ namespace
             Eigen::SparseMatrix<double> BC;
             Eigen::VectorXd SU, L;
             
-            app->ISOCOLORS = LV.col(0);
+            
             app->m_computed_iso_color = true;
 
-            slice_isolines(app->ANIM.AvgVD, app->ANIM.F, LV, val, U, G, J, BC, SU, L);
-            std::cout << L <<std::endl;
-            app->FCSPLIT.resize(G.rows(), 3);
+            slice_isolines(app->ANIM.AvgVD, app->ANIM.F, LV.col(0), val, U, G, J, BC, SU, L);
             
+            app->ISOCOLORS = SU;
+            app->FCSPLIT.resize(G.rows(), 3);
+            app->LABELS = L;
             for (int i = 0; i < L.size(); ++i) 
-            {
+            {   
                 if (L(i) == 0) 
                     app->FCSPLIT.row(i) = Vector3d(0,1,0);
                 else
@@ -355,13 +654,136 @@ namespace
             app->UCSPLIT.resize(uE.rows(), 3);
             app->UCSPLIT.setConstant(0.5);
 
+            propogate_changes_to_frames(app, BC, G);
+            app->ANIM.FC = app->FCSPLIT;
+            RA_LOG_INFO("done");
+        }
+
+        void console_show_iso(App* app, const std::vector<std::string>& args) 
+        {
+            if (args.size()!=1)  
+            {
+                RA_LOG_WARN("Need to specify type of the curve");
+                return; 
+            }
+            using namespace Eigen;
+            VectorXd DA; //double area
+            igl::doublearea(app->ANIM.AvgVD, app->ANIM.F, DA);
+
+            int num_vert = app->ANIM.AvgVD.rows();
+            int num_faces = app->ANIM.F.rows();
+            std::vector<std::vector<int>> VF, VI;
+            igl::vertex_triangle_adjacency(num_vert, app->ANIM.F, VF, VI);
+            SparseMatrix<double> W;
+            W.resize(num_vert, num_faces);
+            for (int vid = 0; vid < VF.size(); ++vid) 
+            {
+                double area_total = 0;
+                for (auto& fid : VF[vid]) 
+                {   
+                    area_total += DA[fid];
+                }
+                RA_LOG_INFO ("Area %f", area_total);
+                assert(area_total > 0.000001);
+
+                for (auto& fid : VF[vid]) 
+                {
+                    double area_w = DA[fid];                    
+                    W.coeffRef(vid, fid) = area_w/area_total;
+                }                 
+            }
+
+            MatrixXi eid_list;
+            VectorXi EI, uEI, DMAP;
+            bool isClosedSeam = std::stoi(args[0]);
+            convert_vertex_to_edge_selection(app->vid_list,
+                                             app->vid_list_second, app->vid_list_third,
+                                             app->ANIM.E, 
+                                             app->ANIM.UE, 
+                                             app->ANIM.EMAP,
+                                             isClosedSeam,
+                                             eid_list, 
+                                             EI, 
+                                             uEI, 
+                                             DMAP);
+
+            VectorXi F1idx, F2idx;
+            tyro::mesh_split(app->ANIM.F,
+                             uEI,
+                             DMAP, 
+                             F1idx, 
+                             F2idx);
+
+            app->LABELS.resize(app->ANIM.F.rows());
+            app->LABELS.setOnes();
+            for (int i =0; i < F1idx.size(); ++i) app->LABELS(F1idx(i)) = 0;
+            //other label is zero 
+
+            MatrixXd LV = W * app->LABELS;
+            MatrixXd sLV; //smoothed
+
+            if(!igl::is_edge_manifold(app->ANIM.F)) 
+            {   
+                RA_LOG_ERROR_ASSERT("Not edge manifold");
+                exit(0);
+            }
+
+            int smooth_iter = 1;
+            for (int i = 0; i < smooth_iter; ++i) 
+            {
+                //igl::per_vertex_attribute_smoothing(LV, app->ANIM.F, sLV);
+                tyro::smooth2(app->ANIM.AvgVD, app->ANIM.F, LV, 0.001, sLV);
+                //tyro::smooth(app->ANIM.AvgVD, app->ANIM.F, LV, 0.001, sLV);
+                
+                LV = sLV.eval();
+            }
+            Eigen::VectorXd val(1);
+            val(0) = 0.5;
+            Eigen::MatrixXd U;
+            Eigen::MatrixXi G;
+            Eigen::VectorXi J;
+            Eigen::SparseMatrix<double> BC;
+            Eigen::VectorXd SU, L;
+            
+            
+            app->m_computed_iso_color = true;
+
+            slice_isolines(app->ANIM.AvgVD, app->ANIM.F, LV.col(0), val, U, G, J, BC, SU, L);
+            
+            app->ISOCOLORS = SU;
+            app->FCSPLIT.resize(G.rows(), 3);
+            app->LABELS = L;
+            for (int i = 0; i < L.size(); ++i) 
+            {   
+                if (L(i) == 0) 
+                    app->FCSPLIT.row(i) = Vector3d(0,1,0);
+                else
+                    app->FCSPLIT.row(i) =  Vector3d(1,0,0);
+            }
+
+            app->VSPLIT = U;
+            app->FSPLIT = G;
+            igl::per_vertex_normals(U, G, app->NSPLIT);
+
+            MatrixXi E;
+            MatrixXi uE;
+            VectorXi EMAP;
+            std::vector<std::vector<int>> uE2E;
+            igl::unique_edge_map(G, E, uE, EMAP, uE2E);
+            
+            app->UESPLIT = uE;
+            app->UCSPLIT.resize(uE.rows(), 3);
+            app->UCSPLIT.setConstant(0.5);
+
+            propogate_changes_to_frames(app, BC, G);
+            app->ANIM.FC = app->FCSPLIT;
             RA_LOG_INFO("done");
         }
 
         void console_load_bunny_stop(App* app, const std::vector<std::string>& args) 
         {
             auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
-            auto p = f/filesystem::path("subanimaton");
+            auto p = f/filesystem::path("bunny_3dprinting_frames");
 
             std::ifstream in = std::ifstream(p.str(), std::ios::binary);
             cereal::BinaryInputArchive archive_i(in);
@@ -375,11 +797,12 @@ namespace
             AxisAlignedBBox bbox;
             MatrixXd VT = app->ANIM.VD[0].transpose();
             bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
-            app->m_model_offset = 0.55*2*bbox.GetRadius(); 
+            app->m_model_offset = 0.8*2*bbox.GetRadius(); 
 
             app->m_update_camera = true;
             app->m_state = App::State::LoadedModel;
             
+            app->ANIM.VW.resize(app->ANIM.VD[0].rows());
             app->ANIM.VW.setOnes();
             //app->m_weights.VW.resize(app->ANIM.VD[0].rows());
             //app->m_weights.VW.setOnes();
@@ -388,21 +811,26 @@ namespace
             //app->m_weights.FW.setOnes();
 
             app->compute_average();
+            
+            app->ShowBunnyMovieStop();
+            
+            app->m_ball_size = igl::avg_edge_length(app->ANIM.AvgVD, app->ANIM.F)/5;
 
-            std::vector<std::string> args1 = {"split", "SUBPIECES"};
+            std::vector<std::string> args1 = {"split", "bunny_3dprinting_split"};
             console_load_serialised_data(app, args1);
             
-            std::vector<std::string> args2 = {"stop_low", "bunny_stop_200_2_1_kmeans"};
-            //console_load_serialised_data(this, args2);
+            std::vector<std::string> args2 = {"stop_low", "bunnyPRINT_stop_30_1_0_kmeans_100_weighteyes"};
+            console_load_serialised_data(app, args2);
 
-            std::vector<std::string> args3 = {"stop_up", "bunny_stop_100_1_0_kmeans"};
-            //console_load_serialised_data(this, args3);
+            std::vector<std::string> args3 = {"stop_up", "bunnyPRINT_stop_20_1_1_kmeans"};
+            console_load_serialised_data(app, args3);
 
             app->render();
         }
 
         void console_save_sub_video(App* app, const std::vector<std::string>& args) 
-        {
+        {   
+            if (args.size() != 1) return;
             int frame[] = {1042,1597,1738,1947};  
             App::VideoCV video;
 
@@ -428,12 +856,13 @@ namespace
             } 
 
             auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
-            auto p = f/filesystem::path(std::string("subvideo_frames"));
+            auto p = f/filesystem::path(args[0]);
             std::ofstream os(p.str(), std::ios::binary);
             cereal::BinaryOutputArchive archive(os);
             archive(video);
 
         }
+
         void copy_sub(App::MAnimation& subanimaton, int *frame, App::MAnimation& sourceAnim) 
         {
             using namespace Eigen;
@@ -473,7 +902,9 @@ namespace
         }
         
         void console_save_sub_split(App* app, const std::vector<std::string>& args) 
-        {
+        {   
+            if (args.size() != 1) return;
+
             int frame[] = {1042,1597,1738,1947};    
 
             std::vector<App::MAnimation> SUBPIECES; // Break deformed mesh into pieces along seam(s).
@@ -486,23 +917,24 @@ namespace
             
 
             auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
-            auto p = f/filesystem::path(std::string("SUBPIECES"));
+            auto p = f/filesystem::path(args[0]);
             std::ofstream os(p.str(), std::ios::binary);
             cereal::BinaryOutputArchive archive(os);
             archive(SUBPIECES);
         }
 
         void console_save_sub_animation(App* app, const std::vector<std::string>& args) 
-        {
+        {   
+            if (args.size() != 1) return;
     
-            int frame[] = {1042,1597,1738,1947};    
+            int frame[] = {851,1501,1738,1947};    
             
             //main animation
             App::MAnimation subanimaton;
             copy_sub(subanimaton, frame, app->ANIM);
 
             auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
-            auto p = f/filesystem::path(std::string("subanimaton"));
+            auto p = f/filesystem::path(args[0]);
             std::ofstream os(p.str(), std::ios::binary);
             cereal::BinaryOutputArchive archive(os);
             archive(subanimaton);
@@ -540,13 +972,16 @@ namespace
 
         void console_render_to_video(App* app, const std::vector<std::string>& args) 
         {   
+            if (args.size() != 1) return;
+
+            auto filename = args[0];
             int v_width, v_height;
             app->m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
             
             cv::Size S = cv::Size(v_width, v_height);
 
             cv::VideoWriter outputVideo;                                        // Open the output
-            outputVideo.open("/home/rinat/bunny.avi",
+            outputVideo.open(string("/home/rinat/") + filename + string(".avi"),
                                 CV_FOURCC('M','J','P','G'), 
                                 //CV_FOURCC('x', '2', '6', '4'),
                                 24, 
@@ -787,6 +1222,19 @@ namespace
             }
         }
         
+        void console_set_selection_type(App* app, const std::vector<std::string>& args) 
+        {
+            if (args.size() != 1 ) return;
+
+            if (args[0] == "select") 
+            {
+            app->m_selection_type = App::SelectionType::Select;
+            }
+            else  
+            {       
+                app->m_selection_type = App::SelectionType::Select;
+            }
+        }
 
         void console_taubin_smooth_along_edges(App* app, const std::vector<std::string>& args) 
         {   
@@ -884,11 +1332,11 @@ namespace
             }
             else if (type == "split_up") 
             {
-                archive(app->PIECES[0]);
+                archive(app->PIECES[1]);
             }
             else if (type == "split_low") 
             {
-                archive(app->PIECES[1]);
+                archive(app->PIECES[0]);
             }
             else if (type == "stop") 
             {
@@ -896,11 +1344,11 @@ namespace
             }
             else if (type == "stop_low") 
             {
-                archive(app->SMOTION[1]);
+                archive(app->SMOTION[0]);
             }
             else if (type == "stop_up") 
             {
-                archive(app->SMOTION[0]);
+                archive(app->SMOTION[1]);
             }
             else if (type == "video") 
             {
@@ -908,7 +1356,16 @@ namespace
             }
             else if (type == "weights_low") 
             {
+                archive(app->PIECES[0].VW);
+            }
+            else if (type == "weights_up") 
+            {
                 archive(app->PIECES[1].VW);
+            }
+            else if (type == "seeds") 
+            {
+                archive(app->fid_list2);
+                archive(app->fid_list3);
             }
         }
 
@@ -969,8 +1426,8 @@ namespace
                 if (app->SMOTION.empty())
                     app->SMOTION.resize(2);
                 
-                archive(app->SMOTION[1]);
-                app->SMOTION[1].computed = true;
+                archive(app->SMOTION[0]);
+                app->SMOTION[0].computed = true;
                 
                 app->m_computed_stop_motion = true;
                 app->m_update_camera = true;
@@ -980,20 +1437,49 @@ namespace
                 if (app->SMOTION.empty())
                     app->SMOTION.resize(2);
                 
-                archive(app->SMOTION[0]);
-                app->SMOTION[0].computed = true;
+                archive(app->SMOTION[1]);
+                app->SMOTION[1].computed = true;
                 
                 app->m_computed_stop_motion = true;
                 app->m_update_camera = true;
             }
-            else if (type == "weights_low") 
+            else if (type == "weights_up") 
             {
                 archive(app->PIECES[1].VW);
                 for (int i = 0; i < app->PIECES[1].VW.size(); ++i) 
                 {
-                    if (app->PIECES[1].VW[i] > 1)
+                    if (app->PIECES[1].VW[i] > 1 ) 
+                    {
                         app->addSphere(i, app->PIECES[1].VD[app->m_frame], Wm5::Vector4f(0,1,0,1), app->RENDER.part[1]->WorldTransform);
-                }                
+                        app->vid_list2.push_back(i);
+                    }               
+                }
+            }
+            else if (type == "weights_low") 
+            {
+                archive(app->PIECES[0].VW);
+                for (int i = 0; i < app->PIECES[0].VW.size(); ++i) 
+                {
+                    if (app->PIECES[0].VW[i] > 1)
+                    {
+                        app->addSphere(i, app->PIECES[0].VD[app->m_frame], Wm5::Vector4f(0,1,0,1), app->RENDER.part[0]->WorldTransform);
+                        app->vid_list2.push_back(i);
+                    }   
+                }
+            }
+            else if (type == "seeds") 
+            {
+                archive(app->fid_list2);
+                archive(app->fid_list3);
+
+                for (auto fid : app->fid_list2) 
+                {
+                    app->setFaceColor(fid, Eigen::Vector3d(1,0,0));
+                }
+                for (auto fid : app->fid_list3) 
+                {
+                    app->setFaceColor(fid, Eigen::Vector3d(0,1,0));
+                }
             }
 
 
@@ -1051,7 +1537,10 @@ namespace
                 for (auto vid : app->vid_list2) 
                 {
                     app->PIECES[part_id].VW[vid] = w;
+                        RA_LOG_INFO("Weights set %f", w);
+
                 }
+
             }
         }
 
@@ -1104,6 +1593,113 @@ namespace
             */
         } 
 
+        void console_find_boundary(App* app, const std::vector<std::string> & args) 
+        {   
+            
+            if (args.size() != 1) 
+                return;
+            
+            int vid_list_id  = std::stoi(args[0]);
+
+            const auto & cE = app->ANIM.UE;
+            const auto & cEMAP = app->ANIM.EMAP;
+            MatrixXi EF, EI;
+            igl::edge_flaps(app->ANIM.F, cE, cEMAP, EF, EI);
+            std::vector<int> seam_edges;
+
+            for (int i = 0; i < app->ANIM.UE.rows(); ++i) 
+            {               
+                int f1 = EF(i, 0);
+                int f2 = EF(i, 1);
+                
+                auto it1 = std::find(app->fid_list.begin(), app->fid_list.end(), f1);
+                auto it2 = std::find(app->fid_list.begin(), app->fid_list.end(), f2);
+                
+                if (it1 != app->fid_list.end() && it2 != app->fid_list.end()) 
+                {   
+                    int idx1 = it1 - app->fid_list.begin();
+                    int idx2 = it2 - app->fid_list.begin();
+                    if (app->LABELS(idx1) != app->LABELS(idx2)) 
+                    {
+                        seam_edges.push_back(i);
+                    }
+                }
+            }
+
+            MatrixXi EU;
+            EU.resize(seam_edges.size(), 2);
+            for (int i=0;i < seam_edges.size(); ++i) 
+            {   
+                int eid = seam_edges[i];
+                EU.row(i) = app->ANIM.UE.row(eid);
+            }
+            VectorXi I1, J1, K1; 
+            igl::edges_to_path(EU, I1, J1, K1);
+            
+            for (int i=0; i <J1.size(); ++i) {
+                //RA_LOG_INFO("Edge %i %i", EU(J1(i),0), EU(J1(i),1));
+            }
+
+            int end = I1.size();
+            if (I1(0) == I1(I1.size()-1)) {
+                RA_LOG_INFO("BOUNDARY IS CLOSED LOOP");
+                end -= 1;
+            }
+            //RA_LOG_INFO("Vertex %i", I1(i));
+            
+            if (vid_list_id == 0) 
+            {
+                app->vid_list.clear();           
+
+                for (int i=0; i < end; ++i) 
+                {      
+                    app->vid_list.push_back(I1(i));
+                    app->addSphere(I1(i),app->ANIM.VD[app->m_frame]);
+                }
+            }
+            else if (vid_list_id == 1) 
+            {   
+                app->vid_list_second.clear();           
+                for (int i=0; i < end; ++i) 
+                { 
+                    app->vid_list_second.push_back(I1(i));
+                    app->addSphere(I1(i),app->ANIM.VD[app->m_frame]);
+                }
+            }
+            else if (vid_list_id == 2) 
+            {   
+                app->vid_list_third.clear();           
+                for (int i=0; i < end; ++i) 
+                { 
+                    app->vid_list_third.push_back(I1(i));
+                    app->addSphere(I1(i),app->ANIM.VD[app->m_frame]);
+                }
+            }
+            
+        
+            
+            //app->ANIM.UEC.row(i) = Eigen::Vector3d(0,0.0,0.8);
+
+            //Eigen::Vector2i evec = FD.ue_data.row(i);
+            //if direction is switched after a mapping directed to undirected
+            
+            
+            //if (!(evec(0)== e1(0) && evec(1) == e1(1))) 
+            //{
+            //    DMAP(i) = 1;
+            //}
+        }
+
+        void console_show_boundary_faces(App* app, const std::vector<std::string>& args) 
+        {   
+            VectorXi I; MatrixXi C;
+            igl::on_boundary(app->ANIM.F, I, C);
+            for (int i=0; i < I.size(); ++i) 
+            {
+                if (I(i)) app->setFaceColor(i, Eigen::Vector3d(1,0,0));
+            }
+        }
+
         void console_segmentation(App* app, const std::vector<std::string>& args) 
         {  
             if (!(app->fid_list.size() > 0 && 
@@ -1114,13 +1710,12 @@ namespace
                 return;   
             }   
 
-            double smooth_weight = (double)std::stoi(args[0]);
+            double smooth_weight = (double)std::stof(args[0]);
             
             //const auto& FD = app->ANIM;
 
             VectorXi L;
-            VectorXi flist1 = Eigen::Map<VectorXi>(app->fid_list.data(), 
-                                                   app->fid_list.size());
+            VectorXi flist1 = Eigen::Map<VectorXi>(app->fid_list.data(), app->fid_list.size());
             MatrixXi F;
             igl::slice(app->ANIM.F, flist1, 1, F); 
 
@@ -1164,14 +1759,28 @@ namespace
 
             MatrixXd Vavg;
             igl::remove_unreferenced(app->ANIM.AvgVD, F, Vavg, NF, I);
-                    
+            
+            //copmute boundary faces
+            //VectorXi I1;
+            //MatrixXi C1;
+            //igl::on_boundary(app->ANIM.F, I1, C1);
+            VectorXi isBoundary;
+            isBoundary.resize(flist1.size());
+            isBoundary.setZero();
+            //for (int i = 0; i < isBoundary.size(); ++i) 
+            //{   int fid = flist1(i);
+            //    if (I1(fid)) 
+                    //isBoundary(i) = 1; 
+            //}
+
             tyro::segmentation(v_data, 
                                NF,
                                Vavg,
                                seeds2,
                                seeds3,
                                smooth_weight,
-                               L);
+                               L, 
+                               isBoundary);
             
             app->LABELS.resize(L.size());
             for (int i = 0; i < L.size(); ++i) 
@@ -1187,46 +1796,48 @@ namespace
                 }
             }
 
-            //TODO:find boundary
-            /*
-            const auto & cE = FD.ue_data;
-            const auto & cEMAP = FD.EMAP;
-            MatrixXi EF, EI;
-
-            igl::edge_flaps(FD.f_data, 
-                            cE, 
-                            cEMAP, 
-                            EF, 
-                            EI);
-            
-            for (int i = 0; i < FD.ue_data.rows(); ++i) 
-            {               
-                int f1 = EF(i, 0);
-                int f2 = EF(i, 1);
-                
-                auto it1 = std::find(app->fid_list.begin(), app->fid_list.end(), f1);
-                auto it2 = std::find(app->fid_list.begin(), app->fid_list.end(), f2);
-                
-                if (it1 != app->fid_list.end() && it2 != app->fid_list.end()) 
-                {   
-                    int idx1 = it1 - app->fid_list.begin();
-                    int idx2 = it2 - app->fid_list.begin();
-                    if (L(idx1) != L(idx2)) 
-                    {
-                        app->eid_list.push_back(i);                        
-                        app->ANIM.UEC.row(i) = Eigen::Vector3d(0,0.0,0.8);
-
-                        Eigen::Vector2i evec = FD.ue_data.row(i);
-                       //if direction is switched after a mapping directed to undirected
-                        if (!(evec(0)== e1(0) && evec(1) == e1(1))) 
-                        {
-                            DMAP(i) = 1;
-                        }
-                    }
-                }
-            }    */ 
+            //find boundary
+            //console_find_boundary(app, args);           
         }
+
         
+        void console_remove_duplicate_vertices(App* app, const std::vector<std::string> & args) 
+        {   
+            using namespace Eigen;
+            MatrixXd SV; 
+            MatrixXi SF;
+            VectorXi SVI, SVJ;
+            igl::remove_duplicate_vertices(app->ANIM.VD[0], app->ANIM.F, 0.00001, SV, SVI, SVJ, SF);
+            RA_LOG_INFO("CHANGES %i %i ", app->ANIM.VD[0].rows(), SV.rows());
+
+       
+            app->ANIM.F = SF;
+            for (int i=0;i<app->ANIM.VD.size();++i) 
+            {   
+                MatrixXd V;
+                igl::slice(app->ANIM.VD[i], SVI, 1, V);
+                app->ANIM.VD[i] =  V;
+                igl::per_vertex_normals(app->ANIM.VD[i], app->ANIM.F, app->ANIM.ND[i]);
+            }
+            
+            std::vector<std::vector<int>> uE2E;
+            igl::unique_edge_map(app->ANIM.F, app->ANIM.E, app->ANIM.UE, app->ANIM.EMAP, uE2E);
+
+            tyro::color_matrix(app->ANIM.F.rows(), Eigen::Vector3d(0.5,0.5,0.5), app->ANIM.FC);
+            tyro::color_matrix(app->ANIM.UE.rows(), Eigen::Vector3d(0.2,0.2,0.2), app->ANIM.UEC);
+            
+            app->ANIM.VW.resize(app->ANIM.VD[0].rows());
+            app->ANIM.VW.setOnes();
+
+            app->compute_average();
+
+            app->RENDER.mesh = nullptr;
+            app->RENDER.mesh_wire = nullptr;
+            
+            app->RENDER.avg = nullptr;
+            app->RENDER.avg_wire = nullptr;       
+        }
+
         void console_upsample(App* app, const std::vector<std::string> & args) 
         {
             Eigen::SparseMatrix<double> S;
@@ -1288,15 +1899,21 @@ namespace
         }
 
         void console_show_edge_selection(App* app, const std::vector<std::string> & args) 
-        {
+        {   
+            /*
             RA_LOG_INFO("Converting vertex to edge selection");
             
             if (args.size() != 1)  return;
 
             MatrixXi eid_list;
             VectorXi EI, uEI, DMAP;
-            convert_vertex_to_edge_selection(app->vid_list, app->ANIM.E, app->ANIM.UE, 
-                                             app->ANIM.EMAP, std::stoi(args[0]), eid_list, EI, 
+            convert_vertex_to_edge_selection(app->vid_list, 
+                                             app->vid_list_second,
+                                             app->vid_list_third,
+                                             app->ANIM.E, 
+                                             app->ANIM.UE, 
+                                             app->ANIM.EMAP, 
+                                             std::stoi(args[0]), eid_list, EI, 
                                              uEI, DMAP);
 
             app->m_eid_list2.clear();
@@ -1313,8 +1930,29 @@ namespace
             glfwPostEmptyEvent();
             
             return;
+            */
+            VectorXi B;
+            igl::is_boundary_edge(app->SMOTION[0].anim.UE, app->SMOTION[0].anim.F, B);
+            app->m_eid_list2.clear();
+            for (int i = 0; i < app->SMOTION[0].anim.UE.rows(); ++i) 
+            {  
+                RA_LOG_INFO("print %i", B(i));
+                if (B(i) == 1) 
+                {
+                    app->m_eid_list2.push_back(i);
+                    app->SMOTION[0].anim.UEC.row(i) = Eigen::Vector3d(0, 0.8, 0);
+                }
+            }
         }
 
+
+
+        void console_find_largest_manifold(App* app, const std::vector<std::string> & args) 
+        {
+            //igl::facet_components()
+        }
+
+        
         void console_split_mesh(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("Splitting mesh");
@@ -1366,6 +2004,7 @@ namespace
             VectorXi EI, uEI, DMAP;
             bool isClosedSeam = std::stoi(args[0]);
             convert_vertex_to_edge_selection(app->vid_list, 
+            app->vid_list_second,app->vid_list_third,
                                              app->DANIM.E, 
                                              app->DANIM.UE, 
                                              app->DANIM.EMAP,
@@ -1383,6 +2022,8 @@ namespace
                              DMAP, 
                              F1idx, 
                              F2idx);
+
+
             igl::slice(app->DANIM.F, F1idx, 1, F1); 
             igl::slice(app->DANIM.F, F2idx, 1, F2); 
 
@@ -1471,7 +2112,8 @@ namespace
                     start = part_id;
                     end = part_id+1;
                 }
-                
+
+
                 for (int i = start; i < end; ++i) 
                 {   
                     double result_energy;
@@ -1479,6 +2121,16 @@ namespace
                     auto& piece = app->PIECES[i];
                     bool kmeans = false;
                     if (initmethod == "kmeans") kmeans = true; 
+
+                    if (piece.VW.size() == 0) 
+                    {
+                        piece.VW.resize(app->PIECES[i].VD[0].rows());
+                        piece.VW.setOnes();
+                        RA_LOG_INFO("WEIGHTS ARE EMPTY, SETTING TO ZERO");
+                    }
+
+                    
+
 
                     Eigen::VectorXd VW = piece.VW.cwiseSqrt();
                     tyro::stop_motion_vertex_distance(num_labels, 
@@ -1529,7 +2181,7 @@ namespace
             app->align_all_models();
             return;
         }
-
+        
         void console_save_mesh_sequence_with_selected_faces(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("Saving mesh sequence with selected faces");
@@ -1760,10 +2412,54 @@ namespace
             return;
         }
 
+        void console_add_adjaent_boundary(App* app, const std::vector<std::string> & args)  
+        {   
+            std::vector<std::vector<int>> A;
+            igl::adjacency_list(app->ANIM.F, A);
+
+            std::vector<int> vcopy;
+            for (auto k : app->vid_list) vcopy.push_back(k);
+            for (auto vid : vcopy) 
+            {
+                auto & loop = A[vid];
+                for (auto vid2 : loop) 
+                {   
+                    auto it = std::find(app->vid_list.begin(), app->vid_list.end(), vid2);
+                    if (it == app->vid_list.end()) 
+                    {
+                        app->addSphere(vid2, app->ANIM.VD[app->m_frame]);
+                    
+                        app->vid_list.push_back(vid2);
+                    }
+                }
+            }
+        }
+        
+       
+        void console_fix_boundary_edges(App* app, const std::vector<std::string> & args) 
+        {   
+            std::vector<std::vector<int>> L;
+            igl::boundary_loop(app->ANIM.F, L);
+
+            for (int i = 0; i < L.size(); ++i) 
+            {
+                auto & loop = L[i];
+                for (auto vid : loop) 
+                {
+                    
+                    auto it = std::find(app->vid_list.begin(), app->vid_list.end(), vid);
+                    if (it == app->vid_list.end()) {
+                        app->addSphere(vid, app->ANIM.VD[app->m_frame]);
+                        app->vid_list.push_back(vid);
+                        }
+                }
+            }
+        }
+
         void console_load_agent(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("load agent");
-            bool serialized = false;
+            bool serialized = true;
             if (args.size() == 1) 
                 serialized = std::stoi(args[0]);
 
@@ -1811,11 +2507,11 @@ namespace
             if (!igl::is_edge_manifold(app->ANIM.F)) 
             {   
                 RA_LOG_ERROR_ASSERT("not manifold");
-                return;
+                exit(0);
             }
             app->m_timeline->SetFrameRange(app->ANIM.VD.size()-1);
 
-            //app->align_all_models(offset_vid, offset);
+            app->align_all_models(offset_vid, offset);
                 
             //Compute radius of the bounding box of the model
             AxisAlignedBBox bbox;
@@ -1832,6 +2528,7 @@ namespace
             //app->m_weights.FW.setOnes();
             
             app->compute_average();
+            app->m_ball_size = igl::avg_edge_length(app->ANIM.AvgVD, app->ANIM.F)/5;
 
             std::vector<std::string> args1 = {"split", "monka_split"};
             //console_load_serialised_data(app,args1);
@@ -1867,7 +2564,7 @@ namespace
             if (serialized) 
             {
                 auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
-                auto p = f/filesystem::path("bart_frames_upsample");
+                auto p = f/filesystem::path("bartender_ver_split_front_nodup");
                 std::ifstream in = std::ifstream(p.str(), std::ios::binary);
                 cereal::BinaryInputArchive archive_i(in);
                 archive_i(app->ANIM);
@@ -1898,7 +2595,7 @@ namespace
             if (!igl::is_edge_manifold(app->ANIM.F)) 
             {   
                 RA_LOG_ERROR_ASSERT("not manifold");
-                return;
+                exit(0);
             }
             app->m_timeline->SetFrameRange(app->ANIM.VD.size()-1);
 
@@ -1921,9 +2618,10 @@ namespace
             //app->m_weights.FW.setOnes();
             
             app->compute_average();
+            app->m_ball_size = igl::avg_edge_length(app->ANIM.AvgVD, app->ANIM.F)/5;
 
-            std::vector<std::string> args1 = {"split", "monka_split"};
-            //console_load_serialised_data(app,args1);
+            std::vector<std::string> args1 = {"split", "bartender_split"};
+            console_load_serialised_data(app, args1);
 
             std::vector<std::string> args2 = {"stop_low", "monka_stop_100_1_1_kmeans"};
             //console_load_serialised_data(app, args2);
@@ -1934,7 +2632,7 @@ namespace
             app->render();
         }
 
-        void console_load_monka(App* app, const std::vector<std::string> & args) 
+        void  console_load_monka(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("load monka");
             bool serialized = true;
@@ -1971,10 +2669,11 @@ namespace
             if (serialized) 
             {
                 auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
-                auto p = f/filesystem::path("monka_manifold");
+                auto p = f/filesystem::path("monkey_1");
                 std::ifstream in = std::ifstream(p.str(), std::ios::binary);
                 cereal::BinaryInputArchive archive_i(in);
                 archive_i(app->ANIM);
+                
             }
             else
             {
@@ -1999,8 +2698,8 @@ namespace
             
             if (!igl::is_edge_manifold(app->ANIM.F)) 
             {   
-                RA_LOG_ERROR_ASSERT("not manifold");
-                return;
+                RA_LOG_ERROR_ASSERT("monkey NOT MANIFOLD");
+                exit(0);
             }
             app->m_timeline->SetFrameRange(app->ANIM.VD.size()-1);
 
@@ -2015,6 +2714,7 @@ namespace
             app->m_update_camera = true;
             app->m_state = App::State::LoadedModel;
             app->compute_average();
+            app->m_ball_size = igl::avg_edge_length(app->ANIM.AvgVD, app->ANIM.F)/5;
 
             //app->m_weights.VW.resize(app->ANIM.VD[0].rows());
             //app->m_weights.VW.setOnes();
@@ -2023,15 +2723,15 @@ namespace
             //app->m_weights.FW.setOnes();
             
             app->compute_average();
-
-            std::vector<std::string> args1 = {"split", "monka_split"};
+            //app->ShowMonkaMovieStop();
+            std::vector<std::string> args1 = {"split", "monka_split_final"};
             console_load_serialised_data(app,args1);
 
             std::vector<std::string> args2 = {"stop_low", "monka_stop_100_1_1_kmeans"};
-            console_load_serialised_data(app, args2);
+            //console_load_serialised_data(app, args2);
             
             std::vector<std::string> args3 = {"stop_up", "monka_stop_50_1_0_kmeans"};
-            console_load_serialised_data(app, args3);
+            //console_load_serialised_data(app, args3);
 
             app->render();
         }
@@ -2066,13 +2766,13 @@ namespace
             auto offset = Eigen::Vector3d(0.012255, 1.557947, 0.744930) ; //Eigen::Vector3d(0.613322, 2.613381, 2.238946);
         
             app->FOLDERS = {   
-                std::string("/home/rinat/GDrive/StopMotionProject/Claymation/data/hello/FramesOBJ/objlist2.txt")
+                std::string("/home/rinat/GDrive/StopMotionProject/Claymation/data/hello_merged/NewFramesOBJ/20")
             };
 
             if (serialized) 
             {
                 auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
-                auto p = f/filesystem::path("monka_manifold");
+                auto p = f/filesystem::path("bloby_frames");
                 std::ifstream in = std::ifstream(p.str(), std::ios::binary);
                 cereal::BinaryInputArchive archive_i(in);
                 archive_i(app->ANIM);
@@ -2086,7 +2786,7 @@ namespace
 
                     //Add smth
                     auto folder = app->FOLDERS[i];
-                    folder += std::string("face/");
+                    //folder += std::string("face/");
 
                     RA_LOG_INFO("loading folder %s", folder.data());
                     tyro::obj_file_path_list(folder, "objlist.txt", obj_paths, num_files_read);
@@ -2115,8 +2815,7 @@ namespace
 
             app->m_update_camera = true;
             app->m_state = App::State::LoadedModel;
-            app->compute_average();
-
+            
             //app->m_weights.VW.resize(app->ANIM.VD[0].rows());
             //app->m_weights.VW.setOnes();
 
@@ -2124,15 +2823,16 @@ namespace
             //app->m_weights.FW.setOnes();
             
             app->compute_average();
+            app->m_ball_size = igl::avg_edge_length(app->ANIM.AvgVD, app->ANIM.F)/5;
 
             std::vector<std::string> args1 = {"split", "monka_split"};
-            console_load_serialised_data(app,args1);
+            //console_load_serialised_data(app,args1);
 
             std::vector<std::string> args2 = {"stop_low", "monka_stop_100_1_1_kmeans"};
-            console_load_serialised_data(app, args2);
+            //console_load_serialised_data(app, args2);
             
             std::vector<std::string> args3 = {"stop_up", "monka_stop_50_1_0_kmeans"};
-            console_load_serialised_data(app, args3);
+            //console_load_serialised_data(app, args3);
 
             app->render();
         }
@@ -2141,6 +2841,30 @@ namespace
         {
             RA_LOG_INFO("compute_average");
             app->compute_average();
+        }
+
+        
+
+        void console_compute_deformation2(App* app, const std::vector<std::string> & args)
+        {
+            RA_LOG_INFO("computing deformation");
+
+            if (app->vid_list.empty() || !app->m_computed_avg) 
+            { 
+                RA_LOG_WARN("Need vertex/face selection and average mesh to compute deformation")
+                return;
+            }
+            //app->DANIM.VD.clear();
+            bool result = tyro::compute_deformation2(app->vid_list, 
+                                                    app->ANIM.VD,
+                                                    app->ANIM.F,
+                                                    app->ANIM.AvgVD,
+                                                    app->DANIM.VD);
+            assert(result);
+            tyro::copy_animation(app->ANIM, app->DANIM, true, true, true);
+            app->m_computed_deformation = true;
+            app->m_update_camera = true;
+            //app->render();
         }
 
         void console_compute_deformation(App* app, const std::vector<std::string> & args)
@@ -2392,7 +3116,67 @@ namespace
         return 0;
     }
 
-    int App::ParseImages() 
+    int App::ShowMonkaMovieStop() 
+    {   
+        using namespace cv;
+               
+        int beginning = 0; //159 - 148;
+        m_frame = beginning;
+        int fileAnchor = 148;
+        int openglAnchor = 159;
+        //int offset = fileAnchor - openglAnchor ;
+        int offset = 0;
+        
+
+        bool serialised = false;
+        if (serialised) 
+        {
+            auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/subvideo_frames");
+            std::ifstream in = std::ifstream(f.str(), std::ios::binary);
+            cereal::BinaryInputArchive archive_i(in);
+            archive_i(m_video);
+        }
+        else 
+        {               
+            int num_frames = 696; //TODO DEPENDS ON MOVIE 
+
+            m_video.F.resize(num_frames);
+            for (int f = 0; f < num_frames; ++f) 
+            {
+                m_video.F[f] = cv::Mat::zeros( cv::Size(1920, 1080), CV_8UC3 );
+            }
+        }
+        int num_frames = m_video.F.size();
+        m_video_texture = ES2VideoTexture::Create(1920, 1080, num_frames, Texture::TextureFormat::TF_R8G8B8); 
+
+        std::vector<std::string> FOLDERS__ = 
+        {   
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/images/monka")
+      
+        };
+
+        std::vector<std::string> obj_paths;
+        for (auto& folder : FOLDERS__) 
+        {
+            int num_files_read;
+            RA_LOG_INFO("loading folder %s", folder.data());
+            tyro::obj_file_path_list(folder, "objlist.txt", obj_paths, num_files_read);
+            RA_LOG_INFO("frames read %i", num_files_read);
+        }       
+        
+        int f_count = beginning;
+        for (auto& file : obj_paths) 
+        {
+            Mat LoadedImage, image2, image3;
+            LoadedImage = cv::imread(file);
+            cv::cvtColor(LoadedImage, image2, CV_BGR2RGB);
+            cv::flip(image2, image3, 0);
+            m_video.F[f_count + offset] = image3;
+            f_count++;
+        }        
+    }
+
+    int App::ShowBunnyMovieStop() 
     {   
         using namespace cv;
         
@@ -2408,7 +3192,130 @@ namespace
         bool serialised = true;
         if (serialised) 
         {
-            auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/video_frames");
+            auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/subvideo_frames");
+            std::ifstream in = std::ifstream(f.str(), std::ios::binary);
+            cereal::BinaryInputArchive archive_i(in);
+            archive_i(m_video);
+        }
+        else 
+        {               
+            int num_frames = 5177; //TODO DEPENDS ON MOVIE 
+
+            m_video.F.resize(num_frames);
+            for (int f = 0; f < num_frames; ++f) 
+            {
+                m_video.F[f] = cv::Mat::zeros( cv::Size(1280, 720), CV_8UC3 );
+            }
+        }
+        int num_frames = m_video.F.size();
+        m_video_texture = ES2VideoTexture::Create(1280, 720, num_frames, Texture::TextureFormat::TF_R8G8B8); 
+
+        std::vector<std::string> FOLDERS__ = 
+        {   
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/02/01/"),
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/02/02/"),
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/02/03/"),
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/02/04/"),
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/02/05/"),
+            
+            
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/03/01/"),
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/03/02/"),
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/03/03/"),
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/03/05/"),            
+            
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/03/06/"),
+
+                        
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/04/01/"),
+            
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/04/03/"),
+            
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/05/01/"),
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/05/03/"),
+            
+            
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/05/05_07_09/"),
+            /*
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/05/07/"),
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/05/09/"),            
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/05/11/"),
+            
+            
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/07/01/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/07/02/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/07/05/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/07/06/"),
+
+
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/01/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/02B/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/03/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/05/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/07/"),    
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/07B/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/09/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/10/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/11/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/13/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/14/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/16/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/18/"),            
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/08/19/"),
+            
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/09/05/"),
+
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/11/10/"),
+
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/12/09/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/12/21/"),
+
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/13/03/"),
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/rinat/13/04/")
+            */
+        };
+    
+        /*
+        std::vector<std::string> obj_paths;
+        for (auto& folder : FOLDERS__) 
+        {
+            int num_files_read;
+            RA_LOG_INFO("loading folder %s", folder.data());
+            tyro::obj_file_path_list(folder, "objlist.txt", obj_paths, num_files_read);
+            RA_LOG_INFO("frames read %i", num_files_read);
+        }       
+        
+        int f_count = beginning;
+        for (auto& file : obj_paths) 
+        {
+            Mat LoadedImage, image2, image3;
+            LoadedImage = cv::imread(file);
+            cv::cvtColor(LoadedImage, image2, CV_BGR2RGB);
+            cv::flip(image2, image3, 0);
+            m_video.F[f_count + offset] = image3;
+            f_count++;
+        }
+        */
+    }
+
+
+    int App::ParseImages() 
+    {   
+        using namespace cv;
+        
+       
+        int beginning = 0;
+        m_frame = beginning;
+        int fileAnchor = 2666;
+        int openglAnchor = 2699;
+        int offset = -fileAnchor + openglAnchor ;
+        offset = 0;
+        
+
+        bool serialised = false;
+        if (serialised) 
+        {
+            auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/subvideo_frames");
             std::ifstream in = std::ifstream(f.str(), std::ios::binary);
             cereal::BinaryInputArchive archive_i(in);
             archive_i(m_video);
@@ -2577,6 +3484,18 @@ namespace
         {
             this->mouse_scroll(window, ydelta);
         };
+        
+        register_console_function("set_selection_type", console_set_selection_type, "");
+        register_console_function("mesh_split_final", console_mesh_split_final, "");
+        register_console_function("compute_deformation2", console_compute_deformation2, "");
+        register_console_function("seam_from_selection", console_seam_from_selection, "");
+        register_console_function("add_adjaent_boundary", console_add_adjaent_boundary, "");
+        register_console_function("fix_boundary_edges", console_fix_boundary_edges, "");
+        register_console_function("remove_duplicate_vertices", console_remove_duplicate_vertices, "");
+        register_console_function("show_boundary_faces", console_show_boundary_faces, "");
+        register_console_function("find_boundary", console_find_boundary, "");
+        register_console_function("mesh_split_bndr", console_mesh_split_bndr, "");
+        register_console_function("compute_vertex_bndr", console_compute_vertex_bndr, "");
         register_console_function("load_agent", console_load_agent, "");
         register_console_function("load_bartender", console_load_bartender, "");
         register_console_function("load_blobby", console_load_blobby, "");
@@ -2595,7 +3514,7 @@ namespace
         register_console_function("align_all_models", console_align_all_models, "");
         register_console_function("stop_motion", console_stop_motion, "");
         register_console_function("frame", console_frame, "");
-        register_console_function("split_mesh", console_split_mesh, "");
+        //register_console_function("split_mesh", console_split_mesh, "");
         register_console_function("show_edge_selection", console_show_edge_selection, "");
         register_console_function("deselect_faces", console_deselect_faces, "");
         register_console_function("deselect_verticies", console_deselect_verticies, "");
@@ -2631,7 +3550,11 @@ namespace
         register_console_function("save_sub_video", console_save_sub_video, "");
         register_console_function("load_bunny_stop", console_load_bunny_stop, "");
         register_console_function("show_iso", console_show_iso, "");
+        register_console_function("show_iso_2", console_show_iso_2, "");
+
         register_console_function("show_label", console_show_labels, "");
+        register_console_function("scale", console_scale, "");
+        register_console_function("collapse_small_triangles", console_collapse_small_triangles, "");
 
 
         m_state = App::State::Launched;
@@ -2740,7 +3663,7 @@ namespace
 
         if (m_eid_list2.size()>0) 
         {
-            RENDER.seam_on_main = IGLMeshWireframe::Create(ANIM.VD[m_frame], ANIM.UE, ANIM.UEC, m_eid_list2);
+            RENDER.seam_on_main = IGLMeshWireframe::Create(SMOTION[0].anim.VD[m_frame], SMOTION[0].anim.UE, SMOTION[0].anim.UEC, m_eid_list2);
             RENDER.seam_on_main->Update(true);
             vis_set.Insert(RENDER.seam_on_main.get());
         }
@@ -2936,24 +3859,32 @@ namespace
             for (int i = 0; i < RENDER.error.size(); ++i) 
             {   
                 if (SMOTION[i].computed == false) continue;
-                                Eigen::Vector3f maxColor = Eigen::Vector3f(255/255.0, 0/255.0, 0/255.0);
+                
+                Eigen::Vector3f maxColor = Eigen::Vector3f(255/255.0, 0/255.0, 0/255.0);
 
                 Wm5::Transform tr;
-                tr.SetTranslate(Wm5::APoint(2*m_model_offset, -m_model_offset/2, 0));
+                //tr2.SetUniformScale(0.6);
+                tr.SetTranslate(Wm5::APoint(2*m_model_offset, -0.5*m_model_offset, 0));
                 if (RENDER.error[i] == nullptr) 
                 {
-                    RENDER.error[i] = IGLMesh::CreateColor(SMOTION[i].anim.VD[m_frame], SMOTION[i].anim.F, 
+                    RENDER.error[i] = IGLMesh::CreateColor(SMOTION[i].anim.VD[m_frame], 
+                                                           SMOTION[i].anim.F, 
                                                            SMOTION[i].anim.ND[m_frame],  
-                                                           m_error[i][m_frame], max_error, maxColor);
+                                                           m_error[i][m_frame], 
+                                                           max_error, 
+                                                           maxColor);
                     
                     RENDER.error[i]->LocalTransform = tr * RENDER.error[i]->LocalTransform;
                     RENDER.error[i]->Update(true);
                 }
                 else 
                 { 
-                    RENDER.error[i]->UpdateData(SMOTION[i].anim.VD[m_frame], SMOTION[i].anim.F, 
+                    RENDER.error[i]->UpdateData(SMOTION[i].anim.VD[m_frame], 
+                                                SMOTION[i].anim.F, 
                                                 SMOTION[i].anim.ND[m_frame], 
-                                                m_error[i][m_frame], max_error,maxColor);
+                                                m_error[i][m_frame], 
+                                                max_error,
+                                                maxColor);
                 }
 
                 vis_set.Insert(RENDER.error[i].get());
@@ -2974,13 +3905,16 @@ namespace
                 if (SMOTION[i].computed == false) continue;
                 Eigen::Vector3f maxColor = Eigen::Vector3f(104/255.0, 34/255.0, 139/255.0);
                 Wm5::Transform tr;
-                tr.SetTranslate(Wm5::APoint(2*m_model_offset, m_model_offset/2, 0));
+                //tr.SetUniformScale(0.6);
+                tr.SetTranslate(Wm5::APoint(2*m_model_offset, 0.5*m_model_offset, 0));
                 if (RENDER.errorVel[i] == nullptr) 
                 {
                     
-                    RENDER.errorVel[i] = IGLMesh::CreateColor(SMOTION[i].anim.VD[m_frame], SMOTION[i].anim.F, 
+                    RENDER.errorVel[i] = IGLMesh::CreateColor(SMOTION[i].anim.VD[m_frame], 
+                                                              SMOTION[i].anim.F, 
                                                               SMOTION[i].anim.ND[m_frame],  
-                                                              m_error_velocity[i][m_frame], max_error_velocity, 
+                                                              m_error_velocity[i][m_frame], 
+                                                              max_error_velocity, 
                                                               maxColor);
                     
                     RENDER.errorVel[i]->LocalTransform = tr * RENDER.errorVel[i]->LocalTransform;
@@ -2988,9 +3922,11 @@ namespace
                 }
                 else 
                 { 
-                    RENDER.errorVel[i]->UpdateData(SMOTION[i].anim.VD[m_frame], SMOTION[i].anim.F, 
+                    RENDER.errorVel[i]->UpdateData(SMOTION[i].anim.VD[m_frame], 
+                                                   SMOTION[i].anim.F, 
                                                    SMOTION[i].anim.ND[m_frame],  
-                                                   m_error_velocity[i][m_frame], max_error_velocity,
+                                                   m_error_velocity[i][m_frame], 
+                                                   max_error_velocity,
                                                    maxColor);
                 }
 
@@ -3174,8 +4110,8 @@ namespace
     {   
         Eigen::RowVector3d new_c = V.row(vid);
         //float s =  (V.size() > 3000) ? 0.0005 : 0.007;
-        float s = 0.001;
-        ES2SphereSPtr object = ES2Sphere::Create(10, 10, s);
+        //float s = 0.001;
+        ES2SphereSPtr object = ES2Sphere::Create(10, 10, m_ball_size);
         Wm5::Transform tr;
         tr.SetTranslate(Wm5::APoint(new_c(0), new_c(1), new_c(2)));
         object->LocalTransform = world * tr * object->LocalTransform;
@@ -3298,7 +4234,9 @@ namespace
         {   
             auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
             //auto p = f/filesystem::path("bunny_frames_upsampled");
-            auto p = f/filesystem::path("bunny_frames_front");
+            //auto p = f/filesystem::path("bunny_split_up_horizontal_no_dup");
+            //auto p = f/filesystem::path("bunny_good");
+            auto p = f/filesystem::path("bunny_scaled_small_frames");
             
             //auto p = f/filesystem::path("subanimaton");
 
@@ -3331,17 +4269,23 @@ namespace
         m_timeline->SetFrameRange(ANIM.VD.size()-1);
 
         //align_all_models(offset_vid, offset);
+        if(!igl::is_edge_manifold(ANIM.F)) 
+        {
+            RA_LOG_ERROR("Mesh is not edge manifold");
+            exit(0);
+        }
 
                
         //Compute radius of the bounding box of the model
         AxisAlignedBBox bbox;
         MatrixXd VT = ANIM.VD[0].transpose();
         bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
-        m_model_offset = 0.55*2*bbox.GetRadius(); 
+        m_model_offset = 2*bbox.GetRadius(); 
 
         m_update_camera = true;
         m_state = App::State::LoadedModel;
         
+        ANIM.VW.resize(ANIM.VD[0].rows());
         ANIM.VW.setOnes();
         //m_weights.VW.resize(ANIM.VD[0].rows());
         //m_weights.VW.setOnes();
@@ -3350,7 +4294,7 @@ namespace
         //m_weights.FW.setOnes();
 
         compute_average();
-
+        m_ball_size = igl::avg_edge_length(ANIM.AvgVD, ANIM.F)/5;
 
         //compute ambient_occlusion
        // Eigen::VectorXd AO;
@@ -3367,30 +4311,123 @@ namespace
             //RA_LOG_INFO("AO %f, %f",ANIM.AO[339].minCoeff(), ANIM.AO[339].maxCoeff());
         }
 
-        //ParseImages();
-        std::vector<std::string> args1 = {"split", "bunny_jaggy_split"};
+
+        std::vector<std::string> args2 = {"split", "bunny_scaled_small_split"};
+        console_load_serialised_data(this, args2);
+
+
+        std::vector<std::string> args1 = { "weights_low", "bunny_W"};
         //console_load_serialised_data(this,args1);
         
-        std::vector<std::string> args2 = {"stop_low", "bunny_stop_200_2_1_kmeans"};
-        //console_load_serialised_data(this, args2);
-
-        std::vector<std::string> args3 = {"stop_up", "bunny_stop_100_1_0_kmeans"};
+        
+        //std::vector<std::string> args3 = {"stop_up", "bunny_no_duplicates_spl"};
         //console_load_serialised_data(this, args3);
 
+        
         render();
-    }
 
+    }
 
 
     //load oldman (will you go to lunch)
     void App::load_oldman() 
     {   
+        bool serialized = true;
         RA_LOG_INFO("load oldman");
-        auto obj_list_file = std::string("/home/rinat/GDrive/StopMotionProject/Claymation/data/oldman/gotolunch/FramesOBJ/FullFace/objlist2.txt");
-        //load_mesh_sequence(obj_list_file);
-        m_update_camera = true;
+        int offset_vid = 1030; // 1222;
+        auto offset = Eigen::Vector3d(0.268563, 3.142050, 2.504273) ; //Eigen::Vector3d(0.613322, 2.613381, 2.238946);
+       
+        FOLDERS = 
+        {   
+            //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj_export/just_face")
+                    
+            std::string("/home/rinat/GDrive/StopMotionProject/Claymation/data/oldman/gotolunch/FramesOBJ/FullFace"),
+        };
 
+        if (serialized) 
+        {   
+            auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
+            auto p = f/filesystem::path("oldman_ver_cut");
+            std::ifstream in = std::ifstream(p.str(), std::ios::binary);
+            cereal::BinaryInputArchive archive_i(in);
+            archive_i(ANIM);
+            tyro::color_matrix(ANIM.UE.rows(), Eigen::Vector3d(0,0,0), ANIM.UEC);
+        }
+        else
+        {   
+            std::vector<std::string> obj_paths;
+            for (auto folder : FOLDERS) 
+            {
+                int num_files_read;
+
+                //Add smth
+                //folder += std::string("no_mouth/");
+                
+                RA_LOG_INFO("loading folder %s", folder.data());
+                tyro::obj_file_path_list(folder, "objlist.txt", obj_paths, num_files_read);
+                RA_LOG_INFO("frames read %i", num_files_read);
+                ANIM.SIdx.push_back(num_files_read);
+            }
+            load_mesh_sequence(obj_paths, true); //use IGL obj loader
+        }
+        m_timeline->SetFrameRange(ANIM.VD.size()-1);
+
+        //align_all_models(offset_vid, offset);
+        if(!igl::is_edge_manifold(ANIM.F)) 
+        {
+            RA_LOG_ERROR("Mesh is not edge manifold");
+            //exit(0);
+        }
+
+               
+        //Compute radius of the bounding box of the model
+        AxisAlignedBBox bbox;
+        MatrixXd VT = ANIM.VD[0].transpose();
+        bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
+        m_model_offset = 0.55*2*bbox.GetRadius(); 
+
+        m_update_camera = true;
         m_state = App::State::LoadedModel;
+        
+        ANIM.VW.resize(ANIM.VD[0].rows());
+        ANIM.VW.setOnes();
+        //m_weights.VW.resize(ANIM.VD[0].rows());
+        //m_weights.VW.setOnes();
+
+        //m_weights.FW.resize(ANIM.F.rows());
+        //m_weights.FW.setOnes();
+
+        compute_average();
+        m_ball_size = igl::avg_edge_length(ANIM.AvgVD, ANIM.F)/5;
+
+        //compute ambient_occlusion
+       // Eigen::VectorXd AO;
+        for (int i = 0; i < 0; ++i) 
+        {               
+            ANIM.AO.resize(ANIM.VD.size());
+            igl::ambient_occlusion(ANIM.VD[i], 
+                                   ANIM.F, 
+                                   ANIM.VD[i], 
+                                   ANIM.ND[i], 
+                                   1000, 
+                                   ANIM.AO[3114]);
+            RA_LOG_INFO("Computed AO for frame %i", i);
+            //RA_LOG_INFO("AO %f, %f",ANIM.AO[339].minCoeff(), ANIM.AO[339].maxCoeff());
+        }
+
+
+        std::vector<std::string> args2 = {"split", "bunny_scaled_small_split"};
+        //console_load_serialised_data(this, args2);
+
+
+        std::vector<std::string> args1 = { "weights_low", "bunny_W"};
+        //console_load_serialised_data(this,args1);
+        
+        
+        //std::vector<std::string> args3 = {"stop_up", "bunny_no_duplicates_spl"};
+        //console_load_serialised_data(this, args3);
+
+        
         render();
     }
 
@@ -3518,7 +4555,7 @@ namespace
     {   
         if (modifier == TYRO_MOD_ALT) 
         { 
-            selectVertexPart(mouse_pos, mouse_button, modifier, 1);
+            selectVertexPart(mouse_pos, mouse_button, modifier, 0);
             return;
         }
 
@@ -3603,7 +4640,7 @@ namespace
                     if (it == fid_list3.end()) 
                     {
                         fid_list3.push_back(fid);
-                        setFaceColor(fid, Eigen::Vector3d(147/255.0, 112/255.0, 219/255.0)); 
+                        setFaceColor(fid, Eigen::Vector3d(0, 1.0, 0)); 
                     }  
                     else
                     {   
@@ -3726,7 +4763,7 @@ namespace
             if (m_sel_primitive == App::SelectionPrimitive::Vertex) 
             {   
                 for (auto vid : vid_selected) 
-                {
+                {   
                     addSphere(vid,  ANIM.VD[m_frame]);
                     vid_list.push_back(vid);
                 }
@@ -3903,7 +4940,7 @@ namespace
             
     }
 
-     void App::register_console_function(const std::string& name,
+    void App::register_console_function(const std::string& name,
                                          const std::function<void(App*, const std::vector<std::string>&)>& con_fun,
                                          const std::string& help_txt)
     {
