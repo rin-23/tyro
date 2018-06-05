@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 #include <Eigen/Sparse>
+#include <RALogManager.h>
 
 using namespace Eigen;
 
@@ -207,16 +208,10 @@ double computeEnergyTRUEVertex(const Eigen::MatrixXd& F,
 	auto W = VW.asDiagonal();
 
 	double dataenergy =
-		( W * F * F.transpose() * W +
-		  -2 * W * F * S.transpose() * D.transpose() * W + 
-	      W * D * S * S.transpose() * D.transpose() * W 
-		).trace();
+		(W * (F - D*S)).array().square().sum();
 
 	double smoothEnergy =
-		( W*F*G*G.transpose()*F.transpose()*W
-		  -2 * W*F*G*G.transpose()*S.transpose()*D.transpose()*W
-		+ W*D*S*G*G.transpose()*S.transpose()*D.transpose()*W 
-		).trace();
+		( W*(F*G - D*S*G)).array().square().sum();
 	
 
 	//Computer data energy term
@@ -257,7 +252,7 @@ double computeEnergyTRUEVertex(const Eigen::MatrixXd& F,
 	return totalenergy;
 }
 
-void updateStepTRUEVertex(const Eigen::MatrixXd& F, 
+void updateStepTRUEVertex2(const Eigen::MatrixXd& F, 
 						  Eigen::VectorXd& VW, Eigen::MatrixXd& D, 
 					      const Eigen::VectorXi& S_vec, 
 						  std::vector<int>& sequenceIdx, 
@@ -279,14 +274,86 @@ void updateStepTRUEVertex(const Eigen::MatrixXd& F,
 	build_G_Matrix(G, sequenceIdx);
 	//printMatrix(G, std::string("Printing G"));
 
-	MatrixXd A = S*S.transpose() + w_s*S*G*G.transpose()*S.transpose();
+	SparseMatrix<double> A = S*S.transpose() + w_s*S*G*G.transpose()*S.transpose();
 	//printMatrix(A, std::string("Matrix A"));
-	MatrixXd C = 2 * A;
+	SparseMatrix<double> C = 2 * A;
 	MatrixXd K = 2 * VW.asDiagonal() * (F*S.transpose() + w_s*F*G*G.transpose()*S.transpose());
 	MatrixXd b = K.transpose() * VW.asDiagonal().inverse();
 	oldEnergy = computeEnergyTRUEVertex(F, VW, D, G, sequenceIdx,S_vec, S, w_s);
-	MatrixXd new_D_t = C.jacobiSvd(ComputeThinU | ComputeThinV).solve(b);
+	//MatrixXd new_D_t = C.jacobiSvd(ComputeThinU | ComputeThinV).solve(b);
+	
+	Eigen::SimplicialLLT <Eigen::SparseMatrix<double> > llt;
+	llt.compute(C);
+	switch(llt.info())
+	{
+	case Eigen::Success:
+		break;
+	case Eigen::NumericalIssue:{
+		RA_LOG_ERROR("Error: Numerical issue.");
+		}
+	default:{
+		RA_LOG_ERROR("Error: Other.");
+		}
+	}
+	MatrixXd new_D_t = llt.solve(b);
+
+	
 	D = new_D_t.transpose();
 	newEnergy = computeEnergyTRUEVertex(F, VW, D, G, sequenceIdx, S_vec, S, w_s);
+	RA_LOG_INFO("Here4");
+	assert(D.cols() == D_cols);
+}
+
+void updateStepTRUEVertex(const Eigen::MatrixXd& F, 
+						  Eigen::VectorXd& VW, Eigen::MatrixXd& D, 
+					      const Eigen::VectorXi& S_vec, 
+						  std::vector<int>& sequenceIdx, 
+						  double w_s, 
+						  double& oldEnergy, 
+						  double& newEnergy, 
+						  Eigen::SparseMatrix<double>& G, 
+						  Eigen::MatrixXd& K_prime) 
+{	
+	int D_cols = D.cols(); //number of labels in dictionary
+	int F_cols = F.cols(); //number of frames
+	RA_LOG_INFO("Here1");
+	SparseMatrix<double> S;
+	S.resize(D_cols, F_cols);
+	S.setZero();
+	build_S_Matrix(S, S_vec);
+	//printMatrix(G, std::string("Printing G"));
+	RA_LOG_INFO("Here1");
+	SparseMatrix<double> A = (S + w_s*S*G*G.transpose())*S.transpose();
+	RA_LOG_INFO("Here1");
+	//printMatrix(A, std::string("Matrix A"));
+	SparseMatrix<double> C = 2 * A;
+	RA_LOG_INFO("Here1");
+	//MatrixXd K = 2 * (F + w_s*F*G*G.transpose())*S.transpose();
+	MatrixXd K = 2 * K_prime*S.transpose();
+	RA_LOG_INFO("Here1");
+	MatrixXd b = K.transpose();
+	RA_LOG_INFO("Here1");
+	oldEnergy = computeEnergyTRUEVertex(F, VW, D, G, sequenceIdx,S_vec, S, w_s);
+	RA_LOG_INFO("Here2");
+	//MatrixXd new_D_t = C.jacobiSvd(ComputeThinU | ComputeThinV).solve(b);
+	
+	Eigen::SimplicialLLT <Eigen::SparseMatrix<double> > llt;
+	llt.compute(C);
+	switch(llt.info())
+	{
+	case Eigen::Success:
+		break;
+	case Eigen::NumericalIssue:{
+		RA_LOG_ERROR("Error: Numerical issue.");
+		}
+	default:{
+		RA_LOG_ERROR("Error: Other.");
+		}
+	}
+	MatrixXd new_D_t = llt.solve(b);
+	RA_LOG_INFO("Here3");
+	D = new_D_t.transpose();
+	newEnergy = computeEnergyTRUEVertex(F, VW, D, G, sequenceIdx, S_vec, S, w_s);
+	RA_LOG_INFO("Here4");
 	assert(D.cols() == D_cols);
 }

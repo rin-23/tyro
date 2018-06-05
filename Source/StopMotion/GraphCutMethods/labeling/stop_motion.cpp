@@ -11,6 +11,7 @@
 //#include <opencv2/viz/vizcore.hpp>
 #include "RALogManager.h"
 //#include "KMeansRexCore.cpp"
+#include <Eigen/Sparse>
 
 using namespace Eigen;
 using namespace std;
@@ -141,6 +142,30 @@ void flatten_weights(const Eigen::VectorXd& VW_per_vertex, Eigen::VectorXd& VW)
 	}
 }
 
+void build_G_Matrix(Eigen::SparseMatrix<double>& G, std::vector<int>& sequenceIdx) 
+{	
+	std::vector<int> ff;
+	int sofar = 0;
+	for (int i = 0; i < sequenceIdx.size(); ++i) 
+	{
+		sofar += sequenceIdx[i];
+		ff.push_back(sofar);
+	}
+
+	int Tminus1 = G.cols();
+	int i = 1;
+	for (int j = 0; j < Tminus1; ++j)
+	{	
+		auto it = std::find(ff.begin(), ff.end(), j+1); //dont connect one scene to another
+		if (it == ff.end()) 
+        { 
+			G.coeffRef(i - 1, j) = -1;
+			G.coeffRef(i, j) = 1;
+		}
+		i += 1; 
+	}
+}
+
 int stop_motion_vertex_distance(int num_labels,
 								double w_s,
 								bool kmeans,
@@ -184,6 +209,13 @@ int stop_motion_vertex_distance(int num_labels,
 		tyro::kmeans(F, num_labels, num_iter, KMEANS, lbvec);
 	} 
 
+	SparseMatrix<double> G;
+	G.resize(F.cols(), F.cols() - 1);
+	//G.setZero();	
+	build_G_Matrix(G, sequenceIdx);
+
+	MatrixXd K_prime = F + w_s*F*G*G.transpose();
+
 	for (int j = 0; j < n_init; ++j)
 	{
 		Eigen::MatrixXd D; //label blendshape data
@@ -213,6 +245,7 @@ int stop_motion_vertex_distance(int num_labels,
 		MatrixXd lastD;
 		VectorXi lastS_vec;
 		double lastEnergy = std::numeric_limits<double>::max();
+
 		for (int i = 0; i < num_steps; ++i)
 		{
 			std::cout << "Iteration " << i << "\n";
@@ -238,7 +271,7 @@ int stop_motion_vertex_distance(int num_labels,
 			}
 		
 			t1 = high_resolution_clock::now();
-			updateStepTRUEVertex(F, VW, D, S_vec, sequenceIdx, w_s, oldEnergy, newEnergy);
+			updateStepTRUEVertex(F, VW, D, S_vec, sequenceIdx, w_s, oldEnergy, newEnergy, G, K_prime);
 			t2 = high_resolution_clock::now();
 			duration = duration_cast<milliseconds>(t2 - t1).count();
 			cout << "update time " << duration << "\n";

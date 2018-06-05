@@ -5,6 +5,7 @@
 #include "RALogManager.h"
 #include <chrono>
 #include <omp.h>
+#include <unordered_map>
 
 using namespace Eigen;
 using namespace std;
@@ -128,12 +129,23 @@ GCoptimization::EnergyTermType smoothFnTRUEVertex(int p1, int p2, int l1, int l2
 	void** data = (void**)extraData;
 	MatrixXd* F = (MatrixXd*)data[0];
 	MatrixXd* D = (MatrixXd*)data[1];
-	VectorXd* VW = (VectorXd*) data[2];
+	VectorXd* VW = (VectorXd*)data[2];
+	std::unordered_map<std::string, double>* m = (std::unordered_map<std::string, double>*)data[3];
 	//VectorXd l1Obj = ;
 	//VectorXd l2Obj = ;
 	//VectorXd p1Obj = ;
 	//VectorXd p2Obj = ;
-
+	using namespace std;
+	std::string ky =  std::to_string(p1) 
+	                 + string("-") 
+	                 + std::to_string(p2)
+					 + string("-") 
+					 + std::to_string(l1) 
+					 + string("-")
+					 + std::to_string(l2);
+	auto it = m->find(ky);
+	
+	if (it != m->end()) return (*m)[ky];
 	
 	double diff = 0;
 	for (int i = 0; i < D->rows(); ++i) 
@@ -147,6 +159,8 @@ GCoptimization::EnergyTermType smoothFnTRUEVertex(int p1, int p2, int l1, int l2
 	//high_resolution_clock::time_point t2 = high_resolution_clock::now();
 	//auto duration = duration_cast<milliseconds>(t2 - t1).count();
 	//RA_LOG_INFO("smoothFnTRUEVertex %i milisec", duration);
+	//RA_LOG_INFO("%i,%i,%i,%i", p1, p2, l1, l2);
+	m->insert({ky, sum});	
 	return sum;	
 }
 
@@ -268,7 +282,7 @@ void prepareDataMatrixTRUEVertex(Eigen::MatrixXd& F, Eigen::VectorXd& VW, Eigen:
 	int num_vertex = F.rows();
 
 	dataArray = new double[num_frames*num_labels];
-			
+	
 	#pragma omp parallel for collapse(2)
 	for (int i = 0; i < num_frames; ++i) 
 	{	
@@ -305,18 +319,22 @@ void labelFacesTRUEVertex(Eigen::MatrixXd& F, Eigen::VectorXd& VW, Eigen::Matrix
 	try
 	{
 		GCoptimizationGeneralGraph *gc = new GCoptimizationGeneralGraph(num_frames, num_labels);
-		void* extraData[3] = {&F, &D, &VW};
+		std::unordered_map<std::string, double> wordMap;
+		void* extraData[4] = {&F, &D, &VW, &wordMap};
 		double* dataArray;
 		high_resolution_clock::time_point t1 = high_resolution_clock::now();
 		prepareDataMatrixTRUEVertex(F, VW, D, dataArray);
 		high_resolution_clock::time_point t2 = high_resolution_clock::now();
 		auto duration = duration_cast<milliseconds>(t2 - t1).count();
+
 		RA_LOG_INFO("data matrix computation %i msec", duration);
 		
 		//gc->setDataCost(&dataFnTRUEVertex, extraData);
 		gc->setDataCost(dataArray);
 		
 		gc->setSmoothCost(&smoothFnTRUEVertex, extraData);
+		
+	
 
 		setNeighbours(gc, num_frames, sequenceIdx);
 
@@ -329,6 +347,13 @@ void labelFacesTRUEVertex(Eigen::MatrixXd& F, Eigen::VectorXd& VW, Eigen::Matrix
 			S_vec(i) = gc->whatLabel(i);
 		}
 
+		/*
+		for (auto it : wordMap) 
+		{
+			if (it.second > 1)
+				RA_LOG_INFO("%s : %i", it.first.data(), it.second);
+		}
+		*/
 		delete gc;
 	}
 	catch (GCException e)

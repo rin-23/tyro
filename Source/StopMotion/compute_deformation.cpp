@@ -117,7 +117,7 @@ bool tyro::compute_deformation( const std::vector<int>& vid_list,
     return true;
 }
 
-bool tyro::compute_deformation2( const std::vector<int>& vid_list, 
+bool tyro::compute_deformation2(const std::vector<int>& vid_list, 
                                 const std::vector<Eigen::MatrixXd>& v_data,
                                 const Eigen::MatrixXi& F,
                                 const Eigen::MatrixXd& AV, //average                       

@@ -75,7 +75,8 @@ void prepareSmoothMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex da
                         const Eigen::MatrixXi& uE, //unique edges
 						const std::vector<Eigen::VectorXd>& uEL, //edge length
 						double smooth_weight,
-						Eigen::SparseMatrix<double>& A, const Eigen::VectorXi& isBoundary) // sparse matrix of smooth cost
+						Eigen::SparseMatrix<double>& A, 
+						const Eigen::VectorXi& isBoundary, double avg_length = 0) // sparse matrix of smooth cost
 {		
 	A.resize(F.rows(), F.rows());
 	A.setZero();
@@ -87,6 +88,8 @@ void prepareSmoothMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex da
 		int v1idx = uE(e,0);
 		int v2idx = uE(e,1);
 		
+		if (f1idx == -1 || f2idx == -1) 
+			continue;
 		/*
 		if ((isBoundary(f1idx) && !isBoundary(f2idx)) ||
 			(isBoundary(f2idx) && !isBoundary(f1idx))) 
@@ -108,7 +111,7 @@ void prepareSmoothMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex da
 			VectorXd v1diff = v1 - v1avg;
 			VectorXd v2diff = v2 - v2avg;
 
-			cost += uEL[frame](e) * (v1diff.norm() + v2diff.norm() + 0.01);
+			cost += uEL[frame](e) * (v1diff.norm() + v2diff.norm() + avg_length);
 		    //cost += (v1diff.norm() + v2diff.norm() + 1);
 		}
 
@@ -182,7 +185,6 @@ void prepareDataMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 		Thard(FS2(i), 0) = 1;
 	}	
 
-
 	MatrixXd Tsoft;
 	Tsoft.resize(F.rows(), 2);
 	Tsoft.setZero(); 
@@ -192,8 +194,8 @@ void prepareDataMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 	//double ll = d1(imin);
 	//double l2 = d2(imax);
 
-	double soft_w = 100;
-	double hard_w = 100;
+	double soft_w = 1;
+	double hard_w = 100000;
 	A = soft_w * Tsoft + hard_w * Thard;
 }
 
@@ -261,6 +263,105 @@ void segmentation(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
 						smooth_weight,
     		 			data->S, 
 						isBoundary); // sparse matrix of smooth cost
+	
+	prepareDataMatrix(v_data,
+					  F, 
+					  Vavg,
+					  EF, 
+					  uE, 
+					  seeds1,
+					  seeds2,
+					  data->U);
+
+	int num_data = F.rows();
+	int num_labels = 2;
+
+	try
+	{
+		GCoptimizationGeneralGraph *gc = new GCoptimizationGeneralGraph(num_data, num_labels);
+
+		gc->setDataCost(&dataFnVertex, data);		
+		gc->setSmoothCost(&smoothFnVertex, data);
+		tyro::setNeighbors(gc, EF);
+
+		double oldE = gc->compute_energy();
+		gc->swap(-1);
+		double newEnergy = gc->compute_energy();
+
+		L.resize(num_data);
+		for (int i = 0; i < num_data; i++)
+		{
+			L(i) = gc->whatLabel(i);
+		}
+
+		delete gc; 
+	}
+	catch(GCException e) 
+	{
+		e.Report();
+	}
+}
+
+
+                  
+void segmentation2(const std::vector<Eigen::MatrixXd>& v_data, //vertex data
+                  const Eigen::MatrixXi& F, //original face data
+                  const Eigen::MatrixXd& Vavg, //average of faces
+				  const Eigen::VectorXi& seeds1, //seeds(indicies of faces that must belong to a label)
+                  const Eigen::VectorXi& seeds2,
+                  double smooth_weight,
+				  double avg_length, 
+                  Eigen::VectorXi& L) 
+{
+
+	assert(igl::is_edge_manifold(F));
+
+	MatrixXi E, uE;
+	VectorXi EMAP;
+	std::vector<std::vector<int> > uE2E;
+	igl::unique_edge_map(F, E, uE,EMAP,uE2E);
+
+	MatrixXi EF, EI;
+	igl::edge_flaps(F, uE, EMAP, EF, EI);
+
+
+	//extract interior edges only
+	//Eigen::VectorXi int_man;
+	//tyro::all(inEF, 
+     //         [](const Eigen::VectorXi& v) -> bool { return v(0) != -1 && v(1) != -1;},
+     //         1,
+     //         int_man);
+
+	//slice edge flaps and unique edge matrix to only contain info about interior edges
+	//MatrixXi EF, uE;
+	//igl::slice(inEF, int_man, 1, EF);
+	//igl::slice(inuE, int_man, 1, uE);
+
+	//Compute edge length of the mesh for every frame
+	std::vector<VectorXd> uEL;
+	uEL.resize(v_data.size());
+	for (int i = 0; i < v_data.size(); ++i) 
+	{
+		const auto& V = v_data[i];
+		Eigen::MatrixXd L;
+		igl::edge_lengths(V, uE, L);
+		uEL[i] = L.col(0);
+	}
+
+	SegmentationData* data = new SegmentationData();
+
+	//data->S.resize(F.rows(), F.rows());
+	//data->S.setZero();
+	Eigen::VectorXi isBoundary;
+	prepareSmoothMatrix(v_data,   //vertex data
+						F,		  //face data
+                        Vavg,     //average of faces
+                        EF,       //edge flaps 
+                        uE,       //unique edges
+            			uEL,      //edge length
+						smooth_weight,
+    		 			data->S, 
+						isBoundary, avg_length); // sparse matrix of smooth cost
 	
 	prepareDataMatrix(v_data,
 					  F, 

@@ -87,6 +87,7 @@ namespace tyro
         bool m_update_camera;
         bool m_show_wire;
         bool add_seg_faces;
+        bool isBLOBBY =false;
         //square selection
         int m_square_sel_start_x;
         int m_square_sel_start_y;
@@ -129,9 +130,13 @@ namespace tyro
 
             std::vector<IGLMeshSPtr> error;
             std::vector<IGLMeshSPtr> errorVel;
+            IGLMeshSPtr errorDeform;
             IGLMeshSPtr isoline;
             IGLMeshSPtr isolineSplit;
             IGLMeshWireframeSPtr isolineSplitWire;
+
+            IGLMeshSPtr addShape1;
+            IGLMeshSPtr addShape2;
 
             //std::vector<IGLMeshWireframeSPtr> stop_motion_meshes_wire;
             
@@ -238,15 +243,23 @@ namespace tyro
         Eigen::VectorXd LABELS;
         Eigen::VectorXd ISOCOLORS;
         bool m_computed_iso_color = false;
-        
+        float max_error;
+        float max_vel_error;
+        float max_def_error;
         MAnimation ANIM; //Original animation data        
         MAnimation DANIM; // Animation data after we smooth the seam(s)
         std::vector<MAnimation> PIECES; // Break deformed mesh into pieces along seam(s).
+        std::vector<Eigen::VectorXi> PIECES_IDX;
         std::vector<MStopMotion> SMOTION; // Stop motion animate pieces
-        std::vector<std::vector<Eigen::VectorXd>> m_error;
-        std::vector<std::vector<Eigen::VectorXd>> m_error_velocity;
-        float max_error;
-        float max_error_velocity;
+        std::vector<Eigen::MatrixXd> m_error;
+        std::vector<Eigen::MatrixXd> m_error_velocity;
+        Eigen::MatrixXd m_error_deform;
+        //float max_error;
+        //float max_error_velocity;
+        Wm5::Transform globalTrans;
+        
+        //float max_error_deform;
+            
         std::vector<std::string> FOLDERS;
         //std::vector<std::string> FOLDERS_MONKA;
         float m_ball_size = 0.01;
@@ -254,6 +267,9 @@ namespace tyro
         //using Movie = std::vector<Shot>;  // collection of shots. Each shot are indicies into m_frame_data.v_data
         //Movie movie;            
         
+        MAnimation addAnim1;
+        MAnimation addAnim2;
+
         std::vector<int> vid_list;
         std::vector<int> vid_list_second;
         std::vector<int> vid_list_third;
@@ -283,6 +299,9 @@ namespace tyro
         void DrawMeshes();
         int ShowMonkaMovieStop(); 
         int ShowBunnyMovieStop();
+            void add_face(int fid);
+            void add_vertex(int vid);
+
     
     };
 

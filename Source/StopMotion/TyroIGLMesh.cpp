@@ -27,7 +27,7 @@ namespace tyro
         VertexBufferAccessor vba(GetVisualEffect()->GetVertexFormat(), GetVertexBuffer().get());
         vba.MapWrite();
         int vIndex = 0;
-        Wm5::Vector3f minColor(0.8, 0.8, 0.8);
+        Wm5::Vector3f minColor(0, 0.8, 0);
         //Wm5::Vector3f maxColor(147,112,219);
         Wm5::Vector3f maxColor = Wm5::Vector3f(EmaxColor(0),EmaxColor(1),EmaxColor(2));
         //maxColor *= 1/255.0;
@@ -198,9 +198,9 @@ namespace tyro
     {
         ES2TriMesh::Init();
 
-        SetVisualEffect(ES2CoreVisualEffects::GourandDirectionalWithVColor());
-        //SetVisualEffect(ES2CoreVisualEffects::PBR());
-        isPBR = false;
+        //SetVisualEffect(ES2CoreVisualEffects::GourandDirectionalWithVColor());
+        SetVisualEffect(ES2CoreVisualEffects::PBR());
+        isPBR = true;
  
         int numVertices = V.rows();
         int numTriangles = F.rows();
@@ -305,25 +305,30 @@ namespace tyro
             //GetVisualEffect()->GetUniforms()->UpdateFloatUniform(3, Wm5::Vector3f(200/255.0, 10/255.0, 10/255.0));
             
             //uniforms->SetUniform(4, shader->GetUniformLocation("metallic"), 1, "metallic", ES2ShaderUniforms::Uniform1fv);
-            float metallic[1] = {0.1f};
+            float metallic[1] = {0.2f};
             GetVisualEffect()->GetUniforms()->UpdateFloatUniform(3, metallic);
 
             //uniforms->SetUniform(5, shader->GetUniformLocation("roughness"), 1, "roughness", ES2ShaderUniforms::Uniform1fv);
-            float roughness[1] = {0.7f};
+            float roughness[1] = {0.45f};
             GetVisualEffect()->GetUniforms()->UpdateFloatUniform(4, roughness);
 
             //uniforms->SetUniform(6, shader->GetUniformLocation("ao"), 1, "ao", ES2ShaderUniforms::Uniform1fv);
-            float ao[1] = {0.5f};
+            float ao[1] = {1.0f};
             GetVisualEffect()->GetUniforms()->UpdateFloatUniform(5, ao);
 
-            
+            //pos = WorldTransform *  Wm5::Vector3f::ZERO;
             //uniforms->SetUniform(7, shader->GetUniformLocation("lightPositions"), 1, "lightPositions", ES2ShaderUniforms::Uniform3fv);
-            Wm5::Vector3f lightPositions[] = {
             
-            Wm5::Vector3f(10.0f,  10.0f, 10.0f),
-            Wm5::Vector3f(-10.0f,  10.0f, 10.0f),
-            Wm5::Vector3f(-10.0f,  10.0f, 10.0f),
-            Wm5::Vector3f(-10.0f,  10.0f, 10.0f),
+            Wm5::APoint pos = WorldTransform * Wm5::APoint(0,0,0);
+            float rad = 10;
+            Wm5::Vector3f lightPositions[] = {            
+            Wm5::Vector3f(pos.X() + rad, pos.Y() + rad , pos.Z()+rad),
+            Wm5::Vector3f(pos.X() - rad, pos.Y() + rad , pos.Z()+rad),
+            //Wm5::Vector3f(pos.X() + rad, pos.Y() + rad , pos.Z()+rad),
+            //Wm5::Vector3f(pos.X() - rad, pos.Y() + rad , pos.Z()+rad),
+            
+            Wm5::Vector3f(pos.X() + rad, pos.Y() + rad, pos.Z()+rad),
+            Wm5::Vector3f(pos.X() + rad, pos.Y() - rad, pos.Z()+rad)
             
             //BUNNY LIGHTS
             //Wm5::Vector3f(10.0f,  10.0f, 10.0f),
@@ -340,14 +345,12 @@ namespace tyro
                 GetVisualEffect()->GetUniforms()->UpdateFloatUniform(6+i, lightPositions[i]);
 
     //        uniforms->SetUniform(8, shader->GetUniformLocation("lightColors"), 1, "lightColors", ES2ShaderUniforms::Uniform3fv);
-            GetVisualEffect()->GetUniforms()->UpdateFloatUniform(10, Wm5::Vector3f(210.0f, 210.0f, 210.0f));
+            GetVisualEffect()->GetUniforms()->UpdateFloatUniform(10, Wm5::Vector3f(280.0f,280.0f, 280.0f));
 
-            Wm5::Vector3f pos = camera->GetPosition();
             //uniforms->SetUniform(9, shader->GetUniformLocation("camPos"), 1, "camPos", ES2ShaderUniforms::Uniform3fv);
-            GetVisualEffect()->GetUniforms()->UpdateFloatUniform(11, pos);
+            GetVisualEffect()->GetUniforms()->UpdateFloatUniform(11, camera->GetPosition());
 
             //GetVisualEffect()->GetUniforms()->UpdateFloatUniform(10, normalMatrix.Transpose());
-        
         }
     }
 
