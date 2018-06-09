@@ -16,7 +16,7 @@ void main()
 {   
     gl_Position = uMVPMatrix * aPosition;
     vec3 eyeNormal = normalize(uNMatrix * aNormal);
-    float intensity = max(c_zero, dot(eyeNormal, cLightDir));
+    float intensity = max(0.2, dot(eyeNormal, cLightDir));
     vColor.rgb = max(0.3 * aColor.rgb, intensity * aColor.rgb);
     vColor.a = 1.0;
 }

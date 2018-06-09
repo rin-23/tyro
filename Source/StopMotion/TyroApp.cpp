@@ -259,7 +259,7 @@ namespace
             if (app->isBLOBBY)
                 igl::collapse_small_triangles(app->ANIM.AvgVD,app->ANIM.F, 0.000001, FF);
             else
-                igl::collapse_small_triangles(app->ANIM.AvgVD,app->ANIM.F, 0.0000001, FF);
+                igl::collapse_small_triangles(app->ANIM.AvgVD,app->ANIM.F, 0.000001, FF);
             RA_LOG_INFO("After %i Before %i collapse", FF.rows(), app->ANIM.F.rows());
             
             MatrixXi I1; 
@@ -311,8 +311,8 @@ namespace
             for (int i = 0; i < app->ANIM.VD.size(); ++i) 
             {
                 app->ANIM.VD[i] = scale * app->ANIM.VD[i];
-  //              app->PIECES[0].VD[i] = scale * app->PIECES[0].VD[i];
-   //             app->PIECES[1].VD[i] = scale * app->PIECES[1].VD[i];
+                app->PIECES[0].VD[i] = scale * app->PIECES[0].VD[i];
+                app->PIECES[1].VD[i] = scale * app->PIECES[1].VD[i];
             }
             app->compute_average();
 
@@ -616,7 +616,9 @@ namespace
         {      
             using namespace Eigen;
 
-            int p = 0;
+            if (args.size() != 1) return;
+
+            int p = std::stoi(args[0]);
             int num_frames = app->ANIM.VD.size();
             int num_vert = app->PIECES[p].VD[0].rows();
             //Velocity
@@ -671,14 +673,70 @@ namespace
             }
         }
 
+        void console_compute_stop_frames(App* app, const std::vector<std::string>& args) 
+        {
+            app->PRINTEDStopAnimMovie();
+        }
+
+        void console_compute_alec(App* app, const std::vector<std::string>& args)
+        {
+            std::vector<int> steps = {500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000};
+            int part_id = 0;
+
+            for (const auto& s : steps) 
+            {
+                for (int num_labels = 10; num_labels < 600; num_labels += 10) 
+                {
+                    double smooth_weight = 1.0;
+                    
+                    double result_energy;
+                    App::MStopMotion sm;  
+                    auto& piece = app->PIECES[part_id];
+                    bool kmeans = true;
+
+                    auto first = piece.VD.begin() + 0;
+                    auto last = piece.VD.begin() + s;
+                    std::vector<Eigen::MatrixXd> NEW_VD(first, last);
+
+                    if (piece.VW.size() == 0) 
+                    {
+                        piece.VW.resize(NEW_VD[0].rows());
+                        piece.VW.setOnes();
+                        RA_LOG_INFO("----WEIGHTS ARE EMPTY, SETTING TO ZERO");
+                    }
+
+                    std::vector<int> sidx = {s};
+                    Eigen::VectorXd VW = piece.VW.cwiseSqrt();
+                    tyro::stop_motion_vertex_distance(num_labels, 
+                                                     smooth_weight,
+                                                     kmeans,
+                                                     NEW_VD, 
+                                                     VW, 
+                                                     sidx,
+                                                     piece.F,
+                                                     sm.D, //dictionary
+                                                     sm.L, //labels  
+                                                     result_energy);
+
+                    if (result_energy < 100)  
+                    {
+                        RA_LOG_INFO("-----num_labels %i for %i frames to reach 200 energy", num_labels, s);
+                        break;
+                    }
+                }     
+            }
+        }
+
         void console_compute_errors(App* app, const std::vector<std::string>& args) 
         {      
+
             if (args.size() != 1) return;
-                            int part_id =  std::stoi(args[0]);
+            
+            int part_id =  std::stoi(args[0]);
             std::vector<double> errors;
-            for (int num_labels = 5; num_labels < 50; num_labels += 5) 
+            for (int num_labels = 10; num_labels < 600; num_labels += 20) 
             {
-                double smooth_weight = 1.0;
+                double smooth_weight = 0.0;
 
                 
                 double result_energy;
@@ -985,7 +1043,6 @@ namespace
 
         void console_load_bunny_stop(App* app, const std::vector<std::string>& args) 
         {   
-
             auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
             auto p = f/filesystem::path("2018_bunny_3d_print_frames");
     
@@ -1037,10 +1094,10 @@ namespace
                 }
             }
             std::vector<std::string> args2 = {"stop_low", "1A_bunny_30_1_0_eye_weights"};
-            console_load_serialised_data(app, args2);
+            //console_load_serialised_data(app, args2);
             
             std::vector<std::string> args3 = {"stop_up", "1A_bunny_20_1_1_kmeans"};
-            console_load_serialised_data(app, args3);
+            //console_load_serialised_data(app, args3);
             
             if (shouldscale) 
             {
@@ -1052,15 +1109,23 @@ namespace
             }
 
             auto clr = Eigen::Vector3d(255/255.0, 148/255.0, 135/255.0);
+            
             auto clr1 = Eigen::Vector3d(255/255.0, 255/255.0, 255/255.0);
             
             auto clr2 = Eigen::Vector3d(180/255.0, 100/255.0, 179/255.0);
+            auto clr3 = Eigen::Vector3d(120/255.0, 151/255.0, 200/255.0);
 
             tyro::color_matrix(app->ANIM.F.rows(), clr, app->ANIM.FC);
             if (app->PIECES.size()>0)
             {
-                tyro::color_matrix(app->PIECES[0].F.rows(), clr, app->PIECES[0].FC);
+                tyro::color_matrix(app->PIECES[0].F.rows(), clr3, app->PIECES[0].FC);
                 tyro::color_matrix(app->PIECES[1].F.rows(), clr2, app->PIECES[1].FC);
+            }
+
+            if (app->SMOTION.size()>0)
+            {
+                tyro::color_matrix(app->SMOTION[0].anim.F.rows(), clr3, app->SMOTION[0].anim.FC);
+                tyro::color_matrix(app->SMOTION[1].anim.F.rows(), clr2, app->SMOTION[1].anim.FC);
             }
             app->render();
         }
@@ -1367,24 +1432,25 @@ namespace
         {   
             int num_vert = app->ANIM.AvgVD.rows();
             int num_frames = app->ANIM.VD.size();
-                        app->max_def_error = std::numeric_limits<float>::min();
-
+            app->max_def_error = std::numeric_limits<float>::min();
             app->m_error_deform.resize(num_frames, num_vert);
-            //app->max_error_deform = std::numeric_limits<float>::min();
-            //float min_error_deform = std::numeric_limits<float>::max();
-            Eigen::VectorXd errors;
-            errors.resize(num_frames);
-            double avg_error;
-            for (int frame=0; frame < num_frames; ++frame) 
+
+            for (int frame=0; frame<num_frames; ++frame) 
             {                   
-                //VC[frame].resize(FD.VD[0].rows());
-                VectorXd lul = (app->ANIM.VD[frame] - app->DANIM.VD[frame]).rowwise().norm();  
+                //VectorXd lul = (app->ANIM.VD[frame] - app->DANIM.VD[frame]).rowwise().norm();  
+                VectorXd lul = app->Lap[frame].rowwise().norm();
                 app->max_def_error = std::max((float)lul.maxCoeff(), app->max_def_error);
-                //app->max_error_deform = std::max(app->max_error_deform, max); 
-                app->m_error_deform.row(frame) = lul;                          
-                //avg_error += max; 
+                RA_LOG_INFO("Max_deform_error %i %f ", frame, lul.maxCoeff());
+                app->m_error_deform.row(frame) = lul;
             }
-            //app->max_error_deform =   ;//avg_error/num_frames;
+            MatrixXd ones;
+            ones.resize(app->m_error_deform.rows(), app->m_error_deform.cols());
+            ones.setOnes();
+            //app->m_error_deform = (app->m_error_deform + ones).array().log().matrix();
+            app->max_def_error = app->m_error_deform.sum()/app->m_error_deform.size(); 
+            //app->max_def_error = igl::avg_edge_length(app->ANIM.AvgVD, app->ANIM.F);
+            RA_LOG_INFO("Max_deform_error %f %f", app->m_error_deform.maxCoeff(), app->max_def_error);    
+            //app->max_def_error = app->m_error_deform.maxCoeff();
         }
 
         void console_plot_error_vel(App* app, const std::vector<std::string>& args) 
@@ -2372,7 +2438,7 @@ namespace
                 }
             }
         }
-
+    
 
 
         void console_find_largest_manifold(App* app, const std::vector<std::string> & args) 
@@ -2380,7 +2446,27 @@ namespace
             //igl::facet_components()
         }
 
-        
+        void console_uniform(App* app, const std::vector<std::string> & args) 
+        {
+            app->SMOTION.resize(2);
+            int part_id = 0;
+            int num_frames = app->ANIM.VD.size();
+            app->SMOTION[part_id].anim.VD.resize(num_frames);
+            int uniform = num_frames/15;
+
+            VectorXd error;
+            error.resize(num_frames);
+            int cur_idx = -1;
+            for (int i=0; i<app->ANIM.VD.size(); ++i) 
+            {   
+                if (i%25 == 0) 
+                {   
+                     cur_idx = i;
+                }
+                app->SMOTION[part_id].anim.VD[i] = app->PIECES[part_id].VD[cur_idx];
+            }
+        }
+
         void console_split_mesh(App* app, const std::vector<std::string> & args) 
         {
             RA_LOG_INFO("Splitting mesh");
@@ -2554,7 +2640,7 @@ namespace
                     {
                         piece.VW.resize(app->PIECES[i].VD[0].rows());
                         piece.VW.setOnes();
-                        RA_LOG_INFO("WEIGHTS ARE EMPTY, SETTING TO ZERO");
+                        //RA_LOG_INFO("WEIGHTS ARE EMPTY, SETTING TO ZERO");
                     }
 
                     
@@ -3105,12 +3191,20 @@ namespace
             auto clr1 = Eigen::Vector3d(255/255.0, 255/255.0, 255/255.0);
             
             auto clr2 = Eigen::Vector3d(180/255.0, 100/255.0, 179/255.0);
+            auto clr3 = Eigen::Vector3d(120/255.0, 151/255.0, 200/255.0);
 
             tyro::color_matrix(app->ANIM.F.rows(), clr, app->ANIM.FC);
             if (app->PIECES.size() > 0) {
-                tyro::color_matrix(app->PIECES[0].F.rows(), clr, app->PIECES[0].FC);
+                tyro::color_matrix(app->PIECES[0].F.rows(), clr3, app->PIECES[0].FC);
                 tyro::color_matrix(app->PIECES[1].F.rows(), clr2, app->PIECES[1].FC);
             }
+            
+            if (app->SMOTION.size()>0)
+            {
+                tyro::color_matrix(app->SMOTION[0].anim.F.rows(), clr3, app->SMOTION[0].anim.FC);
+                tyro::color_matrix(app->SMOTION[1].anim.F.rows(), clr2, app->SMOTION[1].anim.FC);
+            }
+            
             app->render();
         }
 
@@ -3190,11 +3284,18 @@ namespace
 //            auto clr1 = Eigen::Vector3d(255/255.0, 255/255.0, 255/255.0);
             
             auto clr2 = Eigen::Vector3d(180/255.0, 100/255.0, 179/255.0);
+            auto clr3 = Eigen::Vector3d(120/255.0, 151/255.0, 200/255.0);
 
             app->ANIM.FC.setZero();
             tyro::color_matrix(app->ANIM.F.rows(), clr, app->ANIM.FC);
-            tyro::color_matrix(app->PIECES[0].F.rows(), clr, app->PIECES[0].FC);
+            tyro::color_matrix(app->PIECES[0].F.rows(), clr3, app->PIECES[0].FC);
             tyro::color_matrix(app->PIECES[1].F.rows(), clr2, app->PIECES[1].FC);
+            
+            if (app->SMOTION.size()>0)
+            {
+                tyro::color_matrix(app->SMOTION[0].anim.F.rows(), clr3, app->SMOTION[0].anim.FC);
+                tyro::color_matrix(app->SMOTION[1].anim.F.rows(), clr2, app->SMOTION[1].anim.FC);
+            }
 
             app->render();
         }
@@ -3238,10 +3339,10 @@ namespace
             {
                 auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
                 auto p = f/filesystem::path("monka_frames_nodup_smooth");
+                //auto p = f/filesystem::path("monkey_frames_test");
                 std::ifstream in = std::ifstream(p.str(), std::ios::binary);
                 cereal::BinaryInputArchive archive_i(in);
-                archive_i(app->ANIM);
-            
+                archive_i(app->ANIM);            
             }
             else
             {
@@ -3297,18 +3398,42 @@ namespace
             std::vector<std::string> args1 = {"split", "monkey_split_hor2"};
             console_load_serialised_data(app,args1);
 
-            std::vector<std::string> args2 = {"deform", "monkey_deform_hor"};
-            console_load_serialised_data(app, args2);
+            //std::vector<std::string> args2 = {"deform", "monkey_deform_hor"};
+            std::vector<std::string> args2 = {"deform", "monkey_deform_test"};
+            //console_load_serialised_data(app, args2);
             
             std::vector<std::string> args3 = {"stop_up", "monkey_stop_12_1_1_kmeans"};
             //console_load_serialised_data(app, args3);
             
 //            app->ShowMonkaMovieStop();
-            auto clr = Eigen::Vector3d(255/255.0, 148/255.0, 135/255.0);
-            auto clr2 = Eigen::Vector3d(180/255.0, 100/255.0, 179/255.0);
+            //auto clr = Eigen::Vector3d(255/255.0, 148/255.0, 135/255.0);
+            //auto clr2 = Eigen::Vector3d(180/255.0, 100/255.0, 179/255.0);
 
+            //tyro::color_matrix(app->ANIM.F.rows(), clr, app->ANIM.FC);
+            
+
+            auto clr = Eigen::Vector3d(255/255.0, 148/255.0, 135/255.0);
+//            auto clr1 = Eigen::Vector3d(255/255.0, 255/255.0, 255/255.0);
+            
+            auto clr2 = Eigen::Vector3d(180/255.0, 100/255.0, 179/255.0);
+            auto clr3 = Eigen::Vector3d(120/255.0, 151/255.0, 200/255.0);
+
+            app->ANIM.FC.setZero();
             tyro::color_matrix(app->ANIM.F.rows(), clr, app->ANIM.FC);
+            if (app->PIECES.size()>0) 
+            {
+            tyro::color_matrix(app->PIECES[0].F.rows(), clr3, app->PIECES[0].FC);
+            tyro::color_matrix(app->PIECES[1].F.rows(), clr2, app->PIECES[1].FC);
+            }
+            if (app->SMOTION.size()>0)
+            {
+                tyro::color_matrix(app->SMOTION[0].anim.F.rows(), clr3, app->SMOTION[0].anim.FC);
+                tyro::color_matrix(app->SMOTION[1].anim.F.rows(), clr2, app->SMOTION[1].anim.FC);
+            }
+            
             app->render();
+
+
         }
 
         void console_load_bunny(App* app, const std::vector<std::string> & args) 
@@ -3417,8 +3542,8 @@ namespace
                     scale_one_exe(app->PIECES[1], S, tr);
                 }
             }
-            //std::vector<std::string> args2 = {"stop_low", "monka_stop_100_1_1_kmeans"};
-            //console_load_serialised_data(app, args2);
+            std::vector<std::string> args2 = {"stop_low", "monka_stop_100_1_1_kmeans"};
+            console_load_serialised_data(app, args2);
             
             std::vector<std::string> args3 = {"stop_up", "blobby_stop_20_1_1_kmeans"};
             console_load_serialised_data(app, args3);
@@ -3456,6 +3581,13 @@ namespace
                 tyro::color_matrix(app->PIECES[1].F.rows(), clr2, app->PIECES[1].FC);
               
             }
+
+             auto clr3 = Eigen::Vector3d(120/255.0, 151/255.0, 200/255.0);
+            if (app->SMOTION.size()>0)
+            {
+                tyro::color_matrix(app->SMOTION[0].anim.F.rows(), clr3, app->SMOTION[0].anim.FC);
+                tyro::color_matrix(app->SMOTION[1].anim.F.rows(), clr2, app->SMOTION[1].anim.FC);
+            }
             app->render();
         }
 
@@ -3464,8 +3596,6 @@ namespace
             RA_LOG_INFO("compute_average");
             app->compute_average();
         }
-
-        
 
         void console_compute_deformation2(App* app, const std::vector<std::string> & args)
         {
@@ -3476,12 +3606,15 @@ namespace
                 RA_LOG_WARN("Need vertex/face selection and average mesh to compute deformation")
                 return;
             }
+
             //app->DANIM.VD.clear();
+          
             bool result = tyro::compute_deformation2(app->vid_list, 
-                                                    app->ANIM.VD,
-                                                    app->ANIM.F,
-                                                    app->ANIM.AvgVD,
-                                                    app->DANIM.VD);
+                                                     app->ANIM.VD,
+                                                     app->ANIM.F,
+                                                     app->ANIM.AvgVD,
+                                                     app->DANIM.VD, 
+                                                     app->Lap);
             assert(result);
             tyro::copy_animation(app->ANIM, app->DANIM, true, true, true);
             app->m_computed_deformation = true;
@@ -3802,6 +3935,130 @@ namespace
         }      */  
     } 
 
+    
+    int App::PRINTEDStopAnimMovie() 
+    {   
+        using namespace cv;
+        /*
+        if (serialised) 
+        {
+            auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj/subvideo_frames");
+            std::ifstream in = std::ifstream(f.str(), std::ios::binary);
+            cereal::BinaryInputArchive archive_i(in);
+            archive_i(m_video);
+        }
+        */
+       
+        std::vector<std::string> obj_paths;
+        int num_labels;
+        tyro::obj_file_path_list(std::string("/home/rinat/Workspace/STOPMO"), "objlist.txt", obj_paths, num_labels);
+        stop_video_cv.D.resize(num_labels);
+        
+        int num_frames = SMOTION[0].anim.VD.size();
+        //m_video_texture2 = ES2VideoTexture::Create(2144, 1424, num_frames, Texture::TextureFormat::TF_R8G8B8); 
+
+        int f_count = 0;
+        for (auto& file : obj_paths) 
+        {
+            Mat LoadedImage, image2, image3;
+            LoadedImage = cv::imread(file);
+            //cv::cvtColor(LoadedImage, image2, CV_BGR2RGB);
+            //cv::flip(image2, image3, 0);
+            stop_video_cv.D[f_count] = LoadedImage;
+            f_count++;
+        }
+        
+        //create dic 
+        std::ifstream in("/home/rinat/DIC.csv");
+        std::string str;
+        std::unordered_map<std::string, int> wordMap;
+        
+        int file_idx = 0;
+        while (std::getline(in, str)) 
+        {
+            std::cout << str << std::endl;
+            wordMap.insert({str,file_idx++});
+        }
+
+        std::ifstream fin("/home/rinat/FRAMES.csv");
+        int frame = 0;
+        stop_video_cv.F.resize(num_frames);
+        while (std::getline(fin, str)) 
+        {   
+            int dic_idx = wordMap[str];
+            
+            auto fldr = filesystem::path("/home/rinat/GDrive/StopMotionProject/Results/stop");
+            fldr = fldr/(std::to_string(frame++) + std::string(".JPG"));
+     
+            ifstream source(obj_paths[dic_idx], ios::binary);
+            ofstream dest(fldr.str(), ios::binary);
+            dest << source.rdbuf();
+
+            source.close();
+            dest.close();
+
+            //stop_video_cv.F[frame++] = stop_video_cv.D[dic_idx];
+            // cv::Mat::zeros(cv::Size(2144, 1424), CV_8UC3);
+        }
+
+        //////////////////////////////////////////////////
+        /*
+        cv::Size S = cv::Size(2144, 1424);
+
+        cv::VideoWriter outputVideo;                                        // Open the output
+        outputVideo.open(string("/home/rinat/GDrive/StopMotionProject/Results/") +                      string("fuck.avi"),
+                            CV_FOURCC('M','J','P','G'), 
+                            24,
+                            S,
+                            true);
+        
+        if (!outputVideo.isOpened())
+        {
+            cout  << "Could not open the output video for write" << endl;
+            return 0;
+        }
+
+        for (int frame = 0; frame < stop_video_cv.F.size(); ++frame) 
+        {   
+            //cv::Mat image1(v_height, v_width, CV_8UC4, texture);
+            //cv::Mat image2, image3;
+            //cv::cvtColor(image1, image2, CV_RGBA2BGR);
+            //cv::flip(image2, image3, 0);
+
+            outputVideo.write(stop_video_cv.F[frame]);
+            cout << "Saved frame " << frame  << endl;
+
+        }
+        
+        cout << "Finished writing" << endl;
+       
+
+        for (int frame = 0; frame < stop_video_cv.F.size(); ++frame) 
+        {   
+            //cv::Mat image1(v_height, v_width, CV_8UC4, texture);
+            //cv::Mat image2, image3;
+            //cv::cvtColor(image1, image2, CV_RGBA2BGR);
+            //cv::flip(image2, image3, 0);
+
+           
+            //outputVideo.write(stop_video_cv.F[frame]);
+            auto fldr = filesystem::path("/home/rinat/GDrive/StopMotionProject/Results/stop");
+            fldr = fldr/(std::to_string(frame) + std::string(".JPG"));
+
+     
+     
+            ifstream source(obj_paths[frame], ios::binary);
+            ofstream dest(fldr.str(), ios::binary);
+            dest << source.rdbuf();
+
+            source.close();
+            dest.close();
+
+        } */
+           
+    }
+
+
     int App::ShowBunnyMovieStop() 
     {   
         using namespace cv;
@@ -4111,8 +4368,11 @@ namespace
         {
             this->mouse_scroll(window, ydelta);
         };
-
-                register_console_function("save_first_frame", console_save_first_frame, "");
+        
+        register_console_function("compute_stop_frames", console_compute_stop_frames, "");
+        register_console_function("uniform", console_uniform, "");
+        register_console_function("save_first_frame", console_save_first_frame, "");
+        register_console_function("compute_alec", console_compute_alec,"");
 
         register_console_function("compute_random_swith", console_figure_random, "");
         register_console_function("compute_data_vel_error", console_compute_data_vel_error,"");
@@ -4935,9 +5195,9 @@ namespace
         if (serialized) 
         {   
             auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
-            //auto p = f/filesystem::path("2018_bunny_frames");
+            auto p = f/filesystem::path("2018_bunny_frames");
             
-            auto p = f/filesystem::path("2018_bunny_split_up_vertical");
+            //auto p = f/filesystem::path("2018_bunny_split_up_vertical");
             //auto p = f/filesystem::path("bunny_split_up_horizontal_no_dup");
             //auto p = f/filesystem::path("bunny_good");
             //auto p = f/filesystem::path("bunny_scaled_small_frames");
@@ -5018,17 +5278,19 @@ namespace
         //std::vector<std::string> args2 = {"split", "2018_bunny_split_vertical"};
 
         std::vector<std::string> args2 = {"split", "2018_bunny_split"};
-        //console_load_serialised_data(this, args2);
+        console_load_serialised_data(this, args2);
 
 
         std::vector<std::string> args1 = { "deform", "2018_bunny_deform_hor"};
-        //console_load_serialised_data(this,args1);
+        console_load_serialised_data(this,args1);
         
 
-        std::vector<std::string> args3 = {"add1", "2018_bunny_split_up_vertical"};
+        std::vector<std::string> args3 = {"stop_low", "bunny_170_1_0_kmeans"};
         //console_load_serialised_data(this, args3);
         
-        //tyro::color_matrix(addAnim1.F.rows(), Eigen::Vector3d(0.4,0.4,0.4), addAnim1.FC);
+        std::vector<std::string> args4 = {"stop_up", "bunny_80_1_1_"};
+        //console_load_serialised_data(this, args4);
+        
 
         //addAnim1.FC
         
@@ -5165,19 +5427,19 @@ namespace
         auto clr2 = Eigen::Vector3d(180/255.0, 100/255.0, 179/255.0);
 
         tyro::color_matrix(ANIM.F.rows(), clr, ANIM.FC);
-        
+                   auto clr3  = Eigen::Vector3d(120/255.0, 151/255.0, 200/255.0);
+
         if (PIECES.size()>0)
         {
-            tyro::color_matrix(PIECES[1].F.rows(), clr, PIECES[1].FC);
+            tyro::color_matrix(PIECES[1].F.rows(), clr3, PIECES[1].FC);
             tyro::color_matrix(PIECES[0].F.rows(), clr2, PIECES[0].FC);
         }
 
-        if (SMOTION.size()>0)
-        {
-            tyro::color_matrix(SMOTION[1].anim.F.rows(), clr, SMOTION[1].anim.FC);
-            tyro::color_matrix(SMOTION[0].anim.F.rows(), clr2, SMOTION[0].anim.FC);
-        }
-
+            if (SMOTION.size()>0)
+            {
+                tyro::color_matrix(SMOTION[0].anim.F.rows(), clr2, SMOTION[0].anim.FC);
+                tyro::color_matrix(SMOTION[1].anim.F.rows(), clr3, SMOTION[1].anim.FC);
+            }
         render();
     }
 

@@ -46,11 +46,15 @@ namespace tyro
                     err = Error(vid);
                 else
                     RA_LOG_ERROR_ASSERT("Error out of bounds");
-                    
+
+                //RA_LOG_INFO("EROR %f", err);
+                if (err > max_error) err = max_error;
                 float weight = err/max_error;
                 //std::cout << weight << " ";
                 Wm5::Vector3f finalColor = (1-weight)*minColor + weight*maxColor;
-                vba.Color<Wm5::Float3>(vIndex) = Wm5::Float3(finalColor[0], finalColor[1], finalColor[2]); ;//Wm5::Float3(r, 0, 0);
+                vba.Color<Wm5::Float3>(vIndex) = Wm5::Float3(std::min(1.0f,finalColor[0]), 
+                                                             std::min(1.0f,finalColor[1]), 
+                                                             std::min(1.0f,finalColor[2])); ;//Wm5::Float3(r, 0, 0);
                 vIndex++;
             }                
         }

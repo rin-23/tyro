@@ -74,7 +74,13 @@
         "future": "cpp",
         "*.tpp": "cpp",
         "*.isph": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "deque": "cpp",
+        "list": "cpp",
+        "unordered_map": "cpp",
+        "unordered_set": "cpp",
+        "cinttypes": "cpp",
+        "forward_list": "cpp"
     },
     "python.linting.enabled": false
 }

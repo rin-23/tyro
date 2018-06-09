@@ -325,9 +325,9 @@ void labelFacesTRUEVertex(Eigen::MatrixXd& F, Eigen::VectorXd& VW, Eigen::Matrix
 		high_resolution_clock::time_point t1 = high_resolution_clock::now();
 		prepareDataMatrixTRUEVertex(F, VW, D, dataArray);
 		high_resolution_clock::time_point t2 = high_resolution_clock::now();
-		auto duration = duration_cast<milliseconds>(t2 - t1).count();
+		auto duration = duration_cast<seconds>(t2 - t1).count();
 
-		RA_LOG_INFO("data matrix computation %i msec", duration);
+		RA_LOG_INFO("data matrix computation %i sec", duration);
 		
 		//gc->setDataCost(&dataFnTRUEVertex, extraData);
 		gc->setDataCost(dataArray);

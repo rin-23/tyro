@@ -166,6 +166,7 @@ void build_G_Matrix(Eigen::SparseMatrix<double>& G, std::vector<int>& sequenceId
 	}
 }
 
+
 int stop_motion_vertex_distance(int num_labels,
 								double w_s,
 								bool kmeans,
@@ -235,9 +236,9 @@ int stop_motion_vertex_distance(int num_labels,
 		double newEnergy = 0;
 		double graphEnergy = 0;
 
-		std::cout << "######################################################\n";
-		std::cout << "######################## Trial " << j << " #######################\n";
-		std::cout << "######################################################\n";
+		//std::cout << "######################################################\n";
+		//std::cout << "######################## Trial " << j << " #######################\n";
+		//std::cout << "######################################################\n";
 
 		//VectorXd nrg;
 		//nrg.resize(num_steps);
@@ -245,20 +246,20 @@ int stop_motion_vertex_distance(int num_labels,
 		MatrixXd lastD;
 		VectorXi lastS_vec;
 		double lastEnergy = std::numeric_limits<double>::max();
-
+		bool no_Errors = true;
 		for (int i = 0; i < num_steps; ++i)
 		{
-			std::cout << "Iteration " << i << "\n";
+			//std::cout << "Iteration " << i << "\n";
 
 			high_resolution_clock::time_point t1 = high_resolution_clock::now();
 			labelFacesTRUEVertex(F, VW, D, S_vec, sequenceIdx, w_s, graphEnergy);
 			high_resolution_clock::time_point t2 = high_resolution_clock::now();
-			auto duration = duration_cast<microseconds>(t2 - t1).count();
+			auto duration = duration_cast<seconds>(t2 - t1).count();
 			cout << "label time " << duration << "\n";
 
 			if (graphEnergy > lastEnergy)
 			{	
-				std::cout << "Energy after graph cuts " << graphEnergy << " is higher than previous energy " << lastEnergy << "\n\n";
+				//std::cout << "Energy after graph cuts " << graphEnergy << " is higher than previous energy " << lastEnergy << "\n\n";
 				D = lastD;
 				S_vec = lastS_vec;
 				break;
@@ -271,12 +272,17 @@ int stop_motion_vertex_distance(int num_labels,
 			}
 		
 			t1 = high_resolution_clock::now();
-			updateStepTRUEVertex(F, VW, D, S_vec, sequenceIdx, w_s, oldEnergy, newEnergy, G, K_prime);
+			if (!updateStepTRUEVertex(F, VW, D, S_vec, sequenceIdx, w_s, oldEnergy, newEnergy, G, K_prime)) 
+			{	
+				no_Errors = false;
+				RA_LOG_ERROR("Failed update step");
+				break;
+			}
 			t2 = high_resolution_clock::now();
-			duration = duration_cast<milliseconds>(t2 - t1).count();
+			duration = duration_cast<seconds>(t2 - t1).count();
 			cout << "update time " << duration << "\n";
 			
-			std::cout << "Energy after graph cuts " << graphEnergy << "\nEnergy before update step " << oldEnergy << "\nEnergy after update step " << newEnergy << "\n\n";
+			//std::cout << "Energy after graph cuts " << graphEnergy << "\nEnergy before update step " << oldEnergy << "\nEnergy after update step " << newEnergy << "\n\n";
 			double diff = abs(newEnergy - oldEnergy);
 						
 			if (oldEnergy >= newEnergy && diff < tolerance)
@@ -286,9 +292,12 @@ int stop_motion_vertex_distance(int num_labels,
 			}
 
 		}
-		n_init_D.push_back(D);
-		n_init_S.push_back(S_vec);
-		n_init_energy.push_back(graphEnergy);
+		if (no_Errors) 
+		{
+			n_init_D.push_back(D);
+			n_init_S.push_back(S_vec);
+			n_init_energy.push_back(graphEnergy);
+		}
 	}
 
 	//Choose best energy

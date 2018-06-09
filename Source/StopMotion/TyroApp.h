@@ -63,6 +63,7 @@ namespace tyro
         iOSCamera* m_camera;
         ES2TextOverlaySPtr m_frame_overlay;
         ES2VideoTextureSPtr m_video_texture;
+        ES2VideoTextureSPtr m_video_texture2;
         
         void mouse_down(Window& window, int button, int modifier);
         void mouse_up(Window& window, int button, int modifier);
@@ -160,7 +161,30 @@ namespace tyro
           
             }
         };
+
+
         VideoCV m_video;
+
+        struct StopVideoCV 
+        {
+            std::vector<cv::Mat> F;
+            std::vector<cv::Mat> D;
+            Eigen::VectorXi L;
+            
+            template<class Archive>
+            void save(Archive & archive) const
+            {
+                archive(F);             
+            }
+            
+            template<class Archive>
+            void load(Archive & archive)
+            {
+                archive(F);          
+            }
+        };
+
+        StopVideoCV stop_video_cv;
 
         struct MAnimation 
         {   
@@ -248,6 +272,7 @@ namespace tyro
         float max_def_error;
         MAnimation ANIM; //Original animation data        
         MAnimation DANIM; // Animation data after we smooth the seam(s)
+        std::vector<Eigen::MatrixXd> Lap;
         std::vector<MAnimation> PIECES; // Break deformed mesh into pieces along seam(s).
         std::vector<Eigen::VectorXi> PIECES_IDX;
         std::vector<MStopMotion> SMOTION; // Stop motion animate pieces
@@ -299,8 +324,10 @@ namespace tyro
         void DrawMeshes();
         int ShowMonkaMovieStop(); 
         int ShowBunnyMovieStop();
-            void add_face(int fid);
-            void add_vertex(int vid);
+        int PRINTEDStopAnimMovie(); 
+
+        void add_face(int fid);
+        void add_vertex(int vid);
 
     
     };

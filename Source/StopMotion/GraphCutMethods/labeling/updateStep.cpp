@@ -300,11 +300,11 @@ void updateStepTRUEVertex2(const Eigen::MatrixXd& F,
 	
 	D = new_D_t.transpose();
 	newEnergy = computeEnergyTRUEVertex(F, VW, D, G, sequenceIdx, S_vec, S, w_s);
-	RA_LOG_INFO("Here4");
+	//RA_LOG_INFO("Here4");
 	assert(D.cols() == D_cols);
 }
 
-void updateStepTRUEVertex(const Eigen::MatrixXd& F, 
+bool updateStepTRUEVertex(const Eigen::MatrixXd& F, 
 						  Eigen::VectorXd& VW, Eigen::MatrixXd& D, 
 					      const Eigen::VectorXi& S_vec, 
 						  std::vector<int>& sequenceIdx, 
@@ -316,44 +316,64 @@ void updateStepTRUEVertex(const Eigen::MatrixXd& F,
 {	
 	int D_cols = D.cols(); //number of labels in dictionary
 	int F_cols = F.cols(); //number of frames
-	RA_LOG_INFO("Here1");
+	//RA_LOG_INFO("Here1");
 	SparseMatrix<double> S;
 	S.resize(D_cols, F_cols);
 	S.setZero();
 	build_S_Matrix(S, S_vec);
 	//printMatrix(G, std::string("Printing G"));
-	RA_LOG_INFO("Here1");
+//	RA_LOG_INFO("Here1");
 	SparseMatrix<double> A = (S + w_s*S*G*G.transpose())*S.transpose();
-	RA_LOG_INFO("Here1");
+//	RA_LOG_INFO("Here1");
 	//printMatrix(A, std::string("Matrix A"));
 	SparseMatrix<double> C = 2 * A;
-	RA_LOG_INFO("Here1");
+//	RA_LOG_INFO("Here1");
 	//MatrixXd K = 2 * (F + w_s*F*G*G.transpose())*S.transpose();
 	MatrixXd K = 2 * K_prime*S.transpose();
-	RA_LOG_INFO("Here1");
+//	RA_LOG_INFO("Here1");
 	MatrixXd b = K.transpose();
-	RA_LOG_INFO("Here1");
+//	RA_LOG_INFO("Here1");
 	oldEnergy = computeEnergyTRUEVertex(F, VW, D, G, sequenceIdx,S_vec, S, w_s);
-	RA_LOG_INFO("Here2");
+//	RA_LOG_INFO("Here2");
 	//MatrixXd new_D_t = C.jacobiSvd(ComputeThinU | ComputeThinV).solve(b);
 	
 	Eigen::SimplicialLLT <Eigen::SparseMatrix<double> > llt;
 	llt.compute(C);
 	switch(llt.info())
 	{
-	case Eigen::Success:
-		break;
-	case Eigen::NumericalIssue:{
-		RA_LOG_ERROR("Error: Numerical issue.");
+		case Eigen::Success:
+			break;
+		case Eigen::NumericalIssue:
+		{
+			RA_LOG_ERROR("Error: Numerical issue.");
+			return false;
 		}
-	default:{
-		RA_LOG_ERROR("Error: Other.");
+		default:
+		{
+			RA_LOG_ERROR("Error: Other.");
+			return false;
 		}
 	}
 	MatrixXd new_D_t = llt.solve(b);
-	RA_LOG_INFO("Here3");
+	switch(llt.info())
+	{
+		case Eigen::Success:
+			break;
+		case Eigen::NumericalIssue:
+		{
+			RA_LOG_ERROR("Error: Numerical issue solve.");
+			return false;
+		}
+		default:
+		{
+			RA_LOG_ERROR("Error: Other solve.");
+			return false;
+		}
+	}
+//	RA_LOG_INFO("Here3");
 	D = new_D_t.transpose();
 	newEnergy = computeEnergyTRUEVertex(F, VW, D, G, sequenceIdx, S_vec, S, w_s);
-	RA_LOG_INFO("Here4");
+//	RA_LOG_INFO("Here4");
 	assert(D.cols() == D_cols);
+	return true;
 }
