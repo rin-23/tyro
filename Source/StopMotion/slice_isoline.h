@@ -1,7 +1,10 @@
+#pragma once
+
 #include <igl/read_triangle_mesh.h>
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <vector>
+#include <igl/remove_duplicate_vertices.h>
 
 template <
   typename DerivedV,
@@ -122,6 +125,32 @@ template <
   BC.setFromTriplets(vBC.begin(),vBC.end());
   U = BC * V;
   SU = BC * S;
+
+  //remove duplicates
+  Eigen::MatrixXd SV; 
+  Eigen::MatrixXi SF;
+  Eigen::VectorXi SVI, SVJ;
+
+  igl::remove_duplicate_vertices(U,G, 0.00001, SV, SVI, SVJ, SF);
+  U = SV;
+  G = SF;
+  
+  Eigen::SparseMatrix<double> newBC;
+  igl::slice(BC, SVI, 1, newBC);
+  BC = newBC;
+  Eigen::VectorXd newSU;
+  igl::slice(SU, SVI, 1, newSU);
+  SU = newSU;
+
+  //Eigen::VectorXi newJ;
+  //newJ.resizeLike(J);
+  //for(int f = 0;f<F.rows();f++)
+  //{
+  //   newJ(f) = SVJ(F(f,0));
+  //}
+
+//  igl::remove_duplicate_vertices(app->ANIM.VD[0], app->ANIM.F, 0.00001, SV, SVI, SVJ, SF);
+  
 }
 
 /*

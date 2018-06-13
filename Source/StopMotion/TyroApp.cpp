@@ -307,12 +307,13 @@ namespace
             MatrixXd VT = app->ANIM.AvgVD.transpose();
             bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
             double scale = 2/bbox.GetRadius();   ;//0.5 / avg_length;
-
+            scale = 1.356226;
+            RA_LOG_INFO("Scale %f", scale);
             for (int i = 0; i < app->ANIM.VD.size(); ++i) 
             {
                 app->ANIM.VD[i] = scale * app->ANIM.VD[i];
-                app->PIECES[0].VD[i] = scale * app->PIECES[0].VD[i];
-                app->PIECES[1].VD[i] = scale * app->PIECES[1].VD[i];
+                //app->PIECES[0].VD[i] = scale * app->PIECES[0].VD[i];
+                //app->PIECES[1].VD[i] = scale * app->PIECES[1].VD[i];
             }
             app->compute_average();
 
@@ -679,15 +680,18 @@ namespace
         }
 
         void console_compute_alec(App* app, const std::vector<std::string>& args)
-        {
+        {   
             std::vector<int> steps = {500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000};
-            int part_id = 0;
-
+            //std::vector<int> steps = {2000};
+            int part_id = 1;
+            double min_nrg = 200;
+            int start_labels = 2;
+            
             for (const auto& s : steps) 
             {
-                for (int num_labels = 10; num_labels < 600; num_labels += 10) 
+                for (int num_labels = start_labels; num_labels < 1000; num_labels += 2) 
                 {
-                    double smooth_weight = 1.0;
+                    double smooth_weight = 0.0;
                     
                     double result_energy;
                     App::MStopMotion sm;  
@@ -702,26 +706,29 @@ namespace
                     {
                         piece.VW.resize(NEW_VD[0].rows());
                         piece.VW.setOnes();
-                        RA_LOG_INFO("----WEIGHTS ARE EMPTY, SETTING TO ZERO");
+                        RA_LOG_INFO("----WEIGHTS ARE EMPTY, SETTING TO ONE");
                     }
 
                     std::vector<int> sidx = {s};
                     Eigen::VectorXd VW = piece.VW.cwiseSqrt();
-                    tyro::stop_motion_vertex_distance(num_labels, 
-                                                     smooth_weight,
-                                                     kmeans,
-                                                     NEW_VD, 
-                                                     VW, 
-                                                     sidx,
-                                                     piece.F,
-                                                     sm.D, //dictionary
-                                                     sm.L, //labels  
-                                                     result_energy);
-
-                    if (result_energy < 100)  
+                    if (tyro::stop_motion_vertex_distance(num_labels, 
+                                                            smooth_weight,
+                                                            kmeans,
+                                                            NEW_VD, 
+                                                            VW, 
+                                                            sidx,
+                                                            piece.F,
+                                                            sm.D, //dictionary
+                                                            sm.L, //labels  
+                                                            result_energy))
                     {
-                        RA_LOG_INFO("-----num_labels %i for %i frames to reach 200 energy", num_labels, s);
-                        break;
+
+                        if (result_energy < min_nrg)  
+                        {
+                            RA_LOG_INFO("-----num_labels %i for %i frames to reach %i energy", num_labels, s, (int)min_nrg);
+                            start_labels = num_labels;
+                            break;
+                        }
                     }
                 }     
             }
@@ -815,7 +822,9 @@ namespace
             MatrixXi EI, EF;
             igl::edge_flaps(app->ANIM.F, app->ANIM.E, app->ANIM.EMAP, EF, EI);
 
-            std::set<int> V;
+            //std::set<int> V;
+            app->vid_list.clear();
+            app->ball_list.clear();
             for (int i=0; i < EF.rows(); ++i) 
             {
                 int fid1 = EF(i,0), fid2 = EF(i,1);
@@ -823,15 +832,17 @@ namespace
                        
                 if (app->LABELS(fid1) != app->LABELS(fid2)) 
                 {
-                    V.insert(app->ANIM.UE(i,0));
-                    V.insert(app->ANIM.UE(i,1));
+                    //V.insert(app->ANIM.UE(i,0));
+                    //V.insert(app->ANIM.UE(i,1));
+                    app->add_vertex(app->ANIM.UE(i,0));
+                    app->add_vertex(app->ANIM.UE(i,1));
                 }
             }
 
-            app->vid_list.clear();
-            app->vid_list.resize(V.size());
-            std::copy(V.begin(), V.end(), app->vid_list.begin());
-            app->ball_list.clear();
+            //app->vid_list.clear();
+            //app->vid_list.resize(V.size());
+            //std::copy(V.begin(), V.end(), app->vid_list.begin());
+            //app->ball_list.clear();
 
             for (auto vid : app->vid_list) 
             {
@@ -909,8 +920,7 @@ namespace
             Eigen::VectorXi J;
             Eigen::SparseMatrix<double> BC;
             Eigen::VectorXd SU, L;
-            
-            
+                        
             app->m_computed_iso_color = true;
 
             slice_isolines(app->ANIM.AvgVD, app->ANIM.F, LV.col(0), val, U, G, J, BC, SU, L);
@@ -1044,7 +1054,8 @@ namespace
         void console_load_bunny_stop(App* app, const std::vector<std::string>& args) 
         {   
             auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
-            auto p = f/filesystem::path("2018_bunny_3d_print_frames");
+    //        auto p = f/filesystem::path("2018_bunny_3d_print_frames");
+            auto p = f/filesystem::path("rabbit_sub");
     
             std::ifstream in = std::ifstream(p.str(), std::ios::binary);
             cereal::BinaryInputArchive archive_i(in);
@@ -1083,7 +1094,9 @@ namespace
             
             app->m_ball_size = igl::avg_edge_length(app->ANIM.AvgVD, app->ANIM.F)/5;
 
-            std::vector<std::string> args1 = {"split", "2018_bunny_3d_print_split"};
+            //std::vector<std::string> args1 = {"split", "2018_bunny_3d_print_split"};
+            std::vector<std::string> args1 = {"split", "rabbit_sub_split"};
+            
             console_load_serialised_data(app, args1);
             if (shouldscale) 
             {
@@ -1130,9 +1143,32 @@ namespace
             app->render();
         }
         
+        void console_write_labels(App* app, const std::vector<std::string>& args) 
+        {  
+            RA_LOG_INFO("save selected LABELS");
+            auto path = std::string("/home/rinat/Workspace/Tyro/Source/tmp/LABELS.txt");
+
+            std::ofstream outFile(path);
+            for (int i = 0; i < app->LABELS.size(); ++i) 
+            {
+                outFile << (int)app->LABELS(i) << "\n";
+            }
+            outFile.close();
+        }
+
+        void console_save_few_deform_frames(App* app, const std::vector<std::string>& args ) 
+        {
+            igl::writeOBJ("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/print/f_01.obj", app->DANIM.VD[500],  app->DANIM.F);
+            igl::writeOBJ("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/print/f_02.obj", app->DANIM.VD[1000], app->DANIM.F);
+            igl::writeOBJ("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/print/f_03.obj", app->DANIM.VD[2000], app->DANIM.F);
+            igl::writeOBJ("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/print/f_04.obj", app->DANIM.VD[3000], app->DANIM.F);
+            igl::writeOBJ("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/print/f_05.obj", app->DANIM.VD[4000], app->DANIM.F);
+            igl::writeOBJ("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/print/f_06.obj", app->DANIM.VD[5000], app->DANIM.F);
+        }
+
         void console_save_first_frame(App* app, const std::vector<std::string>& args ) 
         {
-            igl::writeOBJ("/home/rinat/fuck", app->ANIM.VD[0], app->ANIM.F);
+            igl::writeOBJ("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/print/base.obj", app->ANIM.VD[0], app->ANIM.F);
         }
 
         void console_save_sub_video(App* app, const std::vector<std::string>& args) 
@@ -1212,8 +1248,8 @@ namespace
         {   
             if (args.size() != 1) return;
 
-            std::vector<int> frame = {851,1501};
-            //int frame[] = {1042,1597,1738,1947};    
+            //std::vector<int> frame = {851,1501};
+            std::vector<int> frame = {1042,1597,1738,1947};    
 
             std::vector<App::MAnimation> SUBPIECES; // Break deformed mesh into pieces along seam(s).
             SUBPIECES.resize(app->PIECES.size());
@@ -1237,8 +1273,8 @@ namespace
         {   
             if (args.size() != 1) return;
     
-            std::vector<int> frame = {851,1501};    
-            //int frame[] = {1042,1597,1738,1947};
+           // std::vector<int> frame = {851,1501};    
+            std::vector<int> frame = {1042,1597,1738,1947};
             //main animation
             App::MAnimation subanimaton;
             copy_sub(subanimaton, frame, app->ANIM);
@@ -1263,34 +1299,29 @@ namespace
 
             auto& part = app->SMOTION[part_id];
 
+            //MatrixXd SV; 
+            //MatrixXi SF;
+            //VectorXi SVI, SVJ;
+            //igl::remove_duplicate_vertices(part.D[0], part.anim.F, 0.00001, SV, SVI, SVJ, SF);
+
+            //MatrixXi FF;
+            //igl::collapse_small_triangles(SV, SF, 0.000001, FF);
+            
+            //MatrixXd newVD;        
+            //MatrixXi newF;  
+            //VectorXi I1;      
+            //igl::remove_unreferenced(SV,FF,newVD,newF,I1);
+                
             for (int i = 0; i < part.D.size(); ++i) 
             {   
                 auto file_name = filesystem::path(tyro::pad_zeros(i) + std::string(".obj"));
                 auto p = path_up/file_name;
-
-                MatrixXd SV; 
-                MatrixXi SF;
-                VectorXi SVI, SVJ;
-                igl::remove_duplicate_vertices(part.D[i], part.anim.F, 0.00001, SV, SVI, SVJ, SF);
-
-                MatrixXi FF;
-                igl::collapse_small_triangles(SV, SF, 0.000001, FF);
-            
-            
-                MatrixXd newVD;        
-                MatrixXi newF;  
-                VectorXi I1;      
-                igl::remove_unreferenced(SV, 
-                                         FF, 
-                                         newVD, 
-                                         newF, 
-                                         I1);
-
-                igl::writeOBJ(p.str(), newVD, newF);
+ 
+                igl::writeOBJ(p.str(), part.D[i], part.anim.F);
             }
 
             RA_LOG_INFO("save selected faces");
-            auto path = path_up /filesystem::path("labels.txt");
+            auto path = path_up/filesystem::path("labels.txt");
 
             std::ofstream outFile(path.str());
             for (int i=0; i < part.L.size(); ++i)
@@ -1731,6 +1762,10 @@ namespace
             {
                 archive(app->DANIM);
             }
+            else if (type == "label") 
+            {
+                archive(app->LABELS);
+            }
             else if (type == "split") 
             {
                 archive(app->PIECES);
@@ -1774,7 +1809,7 @@ namespace
                 archive(app->fid_list3);
             }
         }
-
+    
         void console_load_serialised_data(App* app, const std::vector<std::string>& args) 
         {   
             if (args.size() < 2) 
@@ -1804,6 +1839,17 @@ namespace
                 app->m_update_camera = true;
                 app->m_state = App::State::LoadedModel;
             } 
+            else if (type == "label") 
+            {
+                archive(app->LABELS);
+                for (int i = 0; i < app->LABELS.size(); ++i) 
+                {   
+                    if (app->LABELS(i) == 0) 
+                        app->ANIM.FC.row(i) = Eigen::Vector3d(0,1,0);
+                    else
+                        app->ANIM.FC.row(i) =  Eigen::Vector3d(1,0,0);
+                }
+            }
             else if (type == "deform") 
             {
                 archive(app->DANIM);
@@ -1813,7 +1859,7 @@ namespace
             else if (type == "split") 
             {
                 archive(app->PIECES);
-//                archive(app->PIECES_IDX);
+                archive(app->PIECES_IDX);
 
                 auto clr = Eigen::Vector3d(255/255.0, 148/255.0, 135/255.0);
                 auto clr2 = Eigen::Vector3d(180/255.0, 100/255.0, 179/255.0);
@@ -1917,6 +1963,8 @@ namespace
             app->render();
             glfwPostEmptyEvent();
         }
+
+        
 
         void console_clear_weights(App* app, const std::vector<std::string>& args) 
         {   
@@ -3607,6 +3655,12 @@ namespace
                 return;
             }
 
+            if (!igl::is_edge_manifold(app->ANIM.F)) 
+            { 
+                RA_LOG_ERROR("NOTE EDGE MANIFOLD FOR DEFORM");
+                return;
+            }
+
             //app->DANIM.VD.clear();
           
             bool result = tyro::compute_deformation2(app->vid_list, 
@@ -4369,8 +4423,10 @@ namespace
             this->mouse_scroll(window, ydelta);
         };
         
+        register_console_function("write_labels", console_write_labels, "");
         register_console_function("compute_stop_frames", console_compute_stop_frames, "");
         register_console_function("uniform", console_uniform, "");
+        register_console_function("save_few_deform_frames", console_save_few_deform_frames, "");
         register_console_function("save_first_frame", console_save_first_frame, "");
         register_console_function("compute_alec", console_compute_alec,"");
 
@@ -5195,13 +5251,17 @@ namespace
         if (serialized) 
         {   
             auto f = filesystem::path("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/bunny rinat/production/obj");
-            auto p = f/filesystem::path("2018_bunny_frames");
+            //auto p = f/filesystem::path("rabbit2");
+            //auto p = f/filesystem::path("rabbit_ver_split_up");
+            //auto p = f/filesystem::path("2018_bunny_frames");
             
-            //auto p = f/filesystem::path("2018_bunny_split_up_vertical");
+            auto p = f/filesystem::path("rabbit_ver_split_low");
+            //auto p = f/filesystem::path("rabbit_hor_frames");
+            
+            //auto p = f/filesystem::path("bunny_frames_upsampled");
             //auto p = f/filesystem::path("bunny_split_up_horizontal_no_dup");
             //auto p = f/filesystem::path("bunny_good");
             //auto p = f/filesystem::path("bunny_scaled_small_frames");
-            
             //auto p = f/filesystem::path("subanimaton");
 
 
@@ -5277,12 +5337,14 @@ namespace
 
         //std::vector<std::string> args2 = {"split", "2018_bunny_split_vertical"};
 
-        std::vector<std::string> args2 = {"split", "2018_bunny_split"};
-        console_load_serialised_data(this, args2);
+        //std::vector<std::string> args2 = {"split", "rabbit_hor_split"};
+        std::vector<std::string> args2 = {"split", "rabbit_ver_split_split"};
+        //console_load_serialised_data(this, args2);
 
 
-        std::vector<std::string> args1 = { "deform", "2018_bunny_deform_hor"};
-        console_load_serialised_data(this,args1);
+        //std::vector<std::string> args1 = { "deform", "rabbit_hor_deform"};
+        //std::vector<std::string> args1 = { "deform", "2018_bunny_deform_hor"};
+        //console_load_serialised_data(this,args1);
         
 
         std::vector<std::string> args3 = {"stop_low", "bunny_170_1_0_kmeans"};
@@ -5453,6 +5515,7 @@ namespace
         { 
             outFile << e << "\n";
         }
+        outFile.close();
     }
 
     void App::save_selected_verticies(const std::string& filename) 
@@ -5465,6 +5528,7 @@ namespace
         { 
             outFile << e << "\n";
         }
+        outFile.close();
     }
     
     void App::set_sel_primitive(App::SelectionPrimitive sel_state) 
@@ -5570,7 +5634,6 @@ namespace
             selectVertexPart(mouse_pos, mouse_button, modifier,0);
             return;
         }
-
 
         int fid;
         Eigen::Vector3f bc;

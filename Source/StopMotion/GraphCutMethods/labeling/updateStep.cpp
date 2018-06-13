@@ -319,7 +319,7 @@ bool updateStepTRUEVertex(const Eigen::MatrixXd& F,
 	//RA_LOG_INFO("Here1");
 	SparseMatrix<double> S;
 	S.resize(D_cols, F_cols);
-	S.setZero();
+	//S.setZero();
 	build_S_Matrix(S, S_vec);
 	//printMatrix(G, std::string("Printing G"));
 //	RA_LOG_INFO("Here1");

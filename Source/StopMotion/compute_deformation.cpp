@@ -130,7 +130,10 @@ bool tyro::compute_deformation2(const std::vector<int>& vid_list,
     
     int b_index = 0;            
     for (int vid : vid_list) 
+    {
+        RA_LOG_INFO("%i", vid);
         b(b_index++) = vid;
+    }
                  
     //do biharmonic stuff here.
     igl::min_quad_with_fixed_data<double> data;
@@ -145,8 +148,12 @@ bool tyro::compute_deformation2(const std::vector<int>& vid_list,
     solver.compute(M);
     Eigen::SparseMatrix<double> I(M.rows(), M.cols());
     I.setIdentity();
+    
+    Eigen::MatrixXd Mdense(M);
+    //double w_data = 0.00001*Mdense.maxCoeff();
+   //%Q = K*(M\K) + w_data*M;
     Eigen::SparseMatrix<double> M_inv = solver.solve(I);
-    Eigen::SparseMatrix<double> Q = C.transpose() * M_inv * C;
+    Eigen::SparseMatrix<double> Q = C.transpose() * M_inv * C; // + w_data* M;
     Eigen::SparseMatrix<double> Aeq;
     Q = 2 * Q;
     bool result = igl::min_quad_with_fixed_precompute(Q, b, Aeq, false, data);
