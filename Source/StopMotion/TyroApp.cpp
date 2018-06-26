@@ -10,7 +10,7 @@
 #include <stdio.h>
 
 #include <functional>
-
+#include <igl/jet.h>
 #include <igl/avg_edge_length.h>
 #include "Wm5APoint.h"
 #include "Wm5Vector2.h"
@@ -3783,10 +3783,8 @@ void copy_sub2(App::MAnimation& subanimaton, std::vector<int> frame, App::MAnima
             AxisAlignedBBox bbox;
             MatrixXd VT = app->ANIM.VD[0].transpose();
             bbox.ComputeExtremesd(VT.cols(), 3*sizeof(double), VT.data());
-            
-        
+                    
             app->m_model_offset = 0.8*2*bbox.GetRadius(); 
-            
             app->m_update_camera = true;
             app->m_state = App::State::LoadedModel;
             app->compute_average();
@@ -5269,11 +5267,11 @@ void copy_sub2(App::MAnimation& subanimaton, std::vector<int> frame, App::MAnima
             else 
             { 
                 RENDER.errorDeform->UpdateData(DANIM.VD[m_frame], 
-                                                DANIM.F, 
-                                                ANIM.ND[m_frame],  
-                                                m_error_deform.row(m_frame), 
-                                                max_def_error, 
-                                                maxColor);
+                                               DANIM.F, 
+                                               ANIM.ND[m_frame],  
+                                               m_error_deform.row(m_frame), 
+                                               max_def_error, 
+                                               maxColor);
             }
 
             vis_set.Insert(RENDER.errorDeform.get());
