@@ -7,6 +7,7 @@
 #include <string>
 #include <Eigen/Sparse>
 #include <RALogManager.h>
+#include<Eigen/SparseLU>
 
 using namespace Eigen;
 
@@ -319,26 +320,46 @@ bool updateStepTRUEVertex(const Eigen::MatrixXd& F,
 	//RA_LOG_INFO("Here1");
 	SparseMatrix<double> S;
 	S.resize(D_cols, F_cols);
-	//S.setZero();
 	build_S_Matrix(S, S_vec);
-	//printMatrix(G, std::string("Printing G"));
-//	RA_LOG_INFO("Here1");
-	SparseMatrix<double> A = (S + w_s*S*G*G.transpose())*S.transpose();
-//	RA_LOG_INFO("Here1");
+	//std::cout << "S_vec" << "\n";
+	//std::cout << S_vec << "\n";
+	//auto h1 = std::string("Printing S"); 
+	//printMatrix(S, h1);
+	//printMatrix(G, h2);
+	//RA_LOG_INFO("Here1");
+	//SparseMatrix<double> A1 =  S*S.transpose();
+	//printMatrix(A1, h1);
+
+	//SparseMatrix<double> A2 =  S*G*G.transpose()*S.transpose();
+	//printMatrix(A2, h1);
+
+	SparseMatrix<double> A = S*S.transpose() + w_s*S*G*G.transpose()*S.transpose() ;
+	//RA_LOG_INFO("Here1");
 	//printMatrix(A, std::string("Matrix A"));
 	SparseMatrix<double> C = 2 * A;
-//	RA_LOG_INFO("Here1");
-	//MatrixXd K = 2 * (F + w_s*F*G*G.transpose())*S.transpose();
-	MatrixXd K = 2 * K_prime*S.transpose();
-//	RA_LOG_INFO("Here1");
-	MatrixXd b = K.transpose();
-//	RA_LOG_INFO("Here1");
-	oldEnergy = computeEnergyTRUEVertex(F, VW, D, G, sequenceIdx,S_vec, S, w_s);
-//	RA_LOG_INFO("Here2");
-	//MatrixXd new_D_t = C.jacobiSvd(ComputeThinU | ComputeThinV).solve(b);
 	
-	Eigen::SimplicialLLT <Eigen::SparseMatrix<double> > llt;
+	//RA_LOG_INFO("Here1");
+	//auto h2 = std::string("Printing C");
+	
+	//printMatrix(C, h2);
+
+	    
+
+	//MatrixXd K = 2 * (F + w_s*F*G*G.transpose())*S.transpose();
+	MatrixXd K = 2*K_prime*S.transpose();
+	//RA_LOG_INFO("Here1");
+	MatrixXd b = K.transpose();
+	//RA_LOG_INFO("Here1");
+    oldEnergy = computeEnergyTRUEVertex(F, VW, D, G, sequenceIdx, S_vec, S, w_s);
+	//RA_LOG_INFO("Here2");
+	
+	
+	bool isPD = true;
+	
+	Eigen::SimplicialLLT <Eigen::SparseMatrix<double>> llt;
 	llt.compute(C);
+	MatrixXd new_D_t;
+
 	switch(llt.info())
 	{
 		case Eigen::Success:
@@ -346,34 +367,45 @@ bool updateStepTRUEVertex(const Eigen::MatrixXd& F,
 		case Eigen::NumericalIssue:
 		{
 			RA_LOG_ERROR("Error: Numerical issue.");
-			return false;
+			isPD = false;
 		}
 		default:
 		{
 			RA_LOG_ERROR("Error: Other.");
-			return false;
+			isPD = false;
 		}
 	}
-	MatrixXd new_D_t = llt.solve(b);
-	switch(llt.info())
+
+
+	if (isPD) 
 	{
-		case Eigen::Success:
-			break;
-		case Eigen::NumericalIssue:
+		new_D_t = llt.solve(b);
+		switch(llt.info())
 		{
-			RA_LOG_ERROR("Error: Numerical issue solve.");
-			return false;
-		}
-		default:
-		{
-			RA_LOG_ERROR("Error: Other solve.");
-			return false;
+			case Eigen::Success:
+				break;
+			case Eigen::NumericalIssue:
+			{
+				RA_LOG_ERROR("Error: Numerical issue solve.");
+				return false;
+			}
+			default:
+			{
+				RA_LOG_ERROR("Error: Other solve.");
+				return false;
+			}
 		}
 	}
-//	RA_LOG_INFO("Here3");
+	else 
+	{
+		MatrixXd Cdense(C);
+		new_D_t = Cdense.jacobiSvd(ComputeThinU | ComputeThinV).solve(b);
+	}
+
+	//RA_LOG_INFO("Here3");
 	D = new_D_t.transpose();
 	newEnergy = computeEnergyTRUEVertex(F, VW, D, G, sequenceIdx, S_vec, S, w_s);
-//	RA_LOG_INFO("Here4");
+	//RA_LOG_INFO("Here4");
 	assert(D.cols() == D_cols);
 	return true;
 }

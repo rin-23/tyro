@@ -126,18 +126,10 @@ void flatten_frames(const std::vector<Eigen::MatrixXd>& v_data, MatrixXd& F)
 
 void flatten_weights(const Eigen::VectorXd& VW_per_vertex, Eigen::VectorXd& VW) 
 {
-	for (int i=0; i < VW_per_vertex.size(); ++i) 
-	{
-		//if (VW_per_vertex(i) > 1) 
-			//RA_LOG_INFO("Horray %f", VW_per_vertex(i));
-	}
-	
 	VW.resize(VW_per_vertex.size() * 3);
 	for (int i = 0; i < VW.size(); ++i) 
 	{	
 		int idx =i/3;
-//		if (VW_per_vertex(idx) > 1) 
-			//RA_LOG_INFO("STMH");
 		VW(i) = VW_per_vertex(idx);
 	}
 }
@@ -184,8 +176,10 @@ int stop_motion_vertex_distance(int num_labels,
 
 	MatrixXd F; //,  SAVED_FACES; //frame data
 	flatten_frames(v_data, F);
+	
 	VectorXd VW;
 	flatten_weights(VW_per_vertex, VW);
+	
 	assert(F.rows() == VW.rows());
 	
 	std::vector<Eigen::MatrixXd> n_init_D;
@@ -193,7 +187,7 @@ int stop_motion_vertex_distance(int num_labels,
 	std::vector<double> n_init_energy;
 
 	std::cout << "Energie for " << num_labels << " labels\n";
-	//std::cout << "Smooth weight " << w_s << "\n";
+	std::cout << "Smooth weight " << w_s << "\n";
 
 //#define D_USE_KMEANS_INITALIZATION 1
 	MatrixXd KMEANS;
@@ -218,12 +212,12 @@ int stop_motion_vertex_distance(int num_labels,
 		{	
 			n_init  = 1;
 			D = KMEANS;
-			//std::cout << "Using kmeans initialization" << w_s << "\n";
+			std::cout << "Using kmeans initialization" << w_s << "\n";
 		}
 		else 
 		{
 			build_dictionary_random(F, D, num_labels);
-			//std::cout << "Using random intialization" << w_s << "\n";
+			std::cout << "Using random intialization" << w_s << "\n";
 		}
 
 		VectorXi S_vec;
@@ -231,9 +225,9 @@ int stop_motion_vertex_distance(int num_labels,
 		double newEnergy = 0;
 		double graphEnergy = 0;
 
-		//std::cout << "######################################################\n";
-		//std::cout << "######################## Trial " << j << " #######################\n";
-		//std::cout << "######################################################\n";
+		std::cout << "######################################################\n";
+		std::cout << "######################## Trial " << j << " #######################\n";
+		std::cout << "######################################################\n";
 
 		//VectorXd nrg;
 		//nrg.resize(num_steps);
@@ -244,17 +238,17 @@ int stop_motion_vertex_distance(int num_labels,
 		bool no_Errors = true;
 		for (int i = 0; i < num_steps; ++i)
 		{
-			//std::cout << "Iteration " << i << "\n";
-
+			std::cout << "Iteration " << i << "\n";
+		
 			high_resolution_clock::time_point t1 = high_resolution_clock::now();
 			labelFacesTRUEVertex(F, VW, D, S_vec, sequenceIdx, w_s, graphEnergy);
 			high_resolution_clock::time_point t2 = high_resolution_clock::now();
 			auto duration = duration_cast<seconds>(t2 - t1).count();
-			//cout << "label time " << duration << "\n";
+			cout << "label time " << duration << "\n";
 
 			if (graphEnergy > lastEnergy)
 			{	
-				//std::cout << "Energy after graph cuts " << graphEnergy << " is higher than previous energy " << lastEnergy << "\n\n";
+				std::cout << "Energy after graph cuts " << graphEnergy << " is higher than previous energy " << lastEnergy << "\n\n";
 				D = lastD;
 				S_vec = lastS_vec;
 				break;
@@ -267,6 +261,12 @@ int stop_motion_vertex_distance(int num_labels,
 			}
 		
 			t1 = high_resolution_clock::now();
+			std::set<int> lul;
+			for (int i=0;i<S_vec.size();++i ) lul.insert(S_vec(i));
+			
+			if (lul.size()!= num_labels) 
+				RA_LOG_ERROR("SOME labelas are not used %i out of %i", lul.size(), num_labels);
+			
 			if (!updateStepTRUEVertex(F, VW, D, S_vec, sequenceIdx, w_s, oldEnergy, newEnergy, G, K_prime)) 
 			{	
 				no_Errors = false;
@@ -277,12 +277,12 @@ int stop_motion_vertex_distance(int num_labels,
 			duration = duration_cast<seconds>(t2 - t1).count();
 			//cout << "update time " << duration << "\n";
 			
-			//std::cout << "Energy after graph cuts " << graphEnergy << "\nEnergy before update step " << oldEnergy << "\nEnergy after update step " << newEnergy << "\n\n";
+			std::cout << "Energy after graph cuts " << graphEnergy << "before updatestep " << oldEnergy << "after updatestep " << newEnergy << "\n\n";
 			double diff = abs(newEnergy - oldEnergy);
 						
 			if (oldEnergy >= newEnergy && diff < tolerance)
 			{
-				//std::cout << "Difference diff " << diff << " between old and new energies is lower than tolerance of " << tolerance << "\n\n";
+				std::cout << "Difference diff " << diff << " between old and new energies is lower than tolerance of " << tolerance << "\n\n";
 				break;
 			}
 		}
@@ -294,7 +294,7 @@ int stop_motion_vertex_distance(int num_labels,
 			n_init_energy.push_back(graphEnergy);
 		}
 	}
-
+	
 	//Choose best energy
 	std::vector<double>::iterator result = std::min_element(std::begin(n_init_energy), std::end(n_init_energy));
 	int min_idx = std::distance(std::begin(n_init_energy), result);

@@ -131,7 +131,7 @@ template <
   Eigen::MatrixXi SF;
   Eigen::VectorXi SVI, SVJ;
 
-  igl::remove_duplicate_vertices(U,G, 0.00001, SV, SVI, SVJ, SF);
+  igl::remove_duplicate_vertices(U,G, 0.0000001, SV, SVI, SVJ, SF);
   U = SV;
   G = SF;
   

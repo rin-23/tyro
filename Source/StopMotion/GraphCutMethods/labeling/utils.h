@@ -13,7 +13,7 @@ bool loadMatrix(std::string filename, Eigen::MatrixXd& m);
 
 bool saveMatrix(std::string filename, Eigen::MatrixXd& matrix, bool overwrite = true);
 
-void printMatrix(const Eigen::MatrixXd& mat, std::string& header);
+void printMatrix(const Eigen::MatrixXd& mat, const std::string& header);
 
 int generateRandomNumbers(int** numbers, int nSimulations, int numFrames);
 

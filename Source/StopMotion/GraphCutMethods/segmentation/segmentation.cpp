@@ -102,16 +102,11 @@ void prepareSmoothMatrix(const std::vector<Eigen::MatrixXd>& v_data, //vertex da
 		double cost = 0;
 		for (int frame = 0; frame < v_data.size(); ++frame) 
 		{
-			VectorXd v1 = v_data[frame].row(v1idx);
-			VectorXd v2 = v_data[frame].row(v2idx); 	
-			
-			VectorXd v1avg = Vavg.row(v1idx);
-			VectorXd v2avg = Vavg.row(v2idx);
 
-			VectorXd v1diff = v1 - v1avg;
-			VectorXd v2diff = v2 - v2avg;
+			double n1 = (v_data[frame].row(v1idx) - Vavg.row(v1idx)).norm();
+			double n2 = (v_data[frame].row(v2idx) - Vavg.row(v2idx)).norm();
 
-			cost += uEL[frame](e) * (v1diff.norm() + v2diff.norm() + avg_length);
+			cost += uEL[frame](e) * (n1 + n2 + avg_length);
 		    //cost += (v1diff.norm() + v2diff.norm() + 1);
 		}
 

@@ -248,9 +248,9 @@ bool loadBlendshapeTargets(const std::string& objPath, const std::string& neut_p
 	return true;
 }
 
-void printMatrix(const Eigen::MatrixXd& matrix, std::string& header) 
+void printMatrix(const Eigen::MatrixXd& matrix, const std::string& header) 
 {	
-	bool debug = 0;
+	bool debug = 1;
 	if (debug)
 	{
 		std::cout << header << "\n";

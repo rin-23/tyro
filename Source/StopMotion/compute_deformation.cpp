@@ -113,7 +113,8 @@ bool tyro::compute_deformation( const std::vector<int>& vid_list,
     return true;
 }
 
-bool tyro::compute_deformation2(const std::vector<int>& vid_list, 
+bool tyro::compute_deformation2(const std::vector<int>& vid_list_avg, 
+                                const std::vector<int>& vid_list_frame, 
                                 const std::vector<Eigen::MatrixXd>& v_data,
                                 const Eigen::MatrixXi& F,
                                 const Eigen::MatrixXd& AV, //average                       
@@ -125,13 +126,17 @@ bool tyro::compute_deformation2(const std::vector<int>& vid_list,
     rv_data.reserve(num_frames);
    
     Eigen::VectorXi b;
-    int num_fixed = vid_list.size();
+    int num_fixed = vid_list_avg.size() + vid_list_frame.size();
     b.resize(num_fixed);
     
     int b_index = 0;            
-    for (int vid : vid_list) 
+    for (int vid : vid_list_avg) 
     {
-        RA_LOG_INFO("%i", vid);
+        b(b_index++) = vid;
+    }
+
+    for (int vid : vid_list_frame) 
+    {
         b(b_index++) = vid;
     }
                  
@@ -150,10 +155,10 @@ bool tyro::compute_deformation2(const std::vector<int>& vid_list,
     I.setIdentity();
     
     Eigen::MatrixXd Mdense(M);
-    //double w_data = 0.00001*Mdense.maxCoeff();
-   //%Q = K*(M\K) + w_data*M;
+   // double w_data = 0.00001*Mdense.maxCoeff();
+   ///%Q = K*(M\K) + w_data*M;
     Eigen::SparseMatrix<double> M_inv = solver.solve(I);
-    Eigen::SparseMatrix<double> Q = C.transpose() * M_inv * C; // + w_data* M;
+    Eigen::SparseMatrix<double> Q = C.transpose() * M_inv * C;// + w_data* M;
     Eigen::SparseMatrix<double> Aeq;
     Q = 2 * Q;
     bool result = igl::min_quad_with_fixed_precompute(Q, b, Aeq, false, data);
@@ -162,8 +167,13 @@ bool tyro::compute_deformation2(const std::vector<int>& vid_list,
     Laplacian.resize(num_frames);
     
     Eigen::SparseMatrix<double> L = M_inv*C;
+    
+    Eigen::MatrixXd B = Eigen::MatrixXd::Zero(data.n, 3);
+    Eigen::VectorXd Beq;
+    
     for (int i = 0; i < num_frames; ++i) 
     {   
+        
         RA_LOG_INFO("Compute deformation for mesh %i out of %i", i, num_frames)
         Eigen::MatrixXd V = v_data[i];
 
@@ -173,16 +183,11 @@ bool tyro::compute_deformation2(const std::vector<int>& vid_list,
         bc.setZero();
         b_index = 0;
 
-        for (int vid : vid_list)
+        for (int vid : vid_list_avg)
         {
             bc.row(b_index++) = AV.row(vid) - v_data[i].row(vid);
         }
-        //for (int vid : vid_not_deform)
-        //{
-        //   bc.row(b_index++) = V.row(vid);
-        //}
-        Eigen::MatrixXd B = Eigen::MatrixXd::Zero(data.n, bc.cols());
-        Eigen::VectorXd Beq;
+
         
         result = igl::min_quad_with_fixed_solve(data, B, bc, Beq, D);
         assert(result);

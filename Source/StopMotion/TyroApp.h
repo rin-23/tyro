@@ -39,7 +39,7 @@ namespace tyro
 
         //Commands
         void load_oldman();
-        void load_bunny(bool serialized = true);
+        //void load_bunny(bool serialized = true);
         
         void compute_average();
         
@@ -324,12 +324,14 @@ namespace tyro
         void DrawMeshes();
         int ShowMonkaMovieStop(); 
         int ShowBunnyMovieStop();
+        int ShowBunnyMovieStop2();
+
         int PRINTEDStopAnimMovie(); 
 
         void add_face(int fid);
         void add_vertex(int vid);
+        void add_vertex2(int vid);
 
-    
     };
 
 

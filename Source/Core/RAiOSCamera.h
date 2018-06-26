@@ -12,6 +12,7 @@
 #include "Wm5Vector2.h"
 #include "RAEnginePrerequisites.h"
 #include <Eigen/Core>
+//#include <cereal/cereal.hpp>
 
 namespace tyro
 {
@@ -74,5 +75,53 @@ namespace tyro
         Wm5::HMatrix mTranslationMatrix;
         Wm5::HMatrix mAccumulatedTranslation;
     };
+
+    /*
+    template<class Archive>
+    void save(Archive & archive) const
+    {
+        archive(mInitialPosition);
+        archive(mWorldCenter);
+
+        archive(mInitialScale);
+        archive(mRadius);
+        
+        archive(mLastLoc);
+        archive(mLastRot);
+        
+        archive(mCurScale);
+        archive(mScale);
+
+        archive(mCentroid);
+        archive(mInitialTouch);
+
+        archive(mStartPoint);
+        archive(mTranslationMatrix);
+        archive(mAccumulatedTranslation);
+    }
+    
+    template<class Archive>
+    void load(Archive & archive)
+    {
+        archive(mInitialPosition);
+        archive(mWorldCenter);
+
+        archive(mInitialScale);
+        archive(mRadius);
+        
+        archive(mLastLoc);
+        archive(mLastRot);
+        
+        archive(mCurScale);
+        archive(mScale);
+
+        archive(mCentroid);
+        archive(mInitialTouch);
+
+        archive(mStartPoint);
+        archive(mTranslationMatrix);
+        archive(mAccumulatedTranslation);
+    }
+    */
 }
 
