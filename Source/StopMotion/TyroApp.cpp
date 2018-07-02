@@ -244,8 +244,7 @@ namespace
             tr = Eigen::RowVector3d(tocenter[0], tocenter[1], tocenter[2]);
             
             for (int i = 0; i < ANIM.VD.size(); ++i) 
-            {
-                
+            {                
                 ANIM.VD[i] = scale * (ANIM.VD[i].rowwise() + tr);
             }
         }  
@@ -703,14 +702,14 @@ namespace
 
         void console_compute_alec(App* app, const std::vector<std::string>& args)
         {   
-            //std::vector<int> steps = {500, 1000, 1500, 2000, 2500, 3000}; //;, 3500, 4000, 4500, 5000,5500, 6000, 7500, 8000, 9500, 9997};
+            //std::vector<int> steps = {2000, 2500, 3000}; //;, 3500, 4000, 4500, 5000,5500, 6000, 7500, 8000, 9500, 9997};
             std::vector<int> steps = {3500, 4000, 4500, 5000,5500, 6000, 7500, 8000, 9500, 9997};
             
             //std::vector<int> steps = {2000};
             //int part_id = 1;
             double min_nrg = 200;
-            int start_labels = 10;
-            int max_num_labels = 200;
+            int start_labels = 185;
+            int max_num_labels = 1000;
             int step = 5;
             
             for (const auto& s : steps) 
@@ -875,7 +874,6 @@ namespace
             }
             app->render();
         }
-
         
 
         void console_show_iso_2(App* app, const std::vector<std::string>& args) 
@@ -1588,9 +1586,9 @@ void copy_sub2(App::MAnimation& subanimaton, std::vector<int> frame, App::MAnima
         {   
             if (args.size() != 1) return;
     
-            //std::vector<int> frame = {851,1501};    
+            std::vector<int> frame = {851,1501};    
             //std::vector<int> frame = {1042,1597,1738,1947};
-            std::vector<int> frame = {0,1041};    
+            //std::vector<int> frame = {0,1041};    
 
             //main animation
             App::MAnimation subanimaton;
@@ -3655,7 +3653,7 @@ void copy_sub2(App::MAnimation& subanimaton, std::vector<int> frame, App::MAnima
             
             std::vector<std::string> args1 = {"split", "monka_split_sub_split"};
             console_load_serialised_data(app,args1);
-            if (shouldscale) 
+            if (shouldscale)  
             {
                if (!app->PIECES.empty()) 
                {
@@ -3663,9 +3661,15 @@ void copy_sub2(App::MAnimation& subanimaton, std::vector<int> frame, App::MAnima
                     scale_one_exe(app->PIECES[1], S, tr);
                }
             }
-            std::vector<std::string> args2 = {"deform",   "2018_Monkey_hor_deform"};
-            //console_load_serialised_data(app, args2);
-            
+            std::vector<std::string> args2 = {"deform",   "monka_split_sub_deform"};
+            console_load_serialised_data(app, args2);
+            if (shouldscale)  
+            {
+               if (!app->DANIM.VD.empty()) 
+               {
+                    scale_one_exe(app->DANIM, S, tr);
+               }
+            }
             std::vector<std::string> args3 = {"stop_up",  "monka_10_1_1_kmeans"};
             //console_load_serialised_data(app, args3);
             
@@ -5252,15 +5256,17 @@ void copy_sub2(App::MAnimation& subanimaton, std::vector<int> frame, App::MAnima
             Wm5::Transform tr;
             tr.SetTranslate(Wm5::APoint(-2*m_model_offset, m_model_offset, 0));
 
+            Eigen::MatrixXd jetC;
+            Eigen::VectorXd values = m_error_deform.row(m_frame);
+            igl::jet(values, true, jetC);
+            //jetC.setOnes();
             if (RENDER.errorDeform == nullptr) 
-            {
-                RENDER.errorDeform = IGLMesh::CreateColor(DANIM.VD[m_frame], 
-                                                          DANIM.F, 
-                                                          ANIM.ND[m_frame],  
-                                                          m_error_deform.row(m_frame), 
-                                                          max_def_error, 
-                                                          maxColor);
-                
+            {   
+                RENDER.errorDeform = IGLMesh::Create(DANIM.VD[m_frame], 
+                                                     DANIM.F, 
+                                                     ANIM.ND[m_frame],  
+                                                     jetC, 
+                                                     true);                
                 RENDER.errorDeform->LocalTransform = tr * RENDER.errorDeform->LocalTransform;
                 RENDER.errorDeform->Update(true);
             }
@@ -5269,9 +5275,8 @@ void copy_sub2(App::MAnimation& subanimaton, std::vector<int> frame, App::MAnima
                 RENDER.errorDeform->UpdateData(DANIM.VD[m_frame], 
                                                DANIM.F, 
                                                ANIM.ND[m_frame],  
-                                               m_error_deform.row(m_frame), 
-                                               max_def_error, 
-                                               maxColor);
+                                               jetC, 
+                                               true);
             }
 
             vis_set.Insert(RENDER.errorDeform.get());

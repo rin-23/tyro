@@ -158,7 +158,6 @@ void build_G_Matrix(Eigen::SparseMatrix<double>& G, std::vector<int>& sequenceId
 	}
 }
 
-
 int stop_motion_vertex_distance(int num_labels,
 								double w_s,
 								bool kmeans,
@@ -262,7 +261,7 @@ int stop_motion_vertex_distance(int num_labels,
 		
 			t1 = high_resolution_clock::now();
 			std::set<int> lul;
-			for (int i=0;i<S_vec.size();++i ) lul.insert(S_vec(i));
+			for (int i=0;i<S_vec.size();++i) lul.insert(S_vec(i));
 			
 			if (lul.size()!= num_labels) 
 				RA_LOG_ERROR("SOME labelas are not used %i out of %i", lul.size(), num_labels);

@@ -11,7 +11,12 @@ namespace tyro
 {   
     //void UpdateData(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C, const Eigen::VectorXd& AO){}
     
-    void IGLMesh::UpdateData(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N,  const Eigen::VectorXd& Error, float max_error, Eigen::Vector3f& EmaxColor)
+    void IGLMesh::UpdateData(const Eigen::MatrixXd& V, 
+                             const Eigen::MatrixXi& F, 
+                             const Eigen::MatrixXd& N,  
+                             const Eigen::VectorXd& Error, 
+                             float max_error, 
+                             Eigen::Vector3f& EmaxColor)
     {
  
         int numVertices = V.rows();
@@ -73,7 +78,7 @@ namespace tyro
         UpdateData(V, F, N, C);
     }
 
-    void IGLMesh::UpdateData(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C) 
+    void IGLMesh::UpdateData(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C,  bool perVertexColor) 
     {
         int numVertices = V.rows();
         int numTriangles = F.rows();
@@ -97,14 +102,17 @@ namespace tyro
                 int vid = F(fid,j);
                 vba.Position<Wm5::Float3>(vIndex) = Wm5::Float3(V(vid,0), V(vid,1), V(vid,2));
                 vba.Normal<Wm5::Float3>(vIndex) = Wm5::Float3(N(vid, 0), N(vid, 1), N(vid, 2));
-                vba.Color<Wm5::Float3>(vIndex) = Wm5::Float3(C(fid, 0), C(fid, 1), C(fid, 2));
+                if (perVertexColor) 
+                    vba.Color<Wm5::Float3>(vIndex) = Wm5::Float3(C(vid, 0), C(vid, 1), C(vid, 2));
+                else
+                    vba.Color<Wm5::Float3>(vIndex) = Wm5::Float3(C(fid, 0), C(fid, 1), C(fid, 2)); 
                 vIndex++;
             }                
         }
         vba.Unmap();
     }
     
-    void IGLMesh::Init(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C)
+    void IGLMesh::Init(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C, bool perVertexColor)
     {
         ES2TriMesh::Init();
 
@@ -125,7 +133,7 @@ namespace tyro
         auto vbuffer = std::make_shared<tyro::ES2VertexHardwareBuffer>(stride, numIndices, nullptr, HardwareBuffer::BU_DYNAMIC);
         SetVertexBuffer(vbuffer);
 
-        this->UpdateData(V,F,N,C);
+        this->UpdateData(V,F,N,C,perVertexColor);
         
         //compute bounding box
         LocalBoundBox.ComputeExtremes(vbuffer->GetNumOfVerticies(), vbuffer->GetVertexSize(), vbuffer->MapRead());
@@ -134,7 +142,6 @@ namespace tyro
 	    ES2VertexArraySPtr varray = std::make_shared<ES2VertexArray>(this->GetVisualEffect(), vbuffer);
 	    SetVertexArray(varray);        
         GetVisualEffect()->GetCullState()->Enabled = false;
-    
     }
 
     void IGLMesh::Init(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C, const Eigen::VectorXd& AO) 
@@ -231,10 +238,10 @@ namespace tyro
     }
 
 
-    IGLMeshSPtr IGLMesh::Create(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C)
+    IGLMeshSPtr IGLMesh::Create(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C, bool perVertexColor)
     {
         IGLMeshSPtr sptr = std::make_shared<IGLMesh>();
-        sptr->Init(V,F,N,C);
+        sptr->Init(V,F,N,C, perVertexColor);
         return sptr;
     }
 
@@ -255,7 +262,7 @@ namespace tyro
         }
         
         IGLMeshSPtr sptr = std::make_shared<IGLMesh>();
-        sptr->Init(V,F,N,C);
+        sptr->Init(V,F,N,C,false);
         return sptr;
     }
     

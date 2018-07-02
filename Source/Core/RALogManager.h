@@ -12,8 +12,8 @@
 #include <iostream>
 
 /*****LOGGING TO STDOUT AND STDERR*****/
-#if _DEBUG
-#define SHOULD_LOG 1
+#if IGL_STATIC_LIBRARY_9//_DEBUG
+#define SHOULD_LOG 0
 #else
 #define SHOULD_LOG 1
 #endif

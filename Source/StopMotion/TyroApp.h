@@ -102,7 +102,7 @@ namespace tyro
         //int  m_frame;   
         //bool m_need_rendering;
         double m_model_offset;
-        
+        //Eigen::MatrixXd jetColors;                
         struct MRenderData 
         {
             IGLMeshSPtr mesh;
