@@ -1,4 +1,4 @@
-#include "TyroApp.h"
+#include "TyroVJApp.h"
 
 int main(int argc, char **argv) 
 {	
@@ -6,6 +6,8 @@ int main(int argc, char **argv)
 	int r_code = appr.Launch();
 	//int r_code = appr.VideoToImages();
 	return r_code;
+	
+	//return 0;
 }
 
 

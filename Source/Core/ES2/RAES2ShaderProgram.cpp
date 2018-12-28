@@ -175,8 +175,8 @@ namespace tyro
         glCompileShader(*shader);
         GL_CHECK_ERROR;
         
-#ifdef _DEBUG
-#if _DEBUG
+//#ifdef _DEBUG
+//#if _DEBUG
         GLint logLength;
         glGetShaderiv(*shader, GL_INFO_LOG_LENGTH, &logLength);
         GL_CHECK_ERROR;
@@ -186,8 +186,8 @@ namespace tyro
             RA_LOG_ERROR("Shader compile log: %s", log);
             free(log);
         }
-#endif
-#endif
+//#endif
+//#endif
 
         GLint status;
         glGetShaderiv(*shader, GL_COMPILE_STATUS, &status);

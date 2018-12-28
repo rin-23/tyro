@@ -27,9 +27,9 @@ ES2VisualEffectSPtr ES2CoreVisualEffects::VideoTexture()
     ES2ShaderUniforms* uniforms = new ES2ShaderUniforms(1);
     uniforms->SetUniform(0, shader->GetUniformLocation("uSampler"), 1, "uSampler", ES2ShaderUniforms::Uniform1iv);
     
-    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms, new ES2AlphaState(), new ES2CullState(), new ES2DepthState(), new ES2PolygonOffset()));
-    effect->GetAlphaState()->Enabled = true;
-    effect->GetDepthState()->Enabled = false;
+    ES2VisualEffectSPtr effect = std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms);
+    effect->AlphaStateEnabled = true;
+    effect->DepthStateEnabled = false;
     
     return effect;
 } 
@@ -66,7 +66,7 @@ ES2VisualEffectSPtr ES2CoreVisualEffects::PBR2()
     //uniforms->SetUniform(10, shader->GetUniformLocation("norm"), 1, "norm", ES2ShaderUniforms::UniformMatrix3fv);
 
 
-    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms, new ES2AlphaState(), new ES2CullState(), new ES2DepthState(), new ES2PolygonOffset()));
+    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms));
 
     return effect;
 }
@@ -102,7 +102,7 @@ ES2VisualEffectSPtr ES2CoreVisualEffects::PBR()
     //uniforms->SetUniform(10, shader->GetUniformLocation("norm"), 1, "norm", ES2ShaderUniforms::UniformMatrix3fv);
 
 
-    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms, new ES2AlphaState(), new ES2CullState(), new ES2DepthState(), new ES2PolygonOffset()));
+    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms));
 
     return effect;
 }
@@ -122,11 +122,7 @@ ES2VisualEffectSPtr ES2CoreVisualEffects::ColorPicking()
     
     ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, 
                                                                  vertexFormat, 
-                                                                 uniforms, 
-                                                                 new ES2AlphaState(), 
-                                                                 new ES2CullState(), 
-                                                                 new ES2DepthState(),
-                                                                 new ES2PolygonOffset()));
+                                                                 uniforms));
     
     return effect;
 }
@@ -145,7 +141,7 @@ ES2VisualEffectSPtr ES2CoreVisualEffects::GourandDirectional()
     uniforms->SetUniform(1, shader->GetUniformLocation("uNMatrix"), 1, "uNMatrix", ES2ShaderUniforms::UniformMatrix3fv);
     uniforms->SetUniform(2, shader->GetUniformLocation("uColor"), 1, "uColor", ES2ShaderUniforms::Uniform4fv);
     
-    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms, new ES2AlphaState(), new ES2CullState(), new ES2DepthState(), new ES2PolygonOffset()));
+    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms));
 
     return effect;
 }
@@ -165,7 +161,7 @@ ES2VisualEffectSPtr ES2CoreVisualEffects::GourandDirectionalWithVColor()
     uniforms->SetUniform(1, shader->GetUniformLocation("uNMatrix"), 1, "uNMatrix", ES2ShaderUniforms::UniformMatrix3fv);
     //uniforms->SetUniform(2, shader->GetUniformLocation("uColor"), 1, "uColor", ES2ShaderUniforms::Uniform4fv);
     
-    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms, new ES2AlphaState(), new ES2CullState(), new ES2DepthState(), new ES2PolygonOffset()));
+    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms));
 
     return effect;
 }
@@ -184,7 +180,7 @@ ES2VisualEffectSPtr ES2CoreVisualEffects::WireframeColor()
     //uniforms->SetUniform(1, shader->GetUniformLocation("uNMatrix"), 1, "uNMatrix", ES2ShaderUniforms::UniformMatrix3fv);
     //uniforms->SetUniform(2, shader->GetUniformLocation("uColor"), 1, "uColor", ES2ShaderUniforms::Uniform4fv);
     
-    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms, new ES2AlphaState(), new ES2CullState(), new ES2DepthState(), new ES2PolygonOffset()));
+    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms));
 
     return effect;
 }
@@ -203,7 +199,7 @@ ES2VisualEffectSPtr ES2CoreVisualEffects::NormalBuffer()
     uniforms->SetUniform(0, shader->GetUniformLocation("uMVPMatrix"), 1, "uMVPMatrix", ES2ShaderUniforms::UniformMatrix4fv);
     uniforms->SetUniform(1, shader->GetUniformLocation("uNMatrix"), 1, "uNMatrix", ES2ShaderUniforms::UniformMatrix3fv);
     
-    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms, new ES2AlphaState(), new ES2CullState(), new ES2DepthState(), new ES2PolygonOffset()));
+    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms));
     
     return effect;
 }
@@ -219,7 +215,7 @@ ES2VisualEffectSPtr ES2CoreVisualEffects::DepthBuffer()
     ES2ShaderUniforms* uniforms = new ES2ShaderUniforms(1);
     uniforms->SetUniform(0, shader->GetUniformLocation("uMVPMatrix"), 1, "uMVPMatrix", ES2ShaderUniforms::UniformMatrix4fv);
     
-    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms, new ES2AlphaState(), new ES2CullState(), new ES2DepthState(), new ES2PolygonOffset()));
+    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms));
     
     return effect;
 }
@@ -240,7 +236,7 @@ ES2VisualEffectSPtr ES2CoreVisualEffects::NoLightUniformColor()
     const float pSize = 1.0f;
     uniforms->UpdateFloatUniform(2, &pSize);
     
-    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms, new ES2AlphaState(), new ES2CullState(), new ES2DepthState(), new ES2PolygonOffset()));
+    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms));
 
     return effect;
 }
@@ -260,9 +256,9 @@ ES2VisualEffectSPtr ES2CoreVisualEffects::BitmapText()
     uniforms->SetUniform(1, shader->GetUniformLocation("uSampler"), 1, "uSampler", ES2ShaderUniforms::Uniform1iv);
     uniforms->SetUniform(2, shader->GetUniformLocation("uNDCTransform"), 1, "uNDCTransform", ES2ShaderUniforms::UniformMatrix4fv);
 
-    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms, new ES2AlphaState(), new ES2CullState(), new ES2DepthState(), new ES2PolygonOffset()));
-    effect->GetAlphaState()->Enabled = true;
-    effect->GetDepthState()->Enabled = false;
+    ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms));
+    effect->AlphaStateEnabled = true;
+    effect->DepthStateEnabled = false;
     
     return effect;
 }

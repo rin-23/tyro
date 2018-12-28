@@ -13,7 +13,7 @@
 
 /*****LOGGING TO STDOUT AND STDERR*****/
 #if IGL_STATIC_LIBRARY_9//_DEBUG
-#define SHOULD_LOG 0
+#define SHOULD_LOG 1
 #else
 #define SHOULD_LOG 1
 #endif
@@ -21,8 +21,8 @@
 #define SHOULD_LOG_INFO 1
 #define SHOULD_LOG_ERROR 1
 #define SHOULD_LOG_WARN 1
-#define SHOULD_LOG_VERBOSE 0
-#define SHOULD_LOG_VERY_VERBOSE 0
+#define SHOULD_LOG_VERBOSE 1
+#define SHOULD_LOG_VERY_VERBOSE 1
 
 #if SHOULD_LOG
 #define RA_LOG_INFO(Format, ...) \

@@ -28,17 +28,20 @@ set(OpenCV_DIR /usr/local/share/OpenCV)
 
 # Find the QtWidgets library
 find_package(PkgConfig REQUIRED)
-pkg_search_module(GLFW glfw3)
+pkg_search_module(GLFW REQUIRED glfw3)
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(Threads REQUIRED)
 find_package(OpenCV REQUIRED)
 
+#SET(GCC_COVERAGE_LINK_FLAGS  "-ldl")
+#SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
+
 
 #find_library(PocoFoundation_LIB foo)
 
-if (NOT GLFW_FOUND )
+if (NOT GLFW_FOUND)
     message(STATUS "NOT Found glfw")
 endif()
 
@@ -63,80 +66,93 @@ if (NOT OpenCV_FOUND)
 endif()
 #set(CMAKE_CXX_FLAGS "-Wall")
 
+#SET (CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -ldl -lX11 -lXi -lXrandr -lXxf86vm -lXinerama -lXcursor -lrt -lm")
 
-add_subdirectory(Math)
-include(Core/CMakeSources.cmake)
-include(Engine/CMakeSources.cmake)
-include(StopMotion/CMakeSources.cmake)
+
+add_subdirectory(Source/Math)
+include(Source/Core/CMakeSources.cmake)
+include(Source/Engine/CMakeSources.cmake)
+#include(StopMotion/CMakeSources.cmake)
+include(apps/TyroVJ/CMakeSources.cmake)
 
 #include(External/CMakeSources.cmake)
 
 set(TYRO_MATH_INC_EXE 
-    "./Math"
-	"./Math/Algebra"
-    "./Math/Approximation"
-    "./Math/Assert"
-    "./Math/Base"
-    "./Math/ComputationalGeometry"
-    "./Math/Containment"
-    "./Math/CurvesSurfacesVolumes"
-    "./Math/DataTypes"
-    "./Math/Distance"
-    "./Math/InputOutput"
-    "./Math/Interpolation"
-    "./Math/Intersection"
-    "./Math/Memory"
-    "./Math/Meshes"
-    "./Math/Miscellaneous"
-    "./Math/NumericalAnalysis"
-    "./Math/Objects2D"
-    "./Math/Objects3D"
-    "./Math/ObjectSystems"
-    "./Math/Query"
-    "./Math/Rational"
-    #"./Math/Threading"
-    "./Math/Time"
-    "./Math/Tools"
-    "./Math/Transformation"
+    "./Source/Math"
+	"./Source/Math/Algebra"
+    "./Source/Math/Approximation"
+    "./Source/Math/Assert"
+    "./Source/Math/Base"
+    "./Source/Math/ComputationalGeometry"
+    "./Source/Math/Containment"
+    "./Source/Math/CurvesSurfacesVolumes"
+    "./Source/Math/DataTypes"
+    "./Source/Math/Distance"
+    "./Source/Math/InputOutput"
+    "./Source/Math/Interpolation"
+    "./Source/Math/Intersection"
+    "./Source/Math/Memory"
+    "./Source/Math/Meshes"
+    "./Source/Math/Miscellaneous"
+    "./Source/Math/NumericalAnalysis"
+    "./Source/Math/Objects2D"
+    "./Source/Math/Objects3D"
+    "./Source/Math/ObjectSystems"
+    "./Source/Math/Query"
+    "./Source/Math/Rational"
+    #"./Source/Math/Threading"
+    "./Source/Math/Time"
+    "./Source/Math/Tools"
+    "./Source/Math/Transformation"
     )
 
 set(TYRO_CORE_INC_EXE 
-    "./Core"
-	"./Core/ES2"
-    "./Core/Renderables"
-    "./Core/Scene"
-    "./Core/Tools"
+    "./Source/Core"
+	"./Source/Core/ES2"
+    "./Source/Core/Renderables"
+    "./Source/Core/Scene"
+    "./Source/Core/Tools"
     )
 
 set(TYRO_ENGINE_INC_EXE
-    "./Engine"
+    "./Source/Engine"
    )
 
 set(TYRO_EXTERNAL_INC_EXE
-    "./External"
+    "./Source/External"
     )
 
-set(TYRO_STOPMOTION_INC_EXE 
-    "./StopMotion"
-    "./StopMotion/GraphCutMethods/GCOLib"
-    #"./StopMotion/GraphCutMethods/kmeans"
-    "./StopMotion/GraphCutMethods/labeling"   
-    "./StopMotion/GraphCutMethods/segmentation" 
-    )
+set(TYROVJ_INC_EXE
+    "./apps/TyroVJ"
+    )    
 
-include_directories("./" ${TYRO_MATH_INC_EXE} ${TYRO_CORE_INC_EXE} ${TYRO_ENGINE_INC_EXE} ${TYRO_EXTERNAL_INC_EXE} ${TYRO_STOPMOTION_INC_EXE})
+
+#set(TYRO_STOPMOTION_INC_EXE 
+#    "./StopMotion"
+#    "./StopMotion/GraphCutMethods/GCOLib"
+#    "./StopMotion/GraphCutMethods/kmeans"
+#    "./StopMotion/GraphCutMethods/labeling"   
+#    "./StopMotion/GraphCutMethods/segmentation" 
+#    )
+
+include_directories("./Source" 
+                    ${TYRO_MATH_INC_EXE} 
+                    ${TYRO_CORE_INC_EXE} 
+                    ${TYRO_ENGINE_INC_EXE} 
+                    ${TYRO_EXTERNAL_INC_EXE} 
+                    ${TYROVJ_INC_EXE})
+                    
 include_directories(${GLFW_INCLUDE_DIRS})
 include_directories(${OPENGL_INCLUDE_DIR})
 include_directories(${GLEW_INCLUDE_DIR})
 include_directories(${FREETYPE_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
-include_directories(SYSTEM "External/libigl/include")
-include_directories(SYSTEM "External/libigl/external/eigen")
+include_directories(SYSTEM "Source/External/libigl/include")
+include_directories(SYSTEM "Source/External/libigl/external/eigen")
 include_directories(SYSTEM "/home/rinat/Workspace/poco-1.9.0/Foundation/include")
 include_directories(SYSTEM "/home/rinat/Workspace/Tyro/Source/External/tinyobjloader/")
 
-
-add_executable(tyro main.cpp ${TYRO_CORE_SRC} ${TYRO_ENGINE_SRC} ${TYRO_GCOLIB_SRC} ${TYRO_STOPMOTION_SRC})
+add_executable(tyro Source/main.cpp ${TYRO_CORE_SRC} ${TYRO_ENGINE_SRC} ${TYROVJ_SRC})
 
 IF(CMAKE_BUILD_TYPE MATCHES Debug)
     add_definitions(-D_DEBUG )
@@ -148,12 +164,19 @@ ENDIF()
 
 target_link_libraries(tyro ${OPENGL_LIBRARIES})
 target_link_libraries(tyro ${GLFW_LIBRARIES})
-target_link_libraries(tyro ${GLEW_LIBRARIES})
+target_link_libraries(tyro  "/usr/lib64/libGLEW.so") #${GLEW_LIBRARIES})
 target_link_libraries(tyro ${FREETYPE_LIBRARIES})
 target_link_libraries(tyro ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(tyro ${OpenCV_LIBS})
 target_link_libraries(tyro TyroMath)
 target_link_libraries(tyro "/home/rinat/Workspace/poco-1.9.0/cmake-build/lib/libPocoFoundation.so")
+target_link_libraries(tyro -ldl -lX11 -lXi -lXrandr -lXxf86vm -lXinerama -lXcursor)
+
+#target_link_libraries(tyro "/usr/lib/x86_64-linux-gnu/libdl.so")
+#target_link_libraries(tyro "/usr/lib/x86_64-linux-gnu/libX11.so")
+#target_link_libraries(tyro "/usr/lib/x86_64-linux-gnu/libX11.so")
+
+#target_compile_options(tyro PUBLIC -ldl)
 #target_link_libraries(tyro Qt5::Core)
 #target_link_libraries(tyro Qt5::Widgets)
 #target_link_libraries(tyro TyroCore)

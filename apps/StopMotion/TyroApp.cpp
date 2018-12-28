@@ -53,6 +53,7 @@
 #include "segmentation.h"
 #include "slice_isoline.h"
 #include "data_smooth.h"
+#include <random>
 
 using namespace std;
 

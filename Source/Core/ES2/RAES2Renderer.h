@@ -43,15 +43,15 @@ namespace tyro
 		
 		void SetShader(const ES2ShaderProgram* shaderProgram) const;
 
-		void SetAlphaState(const ES2AlphaState* alphaState) const;
-
-		void SetCullState(const ES2CullState* cullState) const;
-
-		void SetDepthState(const ES2DepthState* depthState) const;
-
 		void SetTexture(const ES2Texture2DSPtr texture) const;
 
-		void SetPolygonOffset(const ES2PolygonOffset* offset) const;
+		void SetAlphaState(const ES2VisualEffectSPtr ve) const;
+
+		void SetCullState(const ES2VisualEffectSPtr ve) const;
+
+		void SetDepthState(const ES2VisualEffectSPtr ve) const;
+
+		void SetPolygonOffset(const ES2VisualEffectSPtr ve) const;
 
 		void UpdateUniforms(const ES2ShaderUniforms* uniforms) const;
 

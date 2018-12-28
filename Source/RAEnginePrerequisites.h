@@ -37,9 +37,6 @@ namespace tyro
     class ES2ShaderProgram;
     class ES2ShaderUniforms;
     class ES2VisualStates;
-    class ES2AlphaState;
-    class ES2CullState;
-    class ES2DepthState;
     class ES2Octree;
 	class ES2Context;
     class TriOctree;
@@ -75,6 +72,7 @@ namespace tyro
     class IGLMeshWireframe;
     class ES2PolygonOffset;
     class ES2VideoTexture;
+    class ShaderBox;
 
     using DepthProxySPtr = std::shared_ptr<DepthProxy>;
     using DepthProxyWPtr = std::weak_ptr<DepthProxy>;
@@ -200,6 +198,11 @@ namespace tyro
     using ES2VideoTextureSPtr = std::shared_ptr<ES2VideoTexture>;
     using ES2VideoTextureUPtr = std::unique_ptr<ES2VideoTexture>;
     using ES2VideoTextureWPtr = std::weak_ptr<ES2VideoTexture>;
+
+    using ShaderBoxSPtr = std::shared_ptr<ShaderBox>;
+    using ShaderBoxUPtr = std::unique_ptr<ShaderBox>;
+    using ShaderBoxWPtr = std::weak_ptr<ShaderBox>;
+
 }
 
 namespace Wm5

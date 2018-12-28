@@ -160,10 +160,10 @@ namespace tyro
 		}
 		
 		SetTexture(effect->GetTexture2D());
-		SetAlphaState(effect->GetAlphaState());
-		SetCullState(effect->GetCullState());
-		SetDepthState(effect->GetDepthState());
-		SetPolygonOffset(effect->GetPolygonOffset());
+		SetAlphaState(effect);
+		SetCullState(effect);
+		SetDepthState(effect);
+		SetPolygonOffset(effect);
 		DrawPrimitive(renderable);
 		//DisableAttributes(effect->GetVertexFormat(), renderable->GetVertexBuffer());
 	}
@@ -179,9 +179,19 @@ namespace tyro
 		shaderProgram->UseProgram();
 	}
 
-	void ES2Renderer::SetAlphaState(const ES2AlphaState* alphaState) const
+	void ES2Renderer::SetTexture(const ES2Texture2DSPtr texture) const
 	{
-		if (alphaState->Enabled)
+		if (texture)
+		{
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, texture->GetTextureID());
+			GL_CHECK_ERROR;
+		}
+	}
+
+	void ES2Renderer::SetAlphaState(const ES2VisualEffectSPtr ve) const
+	{
+		if (ve->AlphaStateEnabled)
 		{
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -194,9 +204,9 @@ namespace tyro
 		}
 	}
 
-	void ES2Renderer::SetCullState(const ES2CullState* cullState) const
+	void ES2Renderer::SetCullState(const ES2VisualEffectSPtr ve) const
 	{
-		if (cullState->Enabled)
+		if (ve->CullStateEnabled)
 		{
 			glEnable(GL_CULL_FACE);
 			GL_CHECK_ERROR;
@@ -208,9 +218,9 @@ namespace tyro
 		}
 	}
 
-	void ES2Renderer::SetDepthState(const ES2DepthState* depthState) const
+	void ES2Renderer::SetDepthState(const ES2VisualEffectSPtr ve) const
 	{
-		if (depthState->Enabled)
+		if (ve->DepthStateEnabled)
 		{
 			glEnable(GL_DEPTH_TEST);
 			GL_CHECK_ERROR;
@@ -221,7 +231,7 @@ namespace tyro
 			GL_CHECK_ERROR;
 		}
 
-		if (depthState->DepthMaskEnabled)
+		if (ve->DepthMaskEnabled)
 		{
 			glDepthMask(GL_TRUE);
 			GL_CHECK_ERROR;
@@ -233,21 +243,11 @@ namespace tyro
 		}
 	}
 
-	void ES2Renderer::SetTexture(const ES2Texture2DSPtr texture) const
+	void ES2Renderer::SetPolygonOffset(const ES2VisualEffectSPtr ve) const 
 	{
-		if (texture)
-		{
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, texture->GetTextureID());
-			GL_CHECK_ERROR;
-		}
-	}
-
-	void ES2Renderer::SetPolygonOffset(const ES2PolygonOffset* offset) const 
-	{
-		if (offset != nullptr && offset->Enabled) 
+		if (ve->PolygonOffsetEnabled) 
 		{	 
-			if (offset->IsSolid) 
+			if (ve->PolygonsOffsetIsSolid) 
 			{	
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 				GL_CHECK_ERROR;
@@ -262,7 +262,7 @@ namespace tyro
 				GL_CHECK_ERROR;
 			}
 
-			glPolygonOffset(offset->Factor, offset->Units);
+			glPolygonOffset(ve->PolygonOffsetFactor, ve->PolygonOffsetUnits);
 			GL_CHECK_ERROR;	
 		}
 		else 
@@ -280,6 +280,11 @@ namespace tyro
 
 	void ES2Renderer::UpdateUniforms(const ES2ShaderUniforms* uniforms) const
 	{
+		if (uniforms == nullptr) 
+		{ 
+			return;
+		}
+
 		for (int i = 0; i < uniforms->GetNumOfUniforms(); ++i)
 		{
 			const ES2ShaderUniforms::Uniform* uni = uniforms->GetUniform(i);

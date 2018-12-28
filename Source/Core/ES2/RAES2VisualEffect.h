@@ -19,16 +19,12 @@ namespace tyro
     class ES2VisualEffect
     {
     public:
-
+    
         ES2VisualEffect();
         
         ES2VisualEffect(ES2ShaderProgram* shaderProgram, 
                         ES2VertexFormat* vertexFormat, 
-                        ES2ShaderUniforms* uniforms, 
-                        ES2AlphaState* alphaState, 
-                        ES2CullState* cullState, 
-                        ES2DepthState* depthState,
-                        ES2PolygonOffset* poly_offset);
+                        ES2ShaderUniforms* uniforms);        
         
         ~ES2VisualEffect();
         
@@ -44,31 +40,26 @@ namespace tyro
         inline void SetUniforms(ES2ShaderUniforms* uniforms);
         inline const ES2ShaderUniforms* GetUniforms() const;
         inline ES2ShaderUniforms* GetUniforms();
-
-        inline void SetAlphaState(ES2AlphaState* alphaState);
-        inline ES2AlphaState* GetAlphaState();
-        
-        inline void SetCullState(ES2CullState* cullState);
-        inline ES2CullState* GetCullState();
-
-        inline void SetDepthState(ES2DepthState* depthState);
-        inline ES2DepthState* GetDepthState();
         
         inline void SetTexture2D(ES2Texture2DSPtr texture);
         inline ES2Texture2DSPtr GetTexture2D();
+       
+        bool AlphaStateEnabled = false;
+        bool CullStateEnabled = true;
+        bool DepthStateEnabled = true;
+        bool DepthMaskEnabled = true;
 
-        inline void SetPolygonOffset(ES2PolygonOffset* offset);
-        inline ES2PolygonOffset* GetPolygonOffset();
+        //Polygon offset 
+        bool PolygonOffsetEnabled = false;
+        float PolygonOffsetFactor = 0.0;
+        float PolygonOffsetUnits = -5.0;
+        bool PolygonsOffsetIsSolid = false;
         
     private:
         ES2ShaderProgram* mShaderProgram;
         ES2VertexFormat* mVertexFormat;
         ES2ShaderUniforms* mUniforms;
-        ES2AlphaState* mAlphaState;
-        ES2CullState* mCullState;
-        ES2DepthState* mDepthState;
         ES2Texture2DSPtr mTexture;
-        ES2PolygonOffset* mPolygonOffset;
     };
     
     /****INLINE FUNCTIONS****/
@@ -129,49 +120,7 @@ namespace tyro
     {
         return mUniforms;
     }
-    
-    inline void ES2VisualEffect::SetAlphaState(ES2AlphaState* alphaState)
-    {
-        if (mAlphaState != nullptr)
-        {
-            delete mAlphaState;
-        }
-        mAlphaState = alphaState;
-    }
-    
-    inline ES2AlphaState* ES2VisualEffect::GetAlphaState()
-    {
-        return mAlphaState;
-    }
-    
-    inline void ES2VisualEffect::SetCullState(ES2CullState* cullState)
-    {
-        if (mCullState != nullptr)
-        {
-            delete mCullState;
-        }
-        mCullState = cullState;
-    }
-    
-    inline ES2CullState* ES2VisualEffect::GetCullState()
-    {
-        return mCullState;
-    }
-    
-    inline void ES2VisualEffect::SetDepthState(ES2DepthState* depthState)
-    {
-        if (mDepthState != nullptr)
-        {
-            delete mDepthState;
-        }
-        mDepthState = depthState;
-    }
-    
-    inline ES2DepthState* ES2VisualEffect::GetDepthState()
-    {
-        return mDepthState;
-    }
-    
+
     inline void ES2VisualEffect::SetTexture2D(ES2Texture2DSPtr texture)
     {
         mTexture = texture;
@@ -180,16 +129,6 @@ namespace tyro
     inline ES2Texture2DSPtr ES2VisualEffect::GetTexture2D()
     {
         return mTexture;
-    }
-
-    inline void ES2VisualEffect::SetPolygonOffset(ES2PolygonOffset* offset) 
-    {
-        mPolygonOffset = offset;
-    }
-    
-    inline ES2PolygonOffset* ES2VisualEffect::GetPolygonOffset()
-    {
-        return mPolygonOffset;
     }
     
     using ES2VisualEffectSPtr = std::shared_ptr<ES2VisualEffect>;

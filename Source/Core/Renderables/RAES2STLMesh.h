@@ -6,8 +6,7 @@
 //  Copyright (c) 2015 Rinat Abdrashitov. All rights reserved.
 //
 
-#ifndef __Ossa__RAES2STLMesh__
-#define __Ossa__RAES2STLMesh__
+#pragma once
 
 #include <stdio.h>
 #include "RAES2TriMesh.h"
@@ -26,4 +25,3 @@ namespace tyro
     
     };
 }
-#endif /* defined(__Ossa__RAES2STLMesh__) */

@@ -93,7 +93,7 @@ void RectHitProxy::Init(TouchableSPtr touchable, ObjectID touchable_id)
     int stride = sizeof(Wm5::Vector3f);
     
     SetVisualEffect(ES2CoreVisualEffects::ColorPicking());
-    GetVisualEffect()->GetDepthState()->Enabled = false;
+    GetVisualEffect()->DepthStateEnabled = false;
     
     // Create a vertex buffer.
     ES2VertexHardwareBufferSPtr vbuffer(std::make_shared<ES2VertexHardwareBuffer>(stride, numVertices, nullptr, HardwareBuffer::BU_STATIC));
