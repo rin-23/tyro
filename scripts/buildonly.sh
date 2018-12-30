@@ -1,2 +1,2 @@
-cd Debug
-make -j13
+cd build
+make -j8

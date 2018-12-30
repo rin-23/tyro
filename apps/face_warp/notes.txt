@@ -1,0 +1,14 @@
+Title:
+Template mesh deformation for facial scans
+
+Input:
+-3d scan data of a face. High res mesh.
+-template mesh
+
+Output:
+- deformed template mesh that fits 3d scan as well as possible
+
+
+
+References:
+Accurate Face Reconstruction through Anisotropic Fitting and Eye Correction, Jascha Achenbach, Eduard Zell, Mario Botsch

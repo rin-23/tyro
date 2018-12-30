@@ -72,10 +72,10 @@ endif()
 add_subdirectory(Source/Math)
 include(Source/Core/CMakeSources.cmake)
 include(Source/Engine/CMakeSources.cmake)
-#include(StopMotion/CMakeSources.cmake)
-include(apps/TyroVJ/CMakeSources.cmake)
-
-#include(External/CMakeSources.cmake)
+#include(apps/StopMotion/CMakeSources.cmake)
+#include(apps/TyroVJ/CMakeSources.cmake)
+#include(apps/TyroVJ/CMakeSources.cmake)
+include(apps/face_warp/CMakeSources.cmake)
 
 set(TYRO_MATH_INC_EXE 
     "./Source/Math"
@@ -122,8 +122,12 @@ set(TYRO_EXTERNAL_INC_EXE
     "./Source/External"
     )
 
-set(TYROVJ_INC_EXE
-    "./apps/TyroVJ"
+#set(TYROVJ_INC_EXE
+#    "./apps/TyroVJ"
+#    )    
+
+set(TYROAPP_INC_EXE
+    "./apps/face_warp"
     )    
 
 
@@ -140,7 +144,7 @@ include_directories("./Source"
                     ${TYRO_CORE_INC_EXE} 
                     ${TYRO_ENGINE_INC_EXE} 
                     ${TYRO_EXTERNAL_INC_EXE} 
-                    ${TYROVJ_INC_EXE})
+                    ${TYROAPP_INC_EXE})
                     
 include_directories(${GLFW_INCLUDE_DIRS})
 include_directories(${OPENGL_INCLUDE_DIR})
@@ -152,14 +156,14 @@ include_directories(SYSTEM "Source/External/libigl/external/eigen")
 include_directories(SYSTEM "/home/rinat/Workspace/poco-1.9.0/Foundation/include")
 include_directories(SYSTEM "/home/rinat/Workspace/Tyro/Source/External/tinyobjloader/")
 
-add_executable(tyro Source/main.cpp ${TYRO_CORE_SRC} ${TYRO_ENGINE_SRC} ${TYROVJ_SRC})
+add_executable(tyro main.cpp ${TYRO_CORE_SRC} ${TYRO_ENGINE_SRC} ${TYROFACEWARP_SRC})
 
 IF(CMAKE_BUILD_TYPE MATCHES Debug)
-    add_definitions(-D_DEBUG )
+    add_definitions(-D_DEBUG)
 ENDIF()
 
 IF(CMAKE_BUILD_TYPE MATCHES Release)
-    add_definitions(-D_RELEASE )
+    add_definitions(-D_RELEASE)
 ENDIF()
 
 target_link_libraries(tyro ${OPENGL_LIBRARIES})

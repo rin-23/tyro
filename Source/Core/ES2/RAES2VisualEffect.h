@@ -53,7 +53,7 @@ namespace tyro
         bool PolygonOffsetEnabled = false;
         float PolygonOffsetFactor = 0.0;
         float PolygonOffsetUnits = -5.0;
-        bool PolygonsOffsetIsSolid = false;
+        bool PolygonOffsetIsSolid = false;
         
     private:
         ES2ShaderProgram* mShaderProgram;

@@ -1,4 +1,4 @@
-#include "TyroVJApp.h"
+#include "TyroApp.h"
 
 int main(int argc, char **argv) 
 {	

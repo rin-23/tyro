@@ -4,7 +4,7 @@
 #include <igl/per_vertex_normals.h>
 #include <igl/list_to_matrix.h>
 #define TINYOBJLOADER_IMPLEMENTATION // define this in only *one* .cc
-#include "tiny_obj_loader.h"
+#include <tinyobjloader/tiny_obj_loader.h>
 #include <igl/unique_edge_map.h>
 #include "RALogManager.h"
 #include <igl/upsample.h>
@@ -167,4 +167,99 @@ namespace tyro
             }
         }
     }  
+
+    bool load_mesh(const std::string& obj_path,
+                    Eigen::MatrixXd& V, 
+                    Eigen::MatrixXd& N,  
+                    Eigen::MatrixXi& F,
+                    Eigen::MatrixXi& E,
+                    Eigen::MatrixXi& UE,
+                    Eigen::VectorXi& EMAP)
+    {       
+        //std::string shape_name("");
+       
+        tinyobj::attrib_t attrib;
+        std::vector<tinyobj::shape_t> shapes;
+        std::vector<tinyobj::material_t> materials;
+        
+        std::string err;
+        bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, obj_path.c_str(), NULL, true);
+        
+        if (!err.empty()) // `err` may contain warning message. 
+        { 
+            std::cerr << err << std::endl;
+        }
+
+        if (!ret) 
+        {
+            RA_LOG_ERROR_ASSERT("tiny obj loader asserted");
+        }
+
+        // Loop over shapes
+        std::vector<std::vector<double>> V_array;
+        std::vector<std::vector<int>> F_array;
+
+        // Generate F array
+        int min_idx = INT_MAX;
+        int max_idx = INT_MIN;
+        for (size_t s = 0; s < shapes.size(); s++) 
+        {
+            // Loop over faces(polygon)
+            size_t index_offset = 0;
+            
+            //if (shapes[s].name != shape_name)
+            //    continue;
+
+            for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) 
+            {
+                int fv = shapes[s].mesh.num_face_vertices[f];
+                assert(fv == 3);
+
+                tinyobj::index_t idx1 = shapes[s].mesh.indices[index_offset + 0];
+                tinyobj::index_t idx2 = shapes[s].mesh.indices[index_offset + 1];
+                tinyobj::index_t idx3 = shapes[s].mesh.indices[index_offset + 2];
+                    
+                std::vector<int> ftx = {idx1.vertex_index,
+                                        idx2.vertex_index,
+                                        idx3.vertex_index};
+                F_array.push_back(ftx);
+                index_offset += fv; //should be plus 3
+
+                min_idx = std::min(min_idx, idx1.vertex_index);
+                min_idx = std::min(min_idx, idx2.vertex_index);
+                min_idx = std::min(min_idx, idx3.vertex_index);
+
+                max_idx = std::max(max_idx, idx1.vertex_index);
+                max_idx = std::max(max_idx, idx2.vertex_index);
+                max_idx = std::max(max_idx, idx3.vertex_index);
+            }
+        }   
+
+        //generate V array by slicing the original
+        for (int i = 0; i < attrib.vertices.size(); i+=3) 
+        {   
+            int actual_indx = i / 3;
+            if (actual_indx >= min_idx && actual_indx <= max_idx) 
+            {
+                std::vector<double> vtx = {attrib.vertices[i+0], 
+                                           attrib.vertices[i+1], 
+                                           attrib.vertices[i+2]};
+                V_array.push_back(vtx);
+            }
+        }
+
+        //flatten them 
+        assert(igl::list_to_matrix(V_array, V));
+        assert(igl::list_to_matrix(F_array, F));
+
+        Eigen::MatrixXi F_ones;
+        F_ones.resize(F.rows(), F.cols());
+        F_ones.setConstant(min_idx);
+        //F = F - F_ones; 
+        
+        igl::per_vertex_normals(V, F, N); 
+
+        //std::vector<std::vector<int> > uE2E;
+        //igl::unique_edge_map(F, E, UE, EMAP, uE2E);
+   }
 }

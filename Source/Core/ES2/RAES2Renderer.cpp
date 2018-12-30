@@ -247,7 +247,7 @@ namespace tyro
 	{
 		if (ve->PolygonOffsetEnabled) 
 		{	 
-			if (ve->PolygonsOffsetIsSolid) 
+			if (ve->PolygonOffsetIsSolid) 
 			{	
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 				GL_CHECK_ERROR;

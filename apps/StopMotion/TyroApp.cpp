@@ -6057,7 +6057,36 @@ void copy_sub2(App::MAnimation& subanimaton, std::vector<int> frame, App::MAnima
         }        
     }
 
-    void App::mouse_down(Window& window, int button, int modifier) 
+   
+
+    void App::add_face(int fid)
+    {   
+        auto it = std::find(fid_list.begin(), fid_list.end(), fid);
+        if (it == fid_list.end())
+        {
+            fid_list.push_back(fid);
+        }        
+    }
+    
+    void App::add_vertex(int vid)
+    {   
+        auto it = std::find(vid_list.begin(), vid_list.end(), vid);
+        if (it == vid_list.end())
+        {
+            vid_list.push_back(vid);
+        }        
+    }
+
+    void App::add_vertex2(int vid)
+    {   
+        auto it = std::find(vid_list2.begin(), vid_list2.end(), vid);
+        if (it == vid_list2.end())
+        {
+            vid_list2.push_back(vid);
+        }        
+    }
+
+     void App::mouse_down(Window& window, int button, int modifier) 
     {   
         //RA_LOG_INFO("mouse down %i", button);
 
@@ -6210,33 +6239,6 @@ void copy_sub2(App::MAnimation& subanimaton, std::vector<int> frame, App::MAnima
         
         mouse_is_down = false;
         gesture_state = 0;
-    }
-
-    void App::add_face(int fid)
-    {   
-        auto it = std::find(fid_list.begin(), fid_list.end(), fid);
-        if (it == fid_list.end())
-        {
-            fid_list.push_back(fid);
-        }        
-    }
-    
-    void App::add_vertex(int vid)
-    {   
-        auto it = std::find(vid_list.begin(), vid_list.end(), vid);
-        if (it == vid_list.end())
-        {
-            vid_list.push_back(vid);
-        }        
-    }
-
-    void App::add_vertex2(int vid)
-    {   
-        auto it = std::find(vid_list2.begin(), vid_list2.end(), vid);
-        if (it == vid_list2.end())
-        {
-            vid_list2.push_back(vid);
-        }        
     }
 
     void App::mouse_move(Window& window, int mouse_x, int mouse_y) 

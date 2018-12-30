@@ -15,5 +15,14 @@ namespace tyro
                             Eigen::MatrixXi& ue_data,
                             Eigen::VectorXi& EMAP,                             
                             bool use_igl_loader = true);
+
+    bool load_mesh(const std::string& obj_path,
+                    Eigen::MatrixXd& v_data, 
+                    Eigen::MatrixXd& n_data,  
+                    Eigen::MatrixXi& f_data,
+                    Eigen::MatrixXi& e_data,
+                    Eigen::MatrixXi& ue_data,
+                    Eigen::VectorXi& EMAP);
+
 }
 

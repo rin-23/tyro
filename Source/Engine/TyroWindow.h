@@ -163,8 +163,8 @@ namespace tyro
 
         inline ES2Context* GetGLContext() { return m_gl_context; }
 
-        inline void ProcessUserEvents() { glfwPollEvents();}
-        inline void Wait() {glfwWaitEvents();}
+        inline void ProcessUserEvents() { glfwPollEvents(); }
+        inline void Wait() { glfwWaitEvents(); }
         
         std::function<bool(Window& window)> callback_init;
         std::function<bool(Window& window)> callback_pre_draw;

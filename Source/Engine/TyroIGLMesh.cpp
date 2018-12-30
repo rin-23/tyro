@@ -141,7 +141,7 @@ namespace tyro
 
 	    ES2VertexArraySPtr varray = std::make_shared<ES2VertexArray>(this->GetVisualEffect(), vbuffer);
 	    SetVertexArray(varray);        
-        GetVisualEffect()->GetCullState()->Enabled = false;
+        GetVisualEffect()->CullStateEnabled = false;
     }
 
     void IGLMesh::Init(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C, const Eigen::VectorXd& AO) 
@@ -193,7 +193,7 @@ namespace tyro
         SetVertexBuffer(vbuffer);
 	    ES2VertexArraySPtr varray = std::make_shared<ES2VertexArray>(this->GetVisualEffect(), vbuffer);
 	    SetVertexArray(varray);        
-        GetVisualEffect()->GetCullState()->Enabled = false;
+        GetVisualEffect()->CullStateEnabled = false;
         //GetVisualEffect()->GetPolygonOffset()->Enabled = true;
         //GetVisualEffect()->GetPolygonOffset()->Offset = -5.0;
     }
@@ -234,7 +234,7 @@ namespace tyro
 
 	    ES2VertexArraySPtr varray = std::make_shared<ES2VertexArray>(this->GetVisualEffect(), vbuffer);
 	    SetVertexArray(varray);        
-        GetVisualEffect()->GetCullState()->Enabled = false;
+        GetVisualEffect()->CullStateEnabled = false;
     }
 
 
@@ -252,7 +252,7 @@ namespace tyro
         return sptr;
     }
     
-    IGLMeshSPtr IGLMesh::Create(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::Vector3d& color) 
+    IGLMeshSPtr IGLMesh::Create(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, Eigen::Vector3d& color) 
     {
         Eigen::MatrixXd C;
         C.resize(F.rows(), 3);
@@ -415,11 +415,11 @@ namespace tyro
 	    ES2VertexArraySPtr varray = std::make_shared<ES2VertexArray>(this->GetVisualEffect(), vbuffer);
 	    SetVertexArray(varray);
 
-        GetVisualEffect()->GetCullState()->Enabled = false;    
-        GetVisualEffect()->GetPolygonOffset()->Enabled = true;
-        GetVisualEffect()->GetPolygonOffset()->Factor = 0;
-        GetVisualEffect()->GetPolygonOffset()->Units = -5;
-        GetVisualEffect()->GetPolygonOffset()->IsSolid = false;
+        GetVisualEffect()->CullStateEnabled = false;    
+        GetVisualEffect()->PolygonOffsetEnabled = true;
+        GetVisualEffect()->PolygonOffsetFactor = 0;
+        GetVisualEffect()->PolygonOffsetUnits = -5;
+        GetVisualEffect()->PolygonOffsetIsSolid = false;
         
     }
 
@@ -465,11 +465,11 @@ namespace tyro
 	    ES2VertexArraySPtr varray = std::make_shared<ES2VertexArray>(this->GetVisualEffect(), vbuffer);
 	    SetVertexArray(varray);
 
-        GetVisualEffect()->GetCullState()->Enabled = false;    
-        GetVisualEffect()->GetPolygonOffset()->Enabled = true;
-        GetVisualEffect()->GetPolygonOffset()->Factor = 0;
-        GetVisualEffect()->GetPolygonOffset()->Units = -5;
-        GetVisualEffect()->GetPolygonOffset()->IsSolid = false;
+        GetVisualEffect()->CullStateEnabled = false;    
+        GetVisualEffect()->PolygonOffsetEnabled = true;
+        GetVisualEffect()->PolygonOffsetFactor = 0;
+        GetVisualEffect()->PolygonOffsetUnits = -5;
+        GetVisualEffect()->PolygonOffsetIsSolid = false;
         
     }
 

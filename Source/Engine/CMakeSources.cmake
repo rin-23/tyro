@@ -5,13 +5,14 @@ set(TYRO_INC_LOCAL
 "Source/Engine/RAHitProxy.h" 
 "Source/Engine/RANormalMapProxy.h" 
 "Source/Engine/RAOverlayManager.h" 
+"Source/Engine/load_mesh_sequence.h"
 #"Engine/RAPointOctree.h" 
-#"Engine/TyroWindow.h"
+"Source/Engine/TyroWindow.h"
 #"Engine/TyroApp.h"
-#"Engine/Console.h"
+"Source/Engine/Console.h"
 "Source/Engine/stb_image_write.h"
 "Source/Engine/stb_image.h"
-#"Engine/TyroIGLMesh.h"
+"Source/Engine/TyroIGLMesh.h"
 #"Engine/stop_motion_data.h"
 #"Engine/TyroTimeLine.h"
 
@@ -21,6 +22,7 @@ set(TYRO_INC_LOCAL
 )
 
 set(TYRO_SRC_LOCAL 
+"Source/Engine/load_mesh_sequence.cpp"
 "Source/Engine/RAAxisAlignedBBox.cpp" 
 "Source/Engine/RADepthProxy.cpp" 
 "Source/Engine/RAES2TextOverlay.cpp" 
@@ -28,12 +30,12 @@ set(TYRO_SRC_LOCAL
 "Source/Engine/RANormalMapProxy.cpp" 
 "Source/Engine/RAOverlayManager.cpp" 
 #"Engine/RAPointOctree.cpp"
-#"Engine/TyroWindow.cpp" 
+"Source/Engine/TyroWindow.cpp" 
 #"Engine/TyroApp.cpp"
 "Source/Engine/Console.cpp"
 "Source/Engine/stb_image_write.c"
 "Source/Engine/stb_image.c"
-#"Engine/TyroIGLMesh.cpp"
+"Source/Engine/TyroIGLMesh.cpp"
 #"Engine/stop_motion_data.cpp"
 #"Engine/TyroTimeLine.cpp"
 )
