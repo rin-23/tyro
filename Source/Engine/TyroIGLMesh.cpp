@@ -300,7 +300,7 @@ namespace tyro
             Wm5::Matrix3f normalMatrix = modelViewMatrix.GetNormalMatrix();
             //Wm5::HMatrix modelViewMatrix = viewMatrix * modelMatrix;
             //Wm5::HMatrix modelViewProjectionMatrix =  camera->GetProjectionMatrix() * modelViewMatrix;
-        // Wm5::Matrix3f normalMatrix = modelViewMatrix.GetNormalMatrix();
+            //Wm5::Matrix3f normalMatrix = modelViewMatrix.GetNormalMatrix();
         
             //uniforms->SetUniform(0, shader->GetUniformLocation("projection"), 1, "projection", ES2ShaderUniforms::UniformMatrix4fv);
             GetVisualEffect()->GetUniforms()->UpdateFloatUniform(0, projectionMatrix.Transpose());
@@ -316,7 +316,7 @@ namespace tyro
             //GetVisualEffect()->GetUniforms()->UpdateFloatUniform(3, Wm5::Vector3f(200/255.0, 10/255.0, 10/255.0));
             
             //uniforms->SetUniform(4, shader->GetUniformLocation("metallic"), 1, "metallic", ES2ShaderUniforms::Uniform1fv);
-            float metallic[1] = {0.2f};
+            float metallic[1] = {0.05f};
             GetVisualEffect()->GetUniforms()->UpdateFloatUniform(3, metallic);
 
             //uniforms->SetUniform(5, shader->GetUniformLocation("roughness"), 1, "roughness", ES2ShaderUniforms::Uniform1fv);
@@ -330,16 +330,17 @@ namespace tyro
             //pos = WorldTransform *  Wm5::Vector3f::ZERO;
             //uniforms->SetUniform(7, shader->GetUniformLocation("lightPositions"), 1, "lightPositions", ES2ShaderUniforms::Uniform3fv);
             
-            Wm5::APoint pos = WorldTransform * Wm5::APoint(0,0,0);
-            float rad = 10;
+            Wm5::APoint world_center = this->WorldBoundBox.GetCenter();
+            float radius = std::abs(WorldBoundBox.GetRadius()*1.5);
+       
+
+            Wm5::APoint pos = WorldTransform * world_center;
+            float rad = radius;
             Wm5::Vector3f lightPositions[] = {            
             Wm5::Vector3f(pos.X() + rad, pos.Y() + rad , pos.Z()+rad),
             Wm5::Vector3f(pos.X() - rad, pos.Y() + rad , pos.Z()+rad),
-            //Wm5::Vector3f(pos.X() + rad, pos.Y() + rad , pos.Z()+rad),
-            //Wm5::Vector3f(pos.X() - rad, pos.Y() + rad , pos.Z()+rad),
-            
-            Wm5::Vector3f(pos.X() + rad, pos.Y() + rad, pos.Z()+rad),
-            Wm5::Vector3f(pos.X() + rad, pos.Y() - rad, pos.Z()+rad)
+            Wm5::Vector3f(pos.X() + rad, pos.Y() - rad, pos.Z()+rad),
+            Wm5::Vector3f(pos.X() - rad, pos.Y() - rad, pos.Z()+rad)
             
             //BUNNY LIGHTS
             //Wm5::Vector3f(10.0f,  10.0f, 10.0f),
@@ -356,7 +357,7 @@ namespace tyro
                 GetVisualEffect()->GetUniforms()->UpdateFloatUniform(6+i, lightPositions[i]);
 
     //        uniforms->SetUniform(8, shader->GetUniformLocation("lightColors"), 1, "lightColors", ES2ShaderUniforms::Uniform3fv);
-            GetVisualEffect()->GetUniforms()->UpdateFloatUniform(10, Wm5::Vector3f(280.0f,280.0f, 280.0f));
+            GetVisualEffect()->GetUniforms()->UpdateFloatUniform(10, Wm5::Vector3f(1000.0f,1000.0f,1000.0f));
 
             //uniforms->SetUniform(9, shader->GetUniformLocation("camPos"), 1, "camPos", ES2ShaderUniforms::Uniform3fv);
             GetVisualEffect()->GetUniforms()->UpdateFloatUniform(11, camera->GetPosition());

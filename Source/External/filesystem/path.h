@@ -153,6 +153,15 @@ public:
         return last;
     }
 
+    //same as filename but without extension
+    std::string basename() const {
+        const std::string &name = filename();
+        size_t pos = name.find_last_of(".");
+        if (pos == std::string::npos)
+            return "";
+        return name.substr(0,pos);
+    }
+
     path parent_path() const {
         path result;
         result.m_absolute = m_absolute;

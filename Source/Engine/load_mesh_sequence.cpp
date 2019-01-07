@@ -168,6 +168,31 @@ namespace tyro
         }
     }  
 
+
+    bool load_meshes(const std::vector<std::string>& obj_paths,
+                     std::vector<Eigen::MatrixXd>& v_data, 
+                     std::vector<Eigen::MatrixXd>& n_data,  
+                     Eigen::MatrixXi& F) 
+    {           
+        for (const auto& p : obj_paths)
+        {
+            Eigen::MatrixXd V,N;
+            load_mesh(p,V,N,F);
+            v_data.push_back(V);
+            n_data.push_back(N);
+        }
+    }  
+
+    bool load_mesh(const std::string& obj_path,
+                Eigen::MatrixXd& V, 
+                Eigen::MatrixXd& N,  
+                Eigen::MatrixXi& F) 
+    {
+        Eigen::MatrixXi E, UE;
+        Eigen::VectorXi EMAP;
+        return load_mesh(obj_path,V,N,F,E,UE,EMAP);
+    }
+
     bool load_mesh(const std::string& obj_path,
                     Eigen::MatrixXd& V, 
                     Eigen::MatrixXd& N,  
@@ -176,8 +201,6 @@ namespace tyro
                     Eigen::MatrixXi& UE,
                     Eigen::VectorXi& EMAP)
     {       
-        //std::string shape_name("");
-       
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
@@ -188,11 +211,13 @@ namespace tyro
         if (!err.empty()) // `err` may contain warning message. 
         { 
             std::cerr << err << std::endl;
+            return false;
         }
 
         if (!ret) 
         {
             RA_LOG_ERROR_ASSERT("tiny obj loader asserted");
+            return false;
         }
 
         // Loop over shapes
@@ -261,5 +286,6 @@ namespace tyro
 
         //std::vector<std::vector<int> > uE2E;
         //igl::unique_edge_map(F, E, UE, EMAP, uE2E);
+        return true;
    }
 }
