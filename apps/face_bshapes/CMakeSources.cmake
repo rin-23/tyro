@@ -6,6 +6,7 @@ set(TYRO_INC_LOCAL
 set(TYRO_SRC_LOCAL 
 "apps/face_bshapes/app.cpp"
 "apps/face_bshapes/bshapes.cpp"
+"apps/face_bshapes/animation.cpp"
 )
 
 set(TYROAPP_SRC

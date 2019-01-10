@@ -80,7 +80,9 @@
         "unordered_map": "cpp",
         "unordered_set": "cpp",
         "cinttypes": "cpp",
-        "forward_list": "cpp"
+        "forward_list": "cpp",
+        "variant": "cpp",
+        "string": "cpp"
     },
     "python.linting.enabled": false
 }

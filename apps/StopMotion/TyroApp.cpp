@@ -1658,11 +1658,11 @@ void copy_sub2(App::MAnimation& subanimaton, std::vector<int> frame, App::MAnima
 
             cv::VideoWriter outputVideo;                                        // Open the output
             outputVideo.open(string("/home/rinat/GDrive/StopMotionProject/Results/") + filename + string(".avi"),
-                                CV_FOURCC('M','J','P','G'), 
-                                //CV_FOURCC('x', '2', '6', '4'),
-                                24, 
-                                S, 
-                                true);
+                             CV_FOURCC('M','J','P','G'), 
+                             //CV_FOURCC('x', '2', '6', '4'),
+                             24, 
+                             S, 
+                             true);
             
             if (!outputVideo.isOpened())
             {

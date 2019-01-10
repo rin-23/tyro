@@ -252,7 +252,7 @@ namespace tyro
         return sptr;
     }
     
-    IGLMeshSPtr IGLMesh::Create(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, Eigen::Vector3d& color) 
+    IGLMeshSPtr IGLMesh::Create(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::Vector3d& color) 
     {
         Eigen::MatrixXd C;
         C.resize(F.rows(), 3);

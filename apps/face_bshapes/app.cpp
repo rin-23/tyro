@@ -15,13 +15,98 @@
 #include <random>
 #include "load_mesh_sequence.h"
 #include "TyroIGLMesh.h"
+#include "common.h"
+#include <filesystem/path.h>
 
 using namespace std;
 
 using Wm5::APoint;
 
+#define MESH_COLOR Eigen::Vector3d(109/255.0f, 150/255.0f, 144/255.0f)
+
 namespace tyro
 {   
+    void console_render_to_image(App* app, const std::vector<std::string>& args) 
+    {
+        if (args.size()!=1) return;
+        auto name = filesystem::path(args[0]);
+        app->DrawMeshes();
+
+        // Poll for and process events
+        app->m_tyro_window->GetGLContext()->swapBuffers();
+
+        //make sure everything was drawn
+        glFlush();
+        glFinish();
+        GL_CHECK_ERROR;
+        
+        int v_width, v_height;
+        app->m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
+        u_int8_t* texture = (u_int8_t*) malloc(4*v_width *v_height);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glReadPixels(0, 0, v_width, v_height, GL_RGBA, GL_UNSIGNED_BYTE, texture);
+        GL_CHECK_ERROR;
+
+        cv::Mat image1(v_height, v_width, CV_8UC4, texture);
+        cv::Mat image2, image3;
+        cv::cvtColor(image1, image2, CV_RGBA2BGR);
+        cv::flip(image2, image3, 0);
+        
+        auto fldr = filesystem::path(RENDER_IMGS_PATH)/name;
+        if (!fldr.exists())
+            filesystem::create_directory(fldr); 
+        
+        fldr = fldr/filesystem::path("_1.png");
+
+        cv::imwrite(fldr.str(), image3);
+        free(texture);
+    }
+
+    void console_render_to_images(App* app, const std::vector<std::string>& args) 
+    {
+        if (args.size()!=1) 
+            return;
+        
+        auto name = filesystem::path(args[0]);
+        auto fldr = filesystem::path(RENDER_IMGS_PATH)/name;
+        if (!fldr.exists()) 
+        {
+            filesystem::create_directory(fldr); 
+        }
+        
+        int v_width, v_height;
+        app->m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
+        u_int8_t* texture = (u_int8_t*) malloc(4*v_width *v_height);
+
+        for (int frame = 0; frame < app->mCurAnimation.getNumFrames(); ++frame) 
+        { 
+            app->m_frame = frame;
+            app->DrawMeshes();
+
+            // Poll for and process events
+            app->m_tyro_window->GetGLContext()->swapBuffers();
+
+            //make sure everything was drawn
+            glFlush();
+            glFinish();
+            GL_CHECK_ERROR;
+            
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+            glReadPixels(0, 0, v_width, v_height, GL_RGBA, GL_UNSIGNED_BYTE, texture);
+            GL_CHECK_ERROR;
+
+            cv::Mat image1(v_height, v_width, CV_8UC4, texture);
+            cv::Mat image2, image3;
+            cv::cvtColor(image1, image2, CV_RGBA2BGR);
+            cv::flip(image2, image3, 0);
+                        
+            auto fldr_to_write = fldr/filesystem::path(std::to_string(frame)+".png");
+
+            cv::imwrite(fldr_to_write.str(), image3);
+        }
+        free(texture);
+    }
+
     App::App()
     :
     m_tyro_window(nullptr),
@@ -30,7 +115,7 @@ namespace tyro
     mouse_is_down(false),
     gesture_state(0),
     show_console(false),
-    //m_frame(0),
+    m_frame(0),
     m_state(App::State::None),
     m_need_rendering(false),
     m_computed_deformation(false),
@@ -62,13 +147,11 @@ namespace tyro
             delete m_camera;
     }
     
-    int App::Launch()
-    {   
-        RA_LOG_INFO("Launching the app");
-
-        //setup windowshapes
+    int App::Setup() 
+    {
+          //setup windowshapes
         m_tyro_window = new Window();
-        m_tyro_window->Init();
+        m_tyro_window->Init(1200,1200);
                 
         //setup renderer
         m_gl_rend = new ES2Renderer(m_tyro_window->GetGLContext());
@@ -79,7 +162,7 @@ namespace tyro
         Wm5::Vector4i viewport(0, 0, v_width, v_height);
         m_camera = new iOSCamera(Wm5::APoint(0,0,0), 1.0, 1.0, 2, viewport, true);
         
-        /* m_timeline = new Timeline(40, 300);
+        m_timeline = new Timeline(24, 300);
         m_timeline->frameChanged = [&](Timeline& timeline, int frame)->void 
         {   
             //RA_LOG_INFO("Frame Change BEGIN");
@@ -88,7 +171,7 @@ namespace tyro
             glfwPostEmptyEvent();
             //RA_LOG_INFO("Frame Change END");
         };
-        */
+        
        
         //set up window callbacks
         //@TODO use std::bind instead
@@ -126,103 +209,7 @@ namespace tyro
         {
             this->mouse_scroll(window, ydelta);
         };
-        
-      /*
-        register_console_function("load_jali", console_load_jali, "");
-        register_console_function("save_avg", console_save_deform_average, "");
-        register_console_function("write_labels", console_write_labels, "");
-        register_console_function("compute_stop_frames", console_compute_stop_frames, "");
-        register_console_function("uniform", console_uniform, "");
-        register_console_function("save_few_deform_frames", console_save_few_deform_frames, "");
-        register_console_function("save_first_frame", console_save_first_frame, "");
-        register_console_function("compute_alec", console_compute_alec,"");
-
-        register_console_function("compute_random_swith", console_figure_random, "");
-        register_console_function("compute_data_vel_error", console_compute_data_vel_error,"");
-        register_console_function("compute_errors", console_compute_errors,"");
-        register_console_function("plot_error_deform", console_plot_error_deform, "");
-        register_console_function("clear_weights", console_clear_weights, "");
-        register_console_function("segmentation_full", console_segmentation_full, "");
-        register_console_function("print_stats", console_print_stats, "");
-        register_console_function("set_selection_type", console_set_selection_type, "");
-        register_console_function("mesh_split_final", console_mesh_split_final, "");
-        register_console_function("compute_deformation2", console_compute_deformation2, "");
-        register_console_function("seam_from_selection", console_seam_from_selection, "");
-        register_console_function("add_adjaent_boundary", console_add_adjaent_boundary, "");
-        register_console_function("fix_boundary_edges", console_fix_boundary_edges, "");
-        register_console_function("remove_duplicate_vertices", console_remove_duplicate_vertices, "");
-        register_console_function("show_boundary_faces", console_show_boundary_faces, "");
-        register_console_function("find_boundary", console_find_boundary, "");
-        register_console_function("mesh_split_bndr", console_mesh_split_bndr, "");
-        register_console_function("compute_vertex_bndr", console_compute_vertex_bndr, "");
-        register_console_function("load_agent", console_load_agent, "");
-        register_console_function("load_bartender", console_load_bartender, "");
-        register_console_function("load_blobby", console_load_blobby, "");
-        register_console_function("load_oldman", console_load_oldman, "");
-        register_console_function("load_bunny", console_load_bunny, "");
-        register_console_function("compute_average", console_compute_average, "");
-        register_console_function("compute_deformation", console_compute_deformation, "");
-        register_console_function("save_selected_faces", console_save_selected_faces, "");
-        register_console_function("load_selected_faces", console_load_selected_faces, "");
-        register_console_function("save_selected_verticies", console_save_selected_verticies, "");
-        register_console_function("load_selected_verticies", console_load_selected_verticies, "");
-        register_console_function("invert_face_selection", console_invert_face_selection, "");
-        register_console_function("set_sel_primitive", console_set_sel_primitive, "");
-        register_console_function("set_sel_method", console_set_sel_method, "");
-        register_console_function("save_mesh_sequence_with_selected_faces", console_save_mesh_sequence_with_selected_faces, "");
-        register_console_function("align_all_models", console_align_all_models, "");
-        register_console_function("stop_motion", console_stop_motion, "");
-        register_console_function("frame", console_frame, "");
-        //register_console_function("split_mesh", console_split_mesh, "");
-        register_console_function("show_edge_selection", console_show_edge_selection, "");
-        register_console_function("deselect_faces", console_deselect_faces, "");
-        register_console_function("deselect_verticies", console_deselect_verticies, "");
-        register_console_function("show_wireframe", console_show_wireframe, "");
-        register_console_function("segmentation", console_segmentation, "");
-        register_console_function("clear_selection", console_clear_selection, "");
-        register_console_function("clear_vertex_selection", console_clear_vertex_selection, "");
-        register_console_function("clear_face_selection", console_clear_face_selection, "");
-
-        register_console_function("save_serialised_data", console_save_serialised_data, "");
-        register_console_function("load_serialised_data", console_load_serialised_data, "");
-        register_console_function("load_monka", console_load_monka, "");
-        register_console_function("load_monka_print", console_load_monka_print, "");
-        
-        register_console_function("set_vertex_weight", console_set_vertex_weight, "");
-        register_console_function("set_face_weight", console_set_face_weight, "");
-        
-        register_console_function("draw_vertex_weight_map", console_draw_vertex_weight_map, "");
-        register_console_function("draw_face_weight_map", console_draw_face_weight_map, "");
-        register_console_function("upsample", console_upsample, "");
-        register_console_function("taubin_smooth_along_edges", console_taubin_smooth_along_edges, "");
-        register_console_function("laplacian_smooth_vert", console_laplacian_smoothing_vert, "");
-
-        register_console_function("laplacian_smooth_along_edges", console_laplacian_smooth_along_edges, "");
-        register_console_function("console_offset_frame", console_offset_frame, "");
-        register_console_function("plot_error", console_plot_error, "");
-        register_console_function("plot_error_vel", console_plot_error_vel, "");
-
-        register_console_function("show_seam", console_show_seam, ""); 
-        register_console_function("render_to_image", console_render_to_image, ""); 
-        register_console_function("render_to_video", console_render_to_video, ""); 
-
-        register_console_function("save_sub_split", console_save_sub_split, "");
-        register_console_function("save_sub_animation", console_save_sub_animation, "");
-        register_console_function("save_sub_deformation", console_save_sub_deformation, "");
-
-        register_console_function("save_for_printing", console_save_for_printing, "");
-        register_console_function("save_sub_video", console_save_sub_video, "");
-        register_console_function("load_bunny_stop", console_load_bunny_stop, "");
-        register_console_function("load_bunny_stop2", console_load_bunny_stop2, "");
-
-        register_console_function("show_iso", console_show_iso, "");
-        register_console_function("show_iso_2", console_show_iso_2, "");
-
-        register_console_function("show_label", console_show_labels, "");
-        register_console_function("scale", console_scale, "");
-        register_console_function("collapse_small_triangles", console_collapse_small_triangles, "");
-        */
-
+     
         m_state = App::State::Launched;
         // Loop until the user closes the window
        // m_tyro_window->GetGLContext()->swapBuffers();
@@ -235,44 +222,51 @@ namespace tyro
             //RA_LOG_INFO("Looping GLFW");
         //    m_tyro_window->Wait();
         //}
+
+
+        register_console_function("render_to_image", console_render_to_image, ""); 
+                register_console_function("render_to_images", console_render_to_images, ""); 
+
+
+
         FontManager* fManager = FontManager::GetSingleton();
         float scale = 1;
         float ppi = 144;
         fManager->Setup(ppi, scale);
 
+          // show current number of frames
         ES2FontSPtr font = FontManager::GetSingleton()->GetSystemFontOfSize12();
-        std::string strrr("Framasdasdasdsaddasde 0/9000");
-        m_frame_overlay = ES2TextOverlay::Create(strrr, 
+        
+        m_frame_overlay = ES2TextOverlay::Create(std::string("Not initialized text"), 
                                                  Wm5::Vector2f(0, 0), 
                                                  font, 
                                                  Wm5::Vector4f(0,0,1,1), 
                                                  viewport);
                                                  
-        m_frame_overlay->SetTranslate(Wm5::Vector2i(-viewport[2]/2 ,-viewport[3]/2 ));
-        m_frame_overlay->SetText(strrr);
+        m_frame_overlay->SetTranslate(Wm5::Vector2i(-viewport[2]/2 + 50,-viewport[3]/2 + 50));
+    }
 
-        // load neuteral expression
-        std::string neut_obj = "/home/rinat/Workspace/tyro/apps/face_bshapes/resources/neuteral.obj";
-        fmodel.setNeuteralMesh(neut_obj);
+    int App::Launch()
+    {   
+        RA_LOG_INFO("Launching the app");
 
-        //load all bshapes
-        std::vector<std::string> bshape_objs = 
-        {
-            std::string("/home/rinat/Workspace/tyro/apps/face_bshapes/resources/frontalis.obj"),
-            std::string("/home/rinat/Workspace/tyro/apps/face_bshapes/resources/zygomatic.obj"),
-            std::string("/home/rinat/Workspace/tyro/apps/face_bshapes/resources/jaw_down.obj")
+        Setup();
 
-        };
-        fmodel.setBshapes(bshape_objs);
+        //load all bshapes and neuteral expression
+        mFaceModel.setNeuteralMesh(NEUT);
+        mFaceModel.setBshapes(BSHAPES); // ORDER IS VERY IMPORTANT to match BSHAPES in arig.py
 
-        //compute deltas
 
-        Eigen::Vector3d clr(109/255.0f, 150/255.0f, 144/255.0f);
+        //load animation
+        std::string csv_file = "/home/rinat/Workspace/FacialManifoldSource/data_anim/maya_exports2/03_0070_02_animation_workshop_0021.txt";
+        loadAnimation(csv_file);
+        
+        
         Eigen::MatrixXd V, N;
         Eigen::MatrixXi F;
-        fmodel.getExpression(V, F, N);
+        mFaceModel.getExpression(V, F, N);
+        RENDER.mesh = IGLMesh::Create(V, F, N, MESH_COLOR);
         
-        RENDER.mesh = IGLMesh::Create(V, F, N, clr);
         m_update_camera = true;
         m_state = App::State::LoadedModel;
 
@@ -311,19 +305,23 @@ namespace tyro
     void App::DrawMeshes() 
     {
         //RA_LOG_INFO("RENDER BEGIN");
-
-        //create renderable for mesh
         VisibleSet vis_set;
-   
-        //std::string fstr = std::string("Frame ") + std::to_string(m_frame) + std::string("/") + std::to_string(ANIM.VD.size());
-        //fstr =fstr+ std::string(" Scene ") + std::to_string(scene_id);
-        //m_frame_overlay->SetText(fstr);
+
+        loadFrame(m_frame);
         
+        // update face geometry
+        Eigen::MatrixXd V, N;
+        Eigen::MatrixXi F;
+        mFaceModel.getExpression(V, F, N);
+        RENDER.mesh->UpdateData(V, F, N, MESH_COLOR);
         RENDER.mesh->Update(true);
         vis_set.Insert(RENDER.mesh.get());
 
-        //vis_set.Insert(m_frame_overlay.get());
-        //vis_set.Insert(m_shaderbox.get());
+        // update timeline text
+        std::string fstr = std::string("Frame ") + std::to_string(m_frame) + std::string("/") + std::to_string(mCurAnimation.getNumFrames());
+        m_frame_overlay->SetText(fstr);
+        vis_set.Insert(m_frame_overlay.get());
+        
         if (m_update_camera) 
         {
             update_camera();
@@ -331,6 +329,22 @@ namespace tyro
         }
         
         m_gl_rend->RenderVisibleSet(&vis_set, m_camera);       
+    }
+
+    void App::loadFrame(int frame) 
+    {
+        std::vector<double> W;
+        std::vector<std::string> A;
+        mCurAnimation.getWeights(frame, A, W);
+        mFaceModel.setWeights(A, W);
+    }
+
+    void App::loadAnimation(const std::string& name) 
+    {
+        mCurAnimation.readPandasCsv(name, 0);
+        mCurAnimation.setCustomAttrs(mFaceModel.getBnames());
+        m_timeline->SetFrameRange(mCurAnimation.getNumFrames()-1);
+
     }
 
     void App::render() 
@@ -467,7 +481,23 @@ namespace tyro
         }
         else 
         {
-            
+            if (key == 'p') 
+            {
+                if (m_timeline->state == Timeline::State::Running)
+                    m_timeline->Pause();
+                else
+                    m_timeline->Start();
+            }
+            else if (key == ']') //next frame
+            {
+                m_timeline->NextFrame();
+                render();
+            }
+            else if (key == '[')
+            {
+                m_timeline->PrevFrame();
+                render();
+            }            
         }
     }
     

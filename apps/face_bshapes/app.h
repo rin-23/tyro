@@ -9,6 +9,9 @@
 #include <atomic>
 #include "Wm5Transform.h"
 #include "bshapes.h"
+#include "TyroTimeLine.h"
+#include "animation.h"
+#include <opencv2/opencv.hpp>
 
 namespace tyro
 {   
@@ -23,9 +26,10 @@ namespace tyro
         ~App();
         
         int Launch();
+        int Setup();
         State m_state;
         
-        //Timeline* m_timeline;
+        Timeline* m_timeline;
         Window* m_tyro_window;
         ES2Renderer* m_gl_rend;
         iOSCamera* m_camera;
@@ -54,14 +58,16 @@ namespace tyro
         Console m_console;
         bool m_update_camera;
         bool m_show_wire;
-          
+        int m_frame;
+
         struct MRenderData 
         {
             IGLMeshSPtr mesh;
         };
         MRenderData RENDER;
 
-        FaceModel fmodel;
+        FaceModel mFaceModel;
+        Animation mCurAnimation;
 
         void register_console_function(const std::string& name,
                                        const std::function<void(App*, const std::vector<std::string>&)>& con_fun,
@@ -69,6 +75,8 @@ namespace tyro
         void update_camera();
         void render();
         void DrawMeshes();
+        void loadAnimation(const std::string& name);
+        void loadFrame(int frame);
     };
 
     

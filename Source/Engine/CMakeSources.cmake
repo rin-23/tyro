@@ -37,7 +37,7 @@ set(TYRO_SRC_LOCAL
 "Source/Engine/stb_image.c"
 "Source/Engine/TyroIGLMesh.cpp"
 #"Engine/stop_motion_data.cpp"
-#"Engine/TyroTimeLine.cpp"
+"Source/Engine/TyroTimeLine.cpp"
 )
 
 set(TYRO_ENGINE_SRC

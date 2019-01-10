@@ -109,7 +109,7 @@ Window::~Window()
 {
 }
 
-int Window::Init()
+int Window::Init(int w, int h)
 {
     /* Initialize the library */
     if (!glfwInit())
@@ -120,7 +120,7 @@ int Window::Init()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
-    m_glfw_window = glfwCreateWindow(1.5*1980, 1.5*1020, "Hello World", NULL, NULL);
+    m_glfw_window = glfwCreateWindow(w, h, "tyro", NULL, NULL);
     //m_glfw_window = glfwCreateWindow(1200, 1200, "Hello World", NULL, NULL);
     
     if (!m_glfw_window)

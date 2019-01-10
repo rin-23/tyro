@@ -10,3 +10,9 @@
 [submodule "Source/External/tinyobjloader"]
 	path = Source/External/tinyobjloader
 	url = git@github.com:syoyo/tinyobjloader.git
+[submodule "Source/External/fast-cpp-csv-parser"]
+	path = Source/External/fast-cpp-csv-parser
+	url = git@github.com:ben-strasser/fast-cpp-csv-parser.git
+[submodule "Source/External/csv-parser"]
+	path = Source/External/csv-parser
+	url = git@github.com:AriaFallah/csv-parser.git

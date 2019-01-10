@@ -84,7 +84,10 @@
                 "/home/rinat/Workspace/poco-1.9.0/Foundation/include",
                 "/home/rinat/Workspace/poco-1.9.0/Foundation/include/Poco",
                 "${workspaceFolder}/apps/TyroVJ",
-                "${workspaceFolder}/apps/face_wrap"
+                "${workspaceFolder}/apps/face_wrap",
+                "${workspaceFolder}/apps/face_bshapes",
+                "${workspaceFolder}/Source/External/filesystem"
+                
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
