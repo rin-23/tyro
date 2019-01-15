@@ -163,7 +163,8 @@ namespace tyro
         inline int ShouldClose() { return glfwWindowShouldClose(m_glfw_window); }
 
         inline ES2Context* GetGLContext() { return m_gl_context; }
-
+        inline GLFWwindow* GetGLFWWindow() { return m_glfw_window; }
+        
         inline void ProcessUserEvents() { glfwPollEvents(); }
         inline void Wait() { glfwWaitEvents(); }
         

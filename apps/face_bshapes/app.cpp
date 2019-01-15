@@ -18,6 +18,10 @@
 #include "common.h"
 #include <filesystem/path.h>
 
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+
 using namespace std;
 
 using Wm5::APoint;
@@ -118,14 +122,10 @@ namespace tyro
     m_frame(0),
     m_state(App::State::None),
     m_need_rendering(false),
-    m_computed_deformation(false),
-    m_computed_avg(false),
     //m_sel_primitive(App::SelectionPrimitive::Faces),
     //m_sel_method(App::SelectionMethod::OneClick),
-    m_computed_stop_motion(false),
     m_update_camera(false),
     m_frame_overlay(nullptr),
-    m_computed_parts(false),
     m_show_wire(true)
     //add_seg_faces(false),
     //m_video_texture(nullptr),
@@ -151,7 +151,7 @@ namespace tyro
     {
           //setup windowshapes
         m_tyro_window = new Window();
-        m_tyro_window->Init(1200,1200);
+        m_tyro_window->Init(1600,1200);
                 
         //setup renderer
         m_gl_rend = new ES2Renderer(m_tyro_window->GetGLContext());
@@ -168,7 +168,7 @@ namespace tyro
             //RA_LOG_INFO("Frame Change BEGIN");
             m_frame = frame;
             m_need_rendering = true;
-            glfwPostEmptyEvent();
+            //glfwPostEmptyEvent();
             //RA_LOG_INFO("Frame Change END");
         };
         
@@ -225,7 +225,7 @@ namespace tyro
 
 
         register_console_function("render_to_image", console_render_to_image, ""); 
-                register_console_function("render_to_images", console_render_to_images, ""); 
+        register_console_function("render_to_images", console_render_to_images, ""); 
 
 
 
@@ -244,45 +244,66 @@ namespace tyro
                                                  viewport);
                                                  
         m_frame_overlay->SetTranslate(Wm5::Vector2i(-viewport[2]/2 + 50,-viewport[3]/2 + 50));
-    }
+    
+        //setup imgui
+       // Setup Dear ImGui context
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO(); (void)io;
+        //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+        //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
+        // Setup Dear ImGui style
+        ImGui::StyleColorsDark();
+        //ImGui::StyleColorsClassic();
+
+        // Setup Platform/Renderer bindings
+        ImGui_ImplGlfw_InitForOpenGL(m_tyro_window->GetGLFWWindow(), true);
+        ImGui_ImplOpenGL3_Init("#version 400");
+
+        //load all bshapes and neuteral expression
+        mFaceModel.setNeuteralMesh(NEUT);
+        mFaceModel.setBshapes(BSHAPES_MAP); // ORDER IS VERY IMPORTANT to match BSHAPES in arig.py
+
+        //load neuteral expression
+        Eigen::MatrixXd V, N;
+        Eigen::MatrixXi F;
+        mFaceModel.getExpression(V, F, N);
+        RENDER.mesh = IGLMesh::Create(V, F, N, MESH_COLOR);
+    }
+    
     int App::Launch()
     {   
         RA_LOG_INFO("Launching the app");
 
         Setup();
 
-        //load all bshapes and neuteral expression
-        mFaceModel.setNeuteralMesh(NEUT);
-        mFaceModel.setBshapes(BSHAPES); // ORDER IS VERY IMPORTANT to match BSHAPES in arig.py
-
-
         //load animation
-        std::string csv_file = "/home/rinat/Workspace/FacialManifoldSource/data_anim/maya_exports2/03_0070_02_animation_workshop_0021.txt";
-        loadAnimation(csv_file);
-        
-        
-        Eigen::MatrixXd V, N;
-        Eigen::MatrixXi F;
-        mFaceModel.getExpression(V, F, N);
-        RENDER.mesh = IGLMesh::Create(V, F, N, MESH_COLOR);
-        
+        loadAnimation(ANIM_LIST[0]);
+                
         m_update_camera = true;
         m_state = App::State::LoadedModel;
 
         while (!m_tyro_window->ShouldClose())
         {   
-            if (m_need_rendering) 
-            {
-                if (m_state == App::State::Launched) 
-                {
-                    m_gl_rend->ClearScreen();
-                }
-                else if (m_state == App::State::LoadedModel) 
-                {   
-                    DrawMeshes();
-                }
+            m_tyro_window->ProcessUserEvents();
+
+            //if (m_need_rendering) 
+            {   
                 
+                DrawUI();
+                //if (m_state == App::State::Launched) 
+                //{
+                    m_gl_rend->ClearScreen();
+                //}
+                //else if (m_state == App::State::LoadedModel) 
+                //{   
+                    //if (m_need_rendering)
+                    DrawMeshes();
+                //}
+                
+                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
                 // Draw console
                 if (show_console) 
                 {
@@ -293,13 +314,72 @@ namespace tyro
                 m_tyro_window->GetGLContext()->swapBuffers();
                 m_need_rendering = false;             
             }
-            
-            m_tyro_window->Wait();
-            //m_tyro_window->ProcessUserEvents();
-
+        
+            //m_tyro_window->Wait();
         }
 
+        // Cleanup
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
+
 	    return 0;
+    }
+
+    void App::DrawUI()
+    {
+        // Start the Dear ImGui frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        //if (show_demo_window)
+        //ImGui::ShowDemoWindow();
+
+        if (ImGui::TreeNode("Animations"))
+        {
+            //ShowHelpMarker("This is a more standard looking tree with selectable nodes.\nClick to select, CTRL+Click to toggle, click on arrows or double-click to open.");
+            //static bool align_label_with_current_x_position = false;
+            //ImGui::Checkbox("Align label with current X position)", &align_label_with_current_x_position);
+            //ImGui::Text("Hello!");
+            //if (align_label_with_current_x_position)
+                //ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
+
+            ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ImGui::GetFontSize()*3); // Increase spacing to differentiate leaves from expanded contents.
+            for (int i = 0; i < ANIM_LIST.size(); i++)
+            {
+                // Disable the default open on single-click behavior and pass in Selected flag according to our selection state.
+                ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ((file_selected == i) ? ImGuiTreeNodeFlags_Selected : 0);
+                // Leaf: The only reason we have a TreeNode at all is to allow selection of the leaf. Otherwise we can use BulletText() or TreeAdvanceToLabelPos()+Text().
+                node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen; // ImGuiTreeNodeFlags_Bullet
+                auto p = filesystem::path(ANIM_LIST[i]);
+                ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, "%i %s", i, p.basename().c_str());
+                if (ImGui::IsItemClicked()) 
+                {
+                    file_selected = i;
+                    RA_LOG_INFO("file selected %i", file_selected);      
+                }      
+            }
+
+            ImGui::PopStyleVar();
+            if(ImGui::Button("Load Animation"))
+            {   
+                if (file_selected >= 0)
+                    RA_LOG_INFO("load animation %s", ANIM_LIST[file_selected].c_str());
+                
+                loadAnimation(ANIM_LIST[file_selected]);
+                m_frame = 0;
+            }
+            //if (align_label_with_current_x_position)
+            //    ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
+            ImGui::TreePop();
+        }
+        
+        //ImGui::End();
+        //ImGui::Begin("Animations", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+        // ImGui::Text("Hello from another window!");
+        //ImGui::End();
+        
+        ImGui::Render();
     }
 
     void App::DrawMeshes() 
@@ -342,9 +422,10 @@ namespace tyro
     void App::loadAnimation(const std::string& name) 
     {
         mCurAnimation.readPandasCsv(name, 0);
-        mCurAnimation.setCustomAttrs(mFaceModel.getBnames());
+        //mCurAnimation.setCustomAttrs(mFaceModel.getBnames());
+        //m_timeline->Stop();
         m_timeline->SetFrameRange(mCurAnimation.getNumFrames()-1);
-
+        m_timeline->SetFrame(0);
     }
 
     void App::render() 
@@ -375,7 +456,6 @@ namespace tyro
     void App::mouse_down(Window& window, int button, int modifier) 
     {   
         //RA_LOG_INFO("mouse down %i", button);
-
         if (m_state != App::State::LoadedModel) return;
 
         mouse_is_down = true;
@@ -438,11 +518,11 @@ namespace tyro
             m_camera->HandleTwoFingerPanGesture(gesture_state, Wm5::Vector2i(mouse_x, -mouse_y));
             gesture_state = 1;
             render();
-        }        
+        } 
     }
 
     void App::mouse_scroll(Window& window, float ydelta) 
-    {
+    {   
         //RA_LOG_INFO("mouse scroll delta %f", ydelta);
         if (m_state != App::State::LoadedModel) return;
         

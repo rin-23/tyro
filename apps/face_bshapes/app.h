@@ -35,7 +35,7 @@ namespace tyro
         iOSCamera* m_camera;
         ES2TextOverlaySPtr m_frame_overlay;
         std::atomic<bool> m_need_rendering;
-        //ShaderBoxSPtr m_shaderbox;
+
         void mouse_down(Window& window, int button, int modifier);
         void mouse_up(Window& window, int button, int modifier);
         void mouse_move(Window& window, int mouse_x, int mouse_y);
@@ -51,14 +51,12 @@ namespace tyro
         bool show_console;        
         int m_modifier;
         int m_mouse_btn_clicked;
-        bool m_computed_deformation;
-        bool m_computed_avg;
-        bool m_computed_stop_motion;
-        bool m_computed_parts;
         Console m_console;
         bool m_update_camera;
         bool m_show_wire;
         int m_frame;
+        int file_selected = -1; //(1 << 2); // Dumb representation of what may be user-side selection state. You may carry selection state inside or outside your objects in whatever format you see fit.
+
 
         struct MRenderData 
         {
@@ -69,6 +67,7 @@ namespace tyro
         FaceModel mFaceModel;
         Animation mCurAnimation;
 
+
         void register_console_function(const std::string& name,
                                        const std::function<void(App*, const std::vector<std::string>&)>& con_fun,
                                        const std::string& help_txt);
@@ -77,6 +76,8 @@ namespace tyro
         void DrawMeshes();
         void loadAnimation(const std::string& name);
         void loadFrame(int frame);
+        void DrawUI();
+        
     };
 
     

@@ -18,7 +18,7 @@ class FaceModel
 
         void setNeuteralMesh(const std::string& obj_path);
         
-        void setBshapes(const std::vector<std::string>& obj_paths);
+        void setBshapes(const std::map<std::string, std::string>& bmap);
 
         //set weight for bshape
         void setWeight(const std::string& bname, double w);

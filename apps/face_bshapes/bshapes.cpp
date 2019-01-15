@@ -19,28 +19,23 @@ namespace tyro
         tyro::load_mesh(obj_path, mVneut, mNneut, mF);
     }
     
-    void FaceModel::setBshapes(const std::vector<std::string>& obj_paths)
+    void FaceModel::setBshapes(const std::map<std::string, std::string>& bmap)
     {   
-        std::vector<Eigen::MatrixXd> Nbshapes; // normal data of bshapes
-        std::vector<Eigen::MatrixXd> Vbshapes; // vertex data of bshapes
         Eigen::MatrixXi Fbshapes; 
-        tyro::load_meshes(obj_paths, Vbshapes, Nbshapes, Fbshapes);
-        assert(mF.rows() == Fbshapes.rows());
-
-        //m_num_bshapes = Vbshapes.size();
         mBnames.clear();
         mBdata.clear();
 
-        for (int i = 0; i < obj_paths.size(); ++i) 
-        {   
-            auto p = filesystem::path(obj_paths[i]);
-            auto name = p.basename();
-            mBnames.push_back(name);
-            mBdata.push_back({0.0, Vbshapes[i] - mVneut});
-        }
+        for (const auto& kv : bmap) 
+        {
+            auto maya_au = kv.first;
+            auto obj_path = kv.second;
+            Eigen::MatrixXd V, N;
+            tyro::load_mesh(obj_path, V, N, Fbshapes);
+            assert(mF.rows() == Fbshapes.rows());
 
-        //m_weights[] = (m_num_bshapes); 
-        //std::fill(m_weights.begin(), m_weights.end(), 0.0f);
+            mBnames.push_back(maya_au);
+            mBdata.push_back({0.0, V - mVneut});
+        }
     }
 
     //set weight for bshape
@@ -49,11 +44,11 @@ namespace tyro
         auto idx = std::find(mBnames.begin(), mBnames.end(), bshape_name);
         if (idx == mBnames.end()) 
         {
-            RA_LOG_ERROR_ASSERT("couldnt find the name");
+            //RA_LOG_WARN("couldnt find the name %s", bshape_name.c_str());
         } 
         else 
         {   
-            if (w < 0.0 || w > 1.0) 
+            if (w < -1.0 || w > 1.0) 
             {
                 RA_LOG_WARN("weight is out of bounds %s %f", bshape_name.c_str(), w);
             }

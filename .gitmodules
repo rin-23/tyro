@@ -16,3 +16,6 @@
 [submodule "Source/External/csv-parser"]
 	path = Source/External/csv-parser
 	url = git@github.com:AriaFallah/csv-parser.git
+[submodule "Source/External/imgui"]
+	path = Source/External/imgui
+	url = git@github.com:ocornut/imgui.git

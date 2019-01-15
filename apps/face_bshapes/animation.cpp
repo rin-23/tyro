@@ -14,7 +14,6 @@ void Animation::readPandasCsv(const std::string& csv_file, int index_col)
 {   
     using namespace aria::csv;
 
-
     mAttrs.clear();
     mData.clear();
 
@@ -82,6 +81,7 @@ int Animation::getNumFrames()
     return mData.size();
 }
 
+/*
 int Animation::setCustomAttrs(const std::vector<std::string>& attrs)
 {
     assert(mAttrs.size() == attrs.size());
@@ -93,6 +93,6 @@ int Animation::setCustomAttrs(const std::vector<std::string>& attrs)
     mAttrs.clear();
     std::copy(attrs.begin(), attrs.end(), back_inserter(mAttrs)); 
 }
-
+*/
 
 }

@@ -72,6 +72,7 @@ endif()
 add_subdirectory(Source/Math)
 include(Source/Core/CMakeSources.cmake)
 include(Source/Engine/CMakeSources.cmake)
+include(Source/External/CMakeSources.cmake)
 #include(apps/StopMotion/CMakeSources.cmake)
 #include(apps/TyroVJ/CMakeSources.cmake)
 #include(apps/TyroVJ/CMakeSources.cmake)
@@ -121,6 +122,8 @@ set(TYRO_ENGINE_INC_EXE
 
 set(TYRO_EXTERNAL_INC_EXE
     "./Source/External"
+    "./Source/External/imgui/"
+    "./Source/External/imgui/examples"
     )
 
 #set(TYROVJ_INC_EXE
@@ -157,7 +160,7 @@ include_directories(SYSTEM "Source/External/libigl/external/eigen")
 include_directories(SYSTEM "/home/rinat/Workspace/poco-1.9.0/Foundation/include")
 include_directories(SYSTEM "/home/rinat/Workspace/Tyro/Source/External/tinyobjloader/")
 
-add_executable(tyro main.cpp ${TYRO_CORE_SRC} ${TYRO_ENGINE_SRC} ${TYROAPP_SRC})
+add_executable(tyro main.cpp ${TYRO_CORE_SRC} ${TYRO_EXTERNAL_SRC} ${TYRO_ENGINE_SRC} ${TYROAPP_SRC})
 
 IF(CMAKE_BUILD_TYPE MATCHES Debug)
     add_definitions(-D_DEBUG)

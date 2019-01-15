@@ -18,7 +18,7 @@ public:
 
     int getNumFrames();
 
-    int setCustomAttrs(const std::vector<std::string>& attrs);
+    //int setCustomAttrs(const std::vector<std::string>& attrs);
 private:
     std::vector<std::string> mAttrs; // list of attributes/bshapes names
     std::vector<std::vector<double>> mData; // #frame by #attributes matrix
