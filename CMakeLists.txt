@@ -99,7 +99,7 @@ endif()
 #set(CMAKE_CXX_FLAGS "-Wall")
 
 #SET (CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -ldl -lX11 -lXi -lXrandr -lXxf86vm -lXinerama -lXcursor -lrt -lm")
-add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLEW)
+add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLEW) # force imgui to use glew
 
 add_subdirectory(Source/Math)
 include(Source/Core/CMakeSources.cmake)
