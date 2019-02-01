@@ -118,7 +118,6 @@ UpgradeLog*.htm
 *.slo
 *.lo
 *.o
-*.obj
 
 # Precompiled Headers
 *.gch
