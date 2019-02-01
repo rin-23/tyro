@@ -4,6 +4,7 @@
 #include "GLStructures.h"
 #include "RACamera.h"
 #include "GazeEstimation.h"
+#include <FaceAnalyser.h>
 
 namespace tyro
 {
