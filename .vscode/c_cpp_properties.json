@@ -86,8 +86,14 @@
                 "${workspaceFolder}/apps/TyroVJ",
                 "${workspaceFolder}/apps/face_wrap",
                 "${workspaceFolder}/apps/face_bshapes",
-                "${workspaceFolder}/Source/External/filesystem"
-                
+                "${workspaceFolder}/Source/External/filesystem",
+                "${workspaceFolder}/Source/External/imgui",
+                "${workspaceFolder}/Source/External/imgui/examples",
+                "/home/rinat/Workspace/OpenFace/lib/local/FaceAnalyser/include",
+                "/home/rinat/Workspace/OpenFace/lib/local/GazeAnalyser/include",
+                "/home/rinat/Workspace/OpenFace/lib/local/LandmarkDetector/include",
+                "/home/rinat/Workspace/OpenFace/lib/local/Utilities/include"
+
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",

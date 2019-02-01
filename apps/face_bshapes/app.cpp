@@ -22,6 +22,8 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
+#include "OpenFaceTexture.h"
+
 using namespace std;
 
 using Wm5::APoint;
@@ -155,7 +157,7 @@ namespace tyro
                 
         //setup renderer
         m_gl_rend = new ES2Renderer(m_tyro_window->GetGLContext());
-        m_gl_rend->SetClearColor(Wm5::Vector4f(20/255.0, 20/255.0, 20/255.0, 1));
+        m_gl_rend->SetClearColor(Wm5::Vector4f(100/255.0, 100/255.0, 100/255.0, 1));
 
         int v_width, v_height;
         m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
@@ -228,7 +230,6 @@ namespace tyro
         register_console_function("render_to_images", console_render_to_images, ""); 
 
 
-
         FontManager* fManager = FontManager::GetSingleton();
         float scale = 1;
         float ppi = 144;
@@ -270,6 +271,9 @@ namespace tyro
         Eigen::MatrixXi F;
         mFaceModel.getExpression(V, F, N);
         RENDER.mesh = IGLMesh::Create(V, F, N, MESH_COLOR);
+
+        // create a video stream
+        m_camera_texture = OpenFaceTexture::Create();
     }
     
     int App::Launch()
@@ -402,6 +406,9 @@ namespace tyro
         m_frame_overlay->SetText(fstr);
         vis_set.Insert(m_frame_overlay.get());
         
+        // update camera 
+        m_camera_texture->showFrame();
+        vis_set.Insert(m_camera_texture.get());
         if (m_update_camera) 
         {
             update_camera();

@@ -1,11 +1,14 @@
 cmake_minimum_required(VERSION 3.5.0)
+
+set(CMAKE_C_COMPILER "gcc")
+set(CMAKE_CXX_COMPILER "g++")
+
 project(Tyro)
 
 # Set OS-specific things here
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-
 message(STATUS "Compiling on Unix")
 
 IF(CMAKE_BUILD_TYPE MATCHES Debug)
@@ -32,8 +35,37 @@ pkg_search_module(GLFW REQUIRED glfw3)
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(Freetype REQUIRED)
-find_package(Threads REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(Threads REQUIRED)
+
+set(OpenBLAS_INCLUDE_DIR "/home/rinat/Workspace/OpenFace/lib/3rdParty/OpenBLAS/include")
+set(OpenBLAS_LIB "/usr/lib/x86_64-linux-gnu/libopenblas.so")
+
+SET (BOOST_INCLUDEDIR "/usr/include/boost")
+SET (BOOST_LIBRARYDIR "/usr/lib/x86_64-linux-gnu")
+find_package( Boost 1.5.9 REQUIRED COMPONENTS filesystem system)
+if(${Boost_FOUND})
+	MESSAGE("Boost information:") 
+	MESSAGE("  Boost_VERSION: ${Boost_VERSION}")
+	MESSAGE("  Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}") 
+	MESSAGE("  Boost_LIBRARIES: ${Boost_LIBRARIES}") 
+	MESSAGE("  Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}") 
+else()
+    MESSAGE(FATAL_ERROR "Boost not found in the system.")
+endif()
+
+# dlib
+find_package(dlib 19.13)
+if(${dlib_FOUND})
+    message("dlib information:")
+    message("  dlib version: ${dlib_VERSION}")
+
+    if (NOT TARGET dlib)
+        add_library(dlib INTERFACE IMPORTED GLOBAL)
+    endif()
+else()
+    message(FATAL_ERROR "dlib not found in the system, please install dlib")
+endif()
 
 #SET(GCC_COVERAGE_LINK_FLAGS  "-ldl")
 #SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLeAGS}")
@@ -155,10 +187,17 @@ include_directories(${OPENGL_INCLUDE_DIR})
 include_directories(${GLEW_INCLUDE_DIR})
 include_directories(${FREETYPE_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${OpenBLAS_INCLUDE_DIR})
+#include_directories(${dlib_INCLUDE_DIRS})
 include_directories(SYSTEM "Source/External/libigl/include")
 include_directories(SYSTEM "Source/External/libigl/external/eigen")
 include_directories(SYSTEM "/home/rinat/Workspace/poco-1.9.0/Foundation/include")
 include_directories(SYSTEM "/home/rinat/Workspace/Tyro/Source/External/tinyobjloader/")
+include_directories(SYSTEM "/home/rinat/Workspace/OpenFace/lib/local/FaceAnalyser/include")
+include_directories(SYSTEM "/home/rinat/Workspace/OpenFace/lib/local/GazeAnalyser/include")
+include_directories(SYSTEM "/home/rinat/Workspace/OpenFace/lib/local/LandmarkDetector/include")
+include_directories(SYSTEM "/home/rinat/Workspace/OpenFace/lib/local/Utilities/include")
 
 add_executable(tyro main.cpp ${TYRO_CORE_SRC} ${TYRO_EXTERNAL_SRC} ${TYRO_ENGINE_SRC} ${TYROAPP_SRC})
 
@@ -177,8 +216,18 @@ target_link_libraries(tyro ${FREETYPE_LIBRARIES})
 target_link_libraries(tyro ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(tyro ${OpenCV_LIBS})
 target_link_libraries(tyro TyroMath)
+
+
 target_link_libraries(tyro "/home/rinat/Workspace/poco-1.9.0/cmake-build/lib/libPocoFoundation.so")
+target_link_libraries(tyro "/home/rinat/Workspace/OpenFace/build/lib/local/FaceAnalyser/libFaceAnalyser.a")
+target_link_libraries(tyro "/home/rinat/Workspace/OpenFace/build/lib/local/GazeAnalyser/libGazeAnalyser.a")
+target_link_libraries(tyro "/home/rinat/Workspace/OpenFace/build/lib/local/LandmarkDetector/libLandmarkDetector.a")
+target_link_libraries(tyro "/home/rinat/Workspace/OpenFace/build/lib/local/Utilities/libUtilities.a")
+target_link_libraries(tyro ${Boost_LIBRARIES})
+target_link_libraries(tyro ${Boost_INCLUDE_DIRS}/boost)
 target_link_libraries(tyro -ldl -lX11 -lXi -lXrandr -lXxf86vm -lXinerama -lXcursor)
+target_link_libraries(tyro ${OpenBLAS_LIB})
+target_link_libraries(tyro dlib::dlib)
 
 #target_link_libraries(tyro "/usr/lib/x86_64-linux-gnu/libdl.so")
 #target_link_libraries(tyro "/usr/lib/x86_64-linux-gnu/libX11.so")

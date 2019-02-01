@@ -4457,7 +4457,6 @@ void copy_sub2(App::MAnimation& subanimaton, std::vector<int> frame, App::MAnima
         int openglAnchor = 426;
         //int offset = openglAnchor - fileAnchor;
         int offset = 0;
-        
 
         bool serialised = true;
         if (serialised) 
@@ -4477,6 +4476,7 @@ void copy_sub2(App::MAnimation& subanimaton, std::vector<int> frame, App::MAnima
                 m_video.F[f] = cv::Mat::zeros( cv::Size(1920, 1080), CV_8UC3 );
             }
         }
+
         int num_frames = m_video.F.size();
         m_video_texture = ES2VideoTexture::Create(1920, 1080, num_frames, Texture::TextureFormat::TF_R8G8B8); 
 
@@ -4484,31 +4484,8 @@ void copy_sub2(App::MAnimation& subanimaton, std::vector<int> frame, App::MAnima
         {   
             //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/images/monka/01"),
             //std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/images/monka/02"),
-              std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/images/monka/03")      
+            std::string("/home/rinat/GDrive/StopMotionProject/BlenderOpenMovies/monkaa/images/monka/03")      
         };
-        
-        
-
-        /*
-        std::vector<std::string> obj_paths;
-        for (auto& folder : FOLDERS__) 
-        {
-            int num_files_read;
-            RA_LOG_INFO("loading folder %s", folder.data());
-            tyro::obj_file_path_list(folder, "objlist.txt", obj_paths, num_files_read);
-            RA_LOG_INFO("frames read %i", num_files_read);
-        }       
-        
-        int f_count = beginning;
-        for (auto& file : obj_paths) 
-        {
-            Mat LoadedImage, image2, image3;
-            LoadedImage = cv::imread(file);
-            cv::cvtColor(LoadedImage, image2, CV_BGR2RGB);
-            cv::flip(image2, image3, 0);
-            m_video.F[f_count + offset] = image3;
-            f_count++;
-        }      */  
     } 
 
     

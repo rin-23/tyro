@@ -13,6 +13,7 @@
 #include "animation.h"
 #include <opencv2/opencv.hpp>
 
+
 namespace tyro
 {   
     class App 
@@ -56,6 +57,8 @@ namespace tyro
         bool m_show_wire;
         int m_frame;
         int file_selected = -1; //(1 << 2); // Dumb representation of what may be user-side selection state. You may carry selection state inside or outside your objects in whatever format you see fit.
+
+        OpenFaceTextureSPtr m_camera_texture;
 
 
         struct MRenderData 
