@@ -151,13 +151,13 @@ namespace tyro
     
     int App::Setup() 
     {
-          //setup windowshapes
+        //setup windowshapes
         m_tyro_window = new Window();
         m_tyro_window->Init(1600,1200);
                 
         //setup renderer
         m_gl_rend = new ES2Renderer(m_tyro_window->GetGLContext());
-        m_gl_rend->SetClearColor(Wm5::Vector4f(100/255.0, 100/255.0, 100/255.0, 1));
+        m_gl_rend->SetClearColor(Wm5::Vector4f(150/255.0, 150/255.0, 150/255.0, 1));
 
         int v_width, v_height;
         m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
@@ -326,6 +326,61 @@ namespace tyro
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
+
+	    return 0;
+    }
+
+    int App::LaunchOffScreen(std::vector<std::vector<double>>& W_in, 
+                             std::vector<std::vector<std::string>>& A_in,
+                             std::vector<char*>& images)
+    {   
+        RA_LOG_INFO("Launching the app in offscreen mode");
+        
+        //setup windowshapes
+        m_tyro_window = new Window();
+        m_tyro_window->InitOffscreen(1600,1200);
+                
+        //setup renderer
+        m_gl_rend = new ES2Renderer(m_tyro_window->GetGLContext());
+        m_gl_rend->SetClearColor(Wm5::Vector4f(150/255.0, 150/255.0, 150/255.0, 1));
+
+        int v_width, v_height;
+        m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
+        Wm5::Vector4i viewport(0, 0, v_width, v_height);
+        m_camera = new iOSCamera(Wm5::APoint(0,0,0), 1.0, 1.0, 2, viewport, true);
+
+        //load all bshapes and neuteral expression
+        mFaceModel.setNeuteralMesh(NEUT);
+        mFaceModel.setBshapes(BSHAPES_MAP); // ORDER IS VERY IMPORTANT to match BSHAPES in arig.py
+
+        //load neuteral expression
+        Eigen::MatrixXd V, N;
+        Eigen::MatrixXi F;
+        mFaceModel.getExpression(V, F, N);
+        RENDER.mesh = IGLMesh::Create(V, F, N, MESH_COLOR);
+        
+        update_camera();
+
+        assert(W_in.size()==A_in.size());
+
+        for (int i=0;i<W_in.size(); ++i) 
+        {
+            m_gl_rend->ClearScreen();
+            VisibleSet vis_set;
+
+            mFaceModel.setWeights(A_in[i], W_in[i]);
+            Eigen::MatrixXd V, N;
+            Eigen::MatrixXi F;
+            mFaceModel.getExpression(V, F, N);
+            RENDER.mesh->UpdateData(V, F, N, MESH_COLOR);
+            RENDER.mesh->Update(true);
+            vis_set.Insert(RENDER.mesh.get());
+            
+            // m_gl_rend->RenderVisibleSet(&vis_set, m_camera);       
+            // TODO render to offscreen buffer to create images
+            
+            m_tyro_window->GetGLContext()->swapBuffers();
+        }
 
 	    return 0;
     }

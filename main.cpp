@@ -1,4 +1,4 @@
-/*
+
 #include "app.h"
 
 int main(int argc, char **argv) 
@@ -10,7 +10,7 @@ int main(int argc, char **argv)
 	
 	//return 0;
 }
-*/
+/*
 
 ///////////////////////////////////////////////////////////////////////////////
 // Copyright (C) 2017, Carnegie Mellon University and University of Cambridge,
@@ -212,3 +212,4 @@ int main(int argc, char **argv)
 	return 0;
 }
 
+*/

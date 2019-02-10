@@ -82,7 +82,8 @@
         "cinttypes": "cpp",
         "forward_list": "cpp",
         "variant": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "strstream": "cpp"
     },
     "python.linting.enabled": false
 }

@@ -157,6 +157,7 @@ namespace tyro
         //return -1 if failed to initialize glfw window
 
         int Init(int w=1980, int h=1020);
+        int InitOffscreen(int w=1980, int h=1020);
     
         int Terminate();
 

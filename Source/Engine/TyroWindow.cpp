@@ -109,6 +109,48 @@ Window::~Window()
 {
 }
 
+int Window::InitOffscreen(int w, int h) 
+{   
+     /* Initialize the library */
+    if (!glfwInit())
+        return -1;
+    
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+
+    /* Create a windowed mode window and its OpenGL context */
+    m_glfw_window = glfwCreateWindow(w, h, "tyro", NULL, NULL);
+    
+    if (!m_glfw_window)
+    {
+        glfwTerminate();
+        return -1;
+    }
+
+     /* Make the window's context current */
+    glfwMakeContextCurrent(m_glfw_window);
+
+	// start GLEW extension handler
+	glewExperimental = true;
+	GLenum err = glewInit();
+    if (GLEW_OK != err)
+        RA_LOG_ERROR_ASSERT("Failed to initialize GLEW %s\n", glewGetErrorString(err));
+    
+    if (GLEW_VERSION_4_4) 
+        RA_LOG_INFO("Yay! OpenGL 4.4 is supported!");
+    
+    // create opengl context
+    // @TODO: make genetal opengl context
+	m_gl_context = new ES2Context(m_glfw_window);
+
+    //@TODO seems to be a bug with glew
+    GL_CHECK_ERROR_GLEW_HACK;
+
+    return 0;
+}
+
 int Window::Init(int w, int h)
 {
     /* Initialize the library */

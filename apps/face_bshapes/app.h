@@ -27,6 +27,9 @@ namespace tyro
         ~App();
         
         int Launch();
+        int LaunchOffScreen(std::vector<std::vector<double>>& W_in, 
+                            std::vector<std::vector<std::string>>& A_in,
+                            std::vector<char*>& images);
         int Setup();
         State m_state;
         
