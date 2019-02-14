@@ -23,6 +23,12 @@
 #include <imgui_impl_opengl3.h>
 
 #include "OpenFaceTexture.h"
+#include "RATextureBuffer.h"
+#include <boost/filesystem.hpp>
+#include <iostream>
+
+
+using namespace boost::filesystem;
 
 using namespace std;
 
@@ -298,12 +304,12 @@ namespace tyro
                 DrawUI();
                 //if (m_state == App::State::Launched) 
                 //{
-                    m_gl_rend->ClearScreen();
+                m_gl_rend->ClearScreen();
                 //}
                 //else if (m_state == App::State::LoadedModel) 
                 //{   
                     //if (m_need_rendering)
-                    DrawMeshes();
+                DrawMeshes();
                 //}
                 
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -330,12 +336,10 @@ namespace tyro
 	    return 0;
     }
 
-    int App::LaunchOffScreen(std::vector<std::vector<double>>& W_in, 
-                             std::vector<std::vector<std::string>>& A_in,
-                             std::vector<char*>& images)
+    int App::LaunchOffScreen(const std::string& csv_file, const std::string& out_fldr) 
     {   
         RA_LOG_INFO("Launching the app in offscreen mode");
-        
+ 
         //setup windowshapes
         m_tyro_window = new Window();
         m_tyro_window->InitOffscreen(1600,1200);
@@ -358,30 +362,60 @@ namespace tyro
         Eigen::MatrixXi F;
         mFaceModel.getExpression(V, F, N);
         RENDER.mesh = IGLMesh::Create(V, F, N, MESH_COLOR);
-        
+        RENDER.mesh->Update(true);
+        mCurAnimation.readPandasCsv(csv_file, 0);
+        assert(mCurAnimation.getNumFrames() > 0);
+
         update_camera();
 
-        assert(W_in.size()==A_in.size());
+        u_int8_t* texture = (u_int8_t*) malloc(4*v_width *v_height);
+        auto out_path = filesystem::path(out_fldr);
 
-        for (int i=0;i<W_in.size(); ++i) 
+        for (int i=0;i<mCurAnimation.getNumFrames(); ++i) 
         {
             m_gl_rend->ClearScreen();
-            VisibleSet vis_set;
 
-            mFaceModel.setWeights(A_in[i], W_in[i]);
+            std::vector<double> W;
+            std::vector<std::string> A;
+            mCurAnimation.getWeights(i, A, W);
+            mFaceModel.setWeights(A, W);
+            
             Eigen::MatrixXd V, N;
             Eigen::MatrixXi F;
             mFaceModel.getExpression(V, F, N);
+            
             RENDER.mesh->UpdateData(V, F, N, MESH_COLOR);
             RENDER.mesh->Update(true);
+            
+            VisibleSet vis_set;
             vis_set.Insert(RENDER.mesh.get());
-            
-            // m_gl_rend->RenderVisibleSet(&vis_set, m_camera);       
-            // TODO render to offscreen buffer to create images
-            
+            m_gl_rend->RenderVisibleSet(&vis_set, m_camera);       
+
+            // Poll for and process events
             m_tyro_window->GetGLContext()->swapBuffers();
+
+            //make sure everything was drawn
+            glFlush();
+            glFinish();
+            GL_CHECK_ERROR;
+            
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+            glReadPixels(0, 0, v_width, v_height, GL_RGBA, GL_UNSIGNED_BYTE, texture);
+            GL_CHECK_ERROR;
+
+            cv::Mat image1(v_height, v_width, CV_8UC4, texture);
+            cv::Mat image2, image3;
+            cv::cvtColor(image1, image2, CV_RGBA2BGR);
+            cv::flip(image2, image3, 0);
+                        
+            auto fldr_to_write = out_path/filesystem::path(std::to_string(i)+".png");
+
+            cv::imwrite(fldr_to_write.str(), image3);
+   
         }
 
+        free(texture);
+        
 	    return 0;
     }
 
@@ -446,7 +480,11 @@ namespace tyro
         //RA_LOG_INFO("RENDER BEGIN");
         VisibleSet vis_set;
 
-        loadFrame(m_frame);
+        m_camera_texture->showFrame();
+        vis_set.Insert(m_camera_texture.get());
+        loadOpenFace(); 
+
+        //loadFrame(m_frame);
         
         // update face geometry
         Eigen::MatrixXd V, N;
@@ -462,8 +500,6 @@ namespace tyro
         vis_set.Insert(m_frame_overlay.get());
         
         // update camera 
-        m_camera_texture->showFrame();
-        vis_set.Insert(m_camera_texture.get());
         if (m_update_camera) 
         {
             update_camera();
@@ -478,6 +514,39 @@ namespace tyro
         std::vector<double> W;
         std::vector<std::string> A;
         mCurAnimation.getWeights(frame, A, W);
+        mFaceModel.setWeights(A, W);
+    }
+
+    void App::loadOpenFace() 
+    {   
+        std::vector<std::string> names; 
+        std::vector<double> values;
+        m_camera_texture->getAUs(names, values);
+        
+        std::vector<std::string> A; 
+        std::vector<double> W;
+        
+        for (int i=0; i<names.size();++i) 
+        {
+            auto k = names[i];
+            if (OPENFACE_TO_BSHAPES_MAP.count(k)) 
+            {
+                auto v = OPENFACE_TO_BSHAPES_MAP.at(k);
+                for (auto& au : v) 
+                {
+                    A.push_back(au);
+                    double scaled = values[i]/5.0;
+                    if (scaled <= 0.1) 
+                    {
+                        scaled = 0.0;
+                    }
+                    RA_LOG_INFO("%s, %0.3f", k.c_str(), scaled);
+                    assert(scaled <= 1.0 && scaled >=0);
+                    W.push_back(scaled);
+                }
+            }
+        }
+        
         mFaceModel.setWeights(A, W);
     }
 

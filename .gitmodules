@@ -19,3 +19,6 @@
 [submodule "Source/External/imgui"]
 	path = Source/External/imgui
 	url = git@github.com:ocornut/imgui.git
+[submodule "Source/External/easyppm"]
+	path = Source/External/easyppm
+	url = git@github.com:fmenozzi/easyppm.git

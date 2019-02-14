@@ -59,6 +59,29 @@ const std::map<std::string, std::string> BSHAPES_MAP =
     //"loBlink_ctl.translateY"
 };
 
+const std::map<std::string, std::vector<std::string>> OPENFACE_TO_BSHAPES_MAP = 
+{
+    //{"AU01_r",
+    //{"AU02_r",
+    //{"AU04_r",
+    //{"AU05_r",
+    //{"AU06_r",
+    //{"AU07_r",
+    {"AU09",  {"faceMuscles.labSup_AN"}},
+    {"AU10",  {"faceMuscles.labSup"}},
+    {"AU12",  {"faceMuscles.zygomatic"}},
+    {"AU14",  {"faceMuscles.buccinator"}},
+    {"AU15",  {"faceMuscles.triangularis"}},
+    {"AU17",  {"faceMuscles.mentalis"}},
+    {"AU20",  {"faceMuscles.risoriusPlatysma"}},
+    {"AU23",  {"faceMuscles.incisivus"}},
+    {"AU25",  {"faceMuscles.orbOris_loose_lo", "faceMuscles.orbOris_loose_hi"}},
+    {"AU26",  {"jaw.rotateZ"}}
+    //{"AU45_r",
+};
+   
+
+
 const std::string RENDER_IMGS_PATH = "/home/rinat/Workspace/FacialManifoldSource/data_anim/images";
 const std::string RENDER_VIDEOS_PATH = "/home/rinat/Workspace/FacialManifoldSource/data_anim/videos";
 

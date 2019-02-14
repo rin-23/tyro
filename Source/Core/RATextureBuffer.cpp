@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include "RALogManager.h"
 #include "Wm5Vector2.h"
+#include <easyppm/easyppm.h>
 
 namespace tyro
 {
@@ -29,10 +30,27 @@ namespace tyro
             free(mData);
         }
     };
+
+    bool TextureBuffer::toPPM(const std::string& path) 
+    {
+        PPM ppm = easyppm_create(mWidth, mHeight, IMAGETYPE_PPM);
+        
+        for (int i =0; i < mWidth; ++i) 
+        {
+            for (int j = 0; j < mHeight; ++j) 
+            {       
+                Wm5::Vector4uc c = GetColor(Wm5::Vector2i(i,j));
+                easyppm_set(&ppm, i, j, easyppm_rgb(c[0], c[1], c[2]));
+            }
+        }
+        easyppm_write(&ppm, path.c_str());        
+    }
     
     Wm5::Vector4uc TextureBuffer::GetColor(const Wm5::Vector2i& touchPoint) const
     {
-        if (mType != TB_UNSIGNED_BYTE || mFormat != TF_RGBA) {
+        if (mType != TB_UNSIGNED_BYTE || mFormat != TF_RGBA) 
+        {
+            RA_LOG_WARN("Unsuported texture format");
             return Wm5::Vector4uc(0, 0, 0, 0);
         }
         

@@ -4,7 +4,7 @@
 #include "GLStructures.h"
 #include "RACamera.h"
 #include "GazeEstimation.h"
-#include <FaceAnalyser.h>
+#include "FaceAnalyser.h"
 
 namespace tyro
 {
@@ -32,7 +32,8 @@ int OpenFaceTexture::Init(int width,
 
 
 int OpenFaceTexture::Init()
-{
+{   
+  
     vector<string> arguments = {"./tyro", "-device", "0"};
 
 	// no arguments: output usage
@@ -44,7 +45,7 @@ int OpenFaceTexture::Init()
 	}
 
 	det_parameters = LandmarkDetector::FaceModelParameters(arguments);
-
+  
 	// The modules that are being used for tracking
 	face_model = LandmarkDetector::CLNF(det_parameters.model_location);
 	if (!face_model.loaded_successfully)
@@ -70,10 +71,14 @@ int OpenFaceTexture::Init()
     int height = sequence_reader.frame_height;
     
     RA_LOG_INFO("Width %i Height %i", width, height);
-
     RA_LOG_INFO("Device or file opened");
 
+    FaceAnalysis::FaceAnalyserParameters face_analysis_params(arguments);
+    face_analysis_params.OptimizeForVideos();
+    face_analyser = new FaceAnalysis::FaceAnalyser (face_analysis_params);
+
     this->Init(width, height, Texture::TextureFormat::TF_R8G8B8);
+    
 }
 
 OpenFaceTextureSPtr OpenFaceTexture::Create() 
@@ -83,14 +88,25 @@ OpenFaceTextureSPtr OpenFaceTexture::Create()
     return ptr;   
 }
 
+void OpenFaceTexture::getAUs(std::vector<std::string>& names, std::vector<double>& values)
+{
+    for (auto& a : face_analyser->GetCurrentAUsReg())
+    {   
+        names.push_back(a.first);
+        values.push_back(a.second);
+    }
+}
+
 void OpenFaceTexture::showFrame() 
 {   
+    
     // Reading the images
     cv::Mat rgb_image = sequence_reader.GetNextFrame();
     cv::Mat_<uchar> grayscale_image = sequence_reader.GetGrayFrame();
 
     // The actual facial landmark detection / tracking
     bool detection_success = LandmarkDetector::DetectLandmarksInVideo(rgb_image, face_model, det_parameters, grayscale_image);
+    face_analyser->AddNextFrame(rgb_image, face_model.detected_landmarks, face_model.detection_success,sequence_reader.time_stamp, sequence_reader.IsWebcam());
 
     // Gaze tracking, absolute gaze direction
     cv::Point3f gazeDirection0(0, 0, -1);
@@ -115,6 +131,9 @@ void OpenFaceTexture::showFrame()
     visualizer->SetObservationPose(pose_estimate, face_model.detection_certainty);
     visualizer->SetObservationGaze(gazeDirection0, gazeDirection1, LandmarkDetector::CalculateAllEyeLandmarks(face_model), LandmarkDetector::Calculate3DEyeLandmarks(face_model, sequence_reader.fx, sequence_reader.fy, sequence_reader.cx, sequence_reader.cy), face_model.detection_certainty);
     //visualizer->SetFps(fps_tracker.GetFPS());
+    //visualizer->SetObservationActionUnits(face_analyser->GetCurrentAUsReg(), face_analyser->GetCurrentAUsClass());
+   
+   
 
     // Capture frame-by-frame
     cv::Mat frame_image_grb = visualizer->GetVisImage();
@@ -133,6 +152,7 @@ void OpenFaceTexture::showFrame()
     cv::flip(frame_image_rgb, frame_image, -1);
 
     GetVisualEffect()->GetTexture2D()->LoadSubData(0, 0, mWidth, mHeight, frame_image.data);
+    
 }
 
 

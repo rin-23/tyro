@@ -22,7 +22,7 @@
 //#include "RAHitProxy.h"
 //#include "OssaScene.h"
 #include "RAVisibleSet.h"
-//#include "RATextureBuffer.h"
+#include "RATextureBuffer.h"
 #include "RAES2Context.h"
 #include "RAES2Renderable.h"
 
@@ -141,6 +141,35 @@ namespace tyro
 		//[mContext presentRenderbuffer : GL_RENDERBUFFER];
 		//mContext->swapBuffers();
 	}
+
+    TextureBuffer* ES2Renderer::RenderVisibleSetToTexture(const VisibleSet* visualSet, const Camera* camera)
+    {
+        mContext->setCurrent();
+		GL_CHECK_ERROR;
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		GL_CHECK_ERROR;
+
+		for (int i = 0; i < visualSet->GetNumVisible(); ++i)
+		{
+			ES2Renderable* renderable = (ES2Renderable*)visualSet->GetVisible(i);
+			assert(renderable);
+            renderable->UpdateUniformsWithCamera(camera);
+            RenderPrimitive(renderable);
+		}
+
+        u_int8_t* texture = (u_int8_t*) malloc(4*mViewWidth*mViewHeight);
+    //    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glPixelStorei(GL_PACK_ALIGNMENT, 4);
+        glReadBuffer(GL_BACK);
+        glReadPixels(0, 0, mViewWidth, mViewHeight, GL_RGBA, GL_UNSIGNED_BYTE, texture);
+        GL_CHECK_ERROR;
+        
+        TextureBuffer* textureBuffer = new TextureBuffer(TextureBuffer::TF_RGBA, TextureBuffer::TB_UNSIGNED_BYTE, texture, mViewWidth, mViewHeight);
+        
+        glReadBuffer(GL_FRONT);
+
+        return textureBuffer;
+    }
 
 	void ES2Renderer::RenderPrimitive(const ES2Renderable* renderable) const
 	{

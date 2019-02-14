@@ -16,7 +16,7 @@
 namespace tyro
 {  
 //	class ES2Context;
-
+    
 	class ES2Renderer
     {
     public:
@@ -26,7 +26,9 @@ namespace tyro
         ~ES2Renderer();
         
         void RenderVisibleSet(const VisibleSet* visibleSet, const Camera* camera);
-    
+        
+        TextureBuffer* RenderVisibleSetToTexture(const VisibleSet* visualSet, const Camera* camera);
+
 		void SetClearColor(const Wm5::Vector4f& clearColor);
 
 		void ClearScreen();

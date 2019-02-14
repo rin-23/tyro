@@ -27,9 +27,7 @@ namespace tyro
         ~App();
         
         int Launch();
-        int LaunchOffScreen(std::vector<std::vector<double>>& W_in, 
-                            std::vector<std::vector<std::string>>& A_in,
-                            std::vector<char*>& images);
+        int LaunchOffScreen(const std::string& csv_file, const std::string& out_fldr); 
         int Setup();
         State m_state;
         
@@ -82,6 +80,7 @@ namespace tyro
         void DrawMeshes();
         void loadAnimation(const std::string& name);
         void loadFrame(int frame);
+        void loadOpenFace();
         void DrawUI();
         
     };

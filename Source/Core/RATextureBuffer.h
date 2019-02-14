@@ -31,6 +31,8 @@ namespace tyro
         
         Wm5::Vector4uc GetColor(const Wm5::Vector2i& touchPoint) const;
         
+        bool toPPM(const std::string& path);
+
         inline void* GetData() const
         {
             return mData;

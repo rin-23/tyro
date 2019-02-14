@@ -1,16 +1,48 @@
 
 #include "app.h"
+#include "torch_model.h"
 
 int main(int argc, char **argv) 
-{	
-	tyro::App appr;
-	int r_code = appr.Launch();
-	//int r_code = appr.VideoToImages();
-	return r_code;
-	
-	//return 0;
+{
+    /*	
+    std::string path_to_model("/home/rinat/Workspace/FacialManifoldSource/data_anim/traced.pth"); 
+    tyro::TorchModel model;
+    model.Init(path_to_model);
+
+    Eigen::MatrixXd tensor_in(1,33);
+    tensor_in.setOnes();
+    
+    Eigen::MatrixXd tensor_out;
+    
+    model.Compute(tensor_in, tensor_out);
+
+    std::cout << tensor_out << "\n";
+    */
+    tyro::App appr;
+    
+    int r_code = appr.Launch();
+	// int r_code = appr.VideoToImages();
+    // return r_code;
+
+    std::string path_ss1("/home/rinat/Workspace/FacialManifoldSource/data_anim/results/test/2019-02-12_13-42-44/clean/lol.txt");
+    std::string out_fldr1("/home/rinat/Workspace/FacialManifoldSource/data_anim/results/test/2019-02-12_13-42-44/clean");
+    //appr.LaunchOffScreen(path_ss1, out_fldr1);
+
+	return 0;
 }
 /*
+
+
+//std::string path_ss("/home/rinat/Workspace/FacialManifoldSource/data_anim/results/test/2019-01-17_16-27-24/clean");
+//
+//        RA_LOG_INFO("Files read")
+//        for (directory_iterator itr(csv_fldr); itr!=directory_iterator(); ++itr)
+//        {   
+//            
+//            std::cout << itr->path().string() << ' '; 
+//            std::cout << '\n';
+//        }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Copyright (C) 2017, Carnegie Mellon University and University of Cambridge,
@@ -211,5 +243,4 @@ int main(int argc, char **argv)
 	}
 	return 0;
 }
-
 */

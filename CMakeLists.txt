@@ -1,13 +1,13 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_CXX_COMPILER "g++")
-
+set(CMAKE_PREFIX_PATH "/home/rinat/Workspace/pytorch/torch/lib/tmp_install")
 project(Tyro)
 
 # Set OS-specific things here
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 11)
+#set(CMAKE_CXX_STANDARD_REQUIRED OFF)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 message(STATUS "Compiling on Unix")
 
@@ -37,6 +37,8 @@ find_package(GLEW REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Threads REQUIRED)
+find_package(Torch REQUIRED)
+
 
 set(OpenBLAS_INCLUDE_DIR "/home/rinat/Workspace/OpenFace/lib/3rdParty/OpenBLAS/include")
 set(OpenBLAS_LIB "/usr/lib/x86_64-linux-gnu/libopenblas.so")
@@ -199,6 +201,8 @@ include_directories(SYSTEM "/home/rinat/Workspace/OpenFace/lib/local/FaceAnalyse
 include_directories(SYSTEM "/home/rinat/Workspace/OpenFace/lib/local/GazeAnalyser/include")
 include_directories(SYSTEM "/home/rinat/Workspace/OpenFace/lib/local/LandmarkDetector/include")
 include_directories(SYSTEM "/home/rinat/Workspace/OpenFace/lib/local/Utilities/include")
+include_directories(SYSTEM "/home/rinat/Workspace/OpenFace/lib/local/CppInerop")
+#include_directories(SYSTEM "/home/rinat/Workspace/libtorch/include")
 
 add_executable(tyro main.cpp ${TYRO_CORE_SRC} ${TYRO_EXTERNAL_SRC} ${TYRO_ENGINE_SRC} ${TYROAPP_SRC})
 
@@ -210,6 +214,8 @@ IF(CMAKE_BUILD_TYPE MATCHES Release)
     add_definitions(-D_RELEASE)
 ENDIF()
 
+message(STATUS "${TORCH_LIBRARIES}")
+target_link_libraries(tyro "${TORCH_LIBRARIES}")
 target_link_libraries(tyro ${OPENGL_LIBRARIES})
 target_link_libraries(tyro ${GLFW_LIBRARIES})
 target_link_libraries(tyro  "/usr/lib64/libGLEW.so") #${GLEW_LIBRARIES})
@@ -217,7 +223,6 @@ target_link_libraries(tyro ${FREETYPE_LIBRARIES})
 target_link_libraries(tyro ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(tyro ${OpenCV_LIBS})
 target_link_libraries(tyro TyroMath)
-
 
 target_link_libraries(tyro "/home/rinat/Workspace/poco-1.9.0/cmake-build/lib/libPocoFoundation.so")
 target_link_libraries(tyro "/home/rinat/Workspace/OpenFace/build/lib/local/FaceAnalyser/libFaceAnalyser.a")
