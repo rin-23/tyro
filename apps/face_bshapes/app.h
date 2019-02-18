@@ -12,7 +12,8 @@
 #include "TyroTimeLine.h"
 #include "animation.h"
 #include <opencv2/opencv.hpp>
-
+#include "torch_model.h"
+#include "kdtree.h"
 
 namespace tyro
 {   
@@ -37,7 +38,7 @@ namespace tyro
         iOSCamera* m_camera;
         ES2TextOverlaySPtr m_frame_overlay;
         std::atomic<bool> m_need_rendering;
-
+        void FetchGamepadInputs();
         void mouse_down(Window& window, int button, int modifier);
         void mouse_up(Window& window, int button, int modifier);
         void mouse_move(Window& window, int mouse_x, int mouse_y);
@@ -61,16 +62,24 @@ namespace tyro
 
         OpenFaceTextureSPtr m_camera_texture;
 
+        KDTree mTree;
 
         struct MRenderData 
         {
             IGLMeshSPtr mesh;
+            IGLMeshSPtr mesh2;
         };
         MRenderData RENDER;
 
         FaceModel mFaceModel;
-        Animation mCurAnimation;
+        FaceModel mFaceModel2;
 
+        Animation mCurAnimation;
+        TorchModel mTorchModel;
+
+        std::vector<double> lower_values_denoised;
+        std::vector<std::string> lower_bnames;
+        std::vector<double> lower_values; 
 
         void register_console_function(const std::string& name,
                                        const std::function<void(App*, const std::vector<std::string>&)>& con_fun,
@@ -82,6 +91,11 @@ namespace tyro
         void loadFrame(int frame);
         void loadOpenFace();
         void DrawUI();
+        void ComputeDistanceToManifold();
+
+        std::vector<std::vector<double>> MOTION_DATA;
+
+
         
     };
 

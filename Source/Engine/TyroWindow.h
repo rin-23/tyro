@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 #include "RAES2Context.h"
 #include <functional>
+#include <map>
 
 /* Printable keys */
 #define TYRO_KEY_SPACE              32
@@ -169,6 +170,12 @@ namespace tyro
         inline void ProcessUserEvents() { glfwPollEvents(); }
         inline void Wait() { glfwWaitEvents(); }
         
+        int JoystickConnected();
+        int JoystickAxes(std::map<std::string, float>& axes_map);
+        int JoystickButtons(std::map<std::string, bool>& buttons_map);
+
+
+
         std::function<bool(Window& window)> callback_init;
         std::function<bool(Window& window)> callback_pre_draw;
         std::function<bool(Window& window)> callback_post_draw;

@@ -59,6 +59,79 @@ const std::map<std::string, std::string> BSHAPES_MAP =
     //"loBlink_ctl.translateY"
 };
 
+
+const std::vector<std::string> ALL_BSHAPES = 
+{
+    "faceMuscles.frontalis",                        
+    "faceMuscles.currogator",          
+    "faceMuscles.medFrontalis",        
+    "faceMuscles.orbOculi",            
+    "faceMuscles.orbOculi_L",         
+    "faceMuscles.orbOculi_R",          
+    "faceMuscles.orbOculi_out",        
+    "faceMuscles.latFrontalis",       
+    "faceMuscles.latFrontalis_L",      
+    "faceMuscles.latFrontalis_R",      
+    "faceMuscles.LabInf",              
+    "faceMuscles.zygomatic",           
+    "faceMuscles.labSup",              
+    "faceMuscles.labSup_AN",           
+    "faceMuscles.triangularis",        
+    "faceMuscles.incisivus",           
+    "faceMuscles.mentalis",            
+    "faceMuscles.risoriusPlatysma",    
+    "faceMuscles.orbOris_loose_lo",    
+    "faceMuscles.orbOris_loose_hi",    
+    "faceMuscles.orbOris_tight_lo",    
+    "faceMuscles.orbOris_tight_hi",    
+    "faceMuscles.orbOri0s_tight_hi2",  
+    "faceMuscles.orbOris_tight_lo2",   
+    "faceMuscles.mouthClose",          
+    "faceMuscles.orbOculi_lo",         
+    "faceMuscles.buccinator",          
+    "faceMuscles.orbOculi_lo_L",       
+    "faceMuscles.orbOculi_lo_R",       
+    "faceMuscles.labSup_L",            
+    "faceMuscles.labSup_R",            
+    "faceMuscles.zygomatic_L",         
+    "faceMuscles.zygomatic_R",         
+    "faceMuscles.risoriusPlatysma_L",  
+    "faceMuscles.risoriusPlatysma_R",  
+    "faceMuscles.levAnguliOris",       
+    "faceMuscles.dilatorNaris",        
+    "faceMuscles.Zyg_Minor",           
+    "faceMuscles.mentalis_lowerLip",   
+    "faceMuscles.triangularis_L",      
+    "faceMuscles.triangularis_R",      
+    "faceMuscles.orbOris_up_hi",       
+    "faceMuscles.jawOpenComp",         
+    "faceMuscles.blow",                
+    "jaw.rotateZ",                     
+    "jaw.rotateY"
+    "jaw.translateX",                  
+    "blink_ctl.translateY",
+    "loBlink_ctl.translateY"
+};
+
+//remove index 46 to get rid of "jaw.rotateY"
+std::vector<int> lower_face_bshape_index = {10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,26,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,46}; 
+
+
+const std::vector<std::string> OpengFaceAUs = 
+{
+    "faceMuscles.labSup_AN",
+    "faceMuscles.labSup",
+    "faceMuscles.zygomatic",
+    "faceMuscles.buccinator",
+    "faceMuscles.triangularis",
+    "faceMuscles.mentalis",
+    "faceMuscles.risoriusPlatysma",
+    "faceMuscles.incisivus",
+    "faceMuscles.orbOris_loose_lo", 
+    "faceMuscles.orbOris_loose_hi",
+    "jaw.rotateZ"
+};
+
 const std::map<std::string, std::vector<std::string>> OPENFACE_TO_BSHAPES_MAP = 
 {
     //{"AU01_r",
@@ -80,7 +153,20 @@ const std::map<std::string, std::vector<std::string>> OPENFACE_TO_BSHAPES_MAP =
     //{"AU45_r",
 };
    
-
+const std::map<std::string, std::vector<std::string>> GAMEPAD_TO_AUS
+= 
+{
+    //{,  {"faceMuscles.labSup_AN"}},
+    //{,  {"faceMuscles.labSup"}},
+    {"L_S_Y",  {"faceMuscles.zygomatic"}},
+    {"R_S_X",  {"faceMuscles.buccinator"}},
+    //{,  {"faceMuscles.triangularis"}},
+    {"R_S_Y",  {"faceMuscles.mentalis"}},
+    //{,  {"faceMuscles.risoriusPlatysma"}},
+    //{,  {"faceMuscles.incisivus"}},
+    //{,  {"faceMuscles.orbOris_loose_lo", "faceMuscles.orbOris_loose_hi"}},
+    {"L_S_X",  {"jaw.rotateZ"}}
+};
 
 const std::string RENDER_IMGS_PATH = "/home/rinat/Workspace/FacialManifoldSource/data_anim/images";
 const std::string RENDER_VIDEOS_PATH = "/home/rinat/Workspace/FacialManifoldSource/data_anim/videos";

@@ -6,6 +6,8 @@
 #include "GazeEstimation.h"
 #include "FaceAnalyser.h"
 
+const bool kIsVideo = true;
+
 namespace tyro
 {
 
@@ -74,8 +76,13 @@ int OpenFaceTexture::Init()
     RA_LOG_INFO("Device or file opened");
 
     FaceAnalysis::FaceAnalyserParameters face_analysis_params(arguments);
-    face_analysis_params.OptimizeForVideos();
-    face_analyser = new FaceAnalysis::FaceAnalyser (face_analysis_params);
+    if (kIsVideo) {
+        face_analysis_params.OptimizeForVideos();
+    } else {
+        face_analysis_params.OptimizeForImages();
+    }
+    
+    face_analyser = new FaceAnalysis::FaceAnalyser(face_analysis_params);
 
     this->Init(width, height, Texture::TextureFormat::TF_R8G8B8);
     
@@ -98,16 +105,28 @@ void OpenFaceTexture::getAUs(std::vector<std::string>& names, std::vector<double
 }
 
 void OpenFaceTexture::showFrame() 
-{   
-    
+{       
     // Reading the images
     cv::Mat rgb_image = sequence_reader.GetNextFrame();
     cv::Mat_<uchar> grayscale_image = sequence_reader.GetGrayFrame();
 
     // The actual facial landmark detection / tracking
-    bool detection_success = LandmarkDetector::DetectLandmarksInVideo(rgb_image, face_model, det_parameters, grayscale_image);
-    face_analyser->AddNextFrame(rgb_image, face_model.detected_landmarks, face_model.detection_success,sequence_reader.time_stamp, sequence_reader.IsWebcam());
+    
+    bool detection_success;
+    RA_LOG_INFO("detecting landmarks");
+    if (kIsVideo)  
+        detection_success = LandmarkDetector::DetectLandmarksInVideo(rgb_image, face_model, det_parameters, grayscale_image);
+    else
+        detection_success = LandmarkDetector::DetectLandmarksInImage(rgb_image, face_model, det_parameters, grayscale_image);
 
+
+    RA_LOG_INFO("Adding next frame");
+    if (kIsVideo) 
+        face_analyser->AddNextFrame(rgb_image, face_model.detected_landmarks, face_model.detection_success,sequence_reader.time_stamp, sequence_reader.IsWebcam());
+    else
+    	face_analyser->PredictStaticAUsAndComputeFeatures(rgb_image, face_model.detected_landmarks);
+
+    RA_LOG_INFO("Computing gaze direction");
     // Gaze tracking, absolute gaze direction
     cv::Point3f gazeDirection0(0, 0, -1);
     cv::Point3f gazeDirection1(0, 0, -1);

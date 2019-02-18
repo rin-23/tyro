@@ -83,7 +83,8 @@
         "forward_list": "cpp",
         "variant": "cpp",
         "string": "cpp",
-        "strstream": "cpp"
+        "strstream": "cpp",
+        "*.ipp": "cpp"
     },
     "python.linting.enabled": false
 }

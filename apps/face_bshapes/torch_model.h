@@ -21,7 +21,8 @@ class TorchModel
         void Init(const std::string& path_to_model);
 
         void Compute(Eigen::MatrixXd& input, Eigen::MatrixXd& output);
-       
+        void Compute(std::vector<double>& input, std::vector<double>& output);
+      
     private:
 
         //class torch::jit::script::Module;

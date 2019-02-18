@@ -89,4 +89,14 @@ namespace tyro
         return mBnames;
     }
 
+    /*
+    void FaceModel::getLowerWeights(std::vector<std::string>& lower_bnames) 
+    {
+        for (auto i : lower_face_bshape_index) 
+        {
+            lower_bnames.push_back(ALL_BSHAPES[i]);
+        }
+    }
+    */
+
 }

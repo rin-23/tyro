@@ -41,4 +41,23 @@ void TorchModel::Compute(Eigen::MatrixXd& input, Eigen::MatrixXd& output)
     double* data = (double*)t_out.data_ptr();
     output = Eigen::Map<matrix_type>(data, rows, cols);
 }
+
+void TorchModel::Compute(std::vector<double>& input, std::vector<double>& output)
+{
+    int rows = 1;
+    int cols = input.size();
+
+    torch::Tensor t_in = torch::from_blob(input.data(), {rows, cols}, torch::TensorOptions().dtype(torch::kFloat64));
+
+    std::vector<torch::jit::IValue> inputs;
+    inputs.push_back(t_in);
+    auto ll = mModule->forward(inputs);
+    at::Tensor t_out = ll.toTensor();
+    
+    //typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>  matrix_type;
+    double* data = (double*)t_out.data_ptr();
+    output.assign(data, data + cols);
+    //output = Eigen::Map<matrix_type>(data, rows, cols);
+}
+
 }

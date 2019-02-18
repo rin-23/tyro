@@ -1,32 +1,65 @@
 
 #include "app.h"
 #include "torch_model.h"
+#include <Eigen/Dense>
+#include "kdtree.h"
 
-int main(int argc, char **argv) 
+void test_kdtree()
 {
-    /*	
+
+    std::vector<std::vector<double>> f = {{1,0,0},{0,1,0},{0,0,1}};
+    //f.resize(5,5);
+    //f.setIdentity();
+
+    tyro::KDTree tree;
+    tree.InitWithData(f);
+    std::vector<double> point = {0,1,0};
+
+    double c_dist;
+    tree.FindClosest(point, c_dist);
+}
+
+void test_tensor()
+{
     std::string path_to_model("/home/rinat/Workspace/FacialManifoldSource/data_anim/traced.pth"); 
     tyro::TorchModel model;
     model.Init(path_to_model);
 
-    Eigen::MatrixXd tensor_in(1,33);
-    tensor_in.setOnes();
+    //Eigen::MatrixXd tensor_in(1,33);
+    //tensor_in.setOnes();
+    std::vector<double> tensor_in(33, 1.0);
     
-    Eigen::MatrixXd tensor_out;
-    
+    //Eigen::MatrixXd tensor_out;
+    std::vector<double> tensor_out;
+
     model.Compute(tensor_in, tensor_out);
 
     std::cout << tensor_out << "\n";
-    */
-    tyro::App appr;
+}
+
+int main(int argc, char **argv) 
+{
+    //test_tensor();
     
-    int r_code = appr.Launch();
-	// int r_code = appr.VideoToImages();
+    tyro::App appr;
+    if (argc<2) 
+    {
+        int r_code = appr.Launch();
+        //test_kdtree();
+    }
+    else 
+    {
+        std::string path_ss1(argv[1]);
+        std::string out_fldr1(argv[2]);
+        std::cout << path_ss1 << "\n";
+        appr.LaunchOffScreen(path_ss1, out_fldr1);
+
+    }
+    // int r_code = appr.VideoToImages();
     // return r_code;
 
-    std::string path_ss1("/home/rinat/Workspace/FacialManifoldSource/data_anim/results/test/2019-02-12_13-42-44/clean/lol.txt");
-    std::string out_fldr1("/home/rinat/Workspace/FacialManifoldSource/data_anim/results/test/2019-02-12_13-42-44/clean");
-    //appr.LaunchOffScreen(path_ss1, out_fldr1);
+    //std::string path_ss1( "/home/rinat/Workspace/FacialManifoldSource/data_anim/clusters/cluster_4/features.txt");
+    //std::string out_fldr1("/home/rinat/Workspace/FacialManifoldSource/data_anim/clusters/cluster_4/imgs");
 
 	return 0;
 }

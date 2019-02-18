@@ -212,7 +212,69 @@ int Window::Terminate()
     glfwTerminate();    
 }
 
+
 //@TODO move all of this inside glfw methods
+
+int Window::JoystickConnected() 
+{
+    int present = glfwJoystickPresent(GLFW_JOYSTICK_1);
+    return present;
+}
+
+int Window::JoystickAxes(std::map<std::string, float>& axes_map) 
+{   
+    if (!JoystickConnected()) 
+    {
+        RA_LOG_ERROR_ASSERT("Gamepad not found");
+        return 0;
+    }
+    
+    int axesCount;
+    const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axesCount);
+    /*
+    RA_LOG_INFO("%i axes found", axesCount);
+    std::cout << "Left Stick X Axis: "  << axes[0] << std::endl; 
+    std::cout << "Left Stick Y Axis: "  << axes[1] << std::endl; 
+    std::cout << "Right Stick X Axis: " << axes[3] << std::endl; 
+    std::cout << "Right Stick Y Axis: " << axes[4] << std::endl; 
+    std::cout << "Left Trigger/L2: "    << axes[2] << std::endl; 
+    std::cout << "Right Trigger/R2: "   << axes[5] << std::endl; 
+    */
+
+    axes_map["L_S_X"] = axes[0];
+    axes_map["L_S_Y"] = axes[1];
+    axes_map["R_S_X"] = axes[3];
+    axes_map["R_S_Y"] = axes[4];
+    axes_map["L_T"] = (axes[2] + 1.0)/2.0;
+    axes_map["R_T"] = (axes[5] + 1.0)/2.0;
+
+    return 1;
+}
+
+int Window::JoystickButtons(std::map<std::string, bool>& buttons_map)
+{   
+    if (!JoystickConnected()) 
+    {
+        RA_LOG_ERROR_ASSERT("Gamepad not found");
+        return 0;
+    }
+
+    int buttonCount;
+    const unsigned char *buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
+    
+    for (int i=0;i<buttonCount;++i) 
+    {   
+        /*
+        if (GLFW_PRESS == buttons[i])
+            std::cout << "Button " << i << "Pressed" << std::endl;
+        else if (GLFW_RELEASE == buttons[i] )
+            std::cout << "Button " << i << "Released" << std::endl;
+        */
+    }
+    
+}
+
+
 
 bool Window::mouse_down(MouseButton button, int modifier)
 {   

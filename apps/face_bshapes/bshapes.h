@@ -32,6 +32,12 @@ class FaceModel
         // get blendshape names
         const std::vector<std::string>& getBnames();
 
+        // get lower data
+        //void getLowerNames(std::vector<std::string>& lower_bnames);
+
+        // TODO: get lower data
+        // void getUpperWeights(std::vector<std::string>& lower_bnames, std::vector<double>& lower_weights);
+        
     private:
 
         struct BShape

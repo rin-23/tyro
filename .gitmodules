@@ -22,3 +22,6 @@
 [submodule "Source/External/easyppm"]
 	path = Source/External/easyppm
 	url = git@github.com:fmenozzi/easyppm.git
+[submodule "Source/External/nanoflann"]
+	path = Source/External/nanoflann
+	url = git@github.com:jlblancoc/nanoflann.git
