@@ -2,10 +2,22 @@
 
 #include <string>
 #include <Eigen/Dense>
+#include <Eigen/Core>
 #include <vector>
 #include <map>
 #include "RAEnginePrerequisites.h"
+#include <cereal/types/vector.hpp>
+#include <cereal/cereal.hpp>
 
+#include "eigen_cerealisation.h"
+#include <iostream>
+#include <fstream>
+
+#include <cereal/types/base_class.hpp>
+#include <cereal/types/memory.hpp>
+#include <cereal/types/polymorphic.hpp>
+#include <cereal/access.hpp>
+#include <cereal/archives/binary.hpp>
 
 namespace tyro
 {
@@ -19,6 +31,9 @@ class FaceModel
         void setNeuteralMesh(const std::string& obj_path);
         
         void setBshapes(const std::map<std::string, std::string>& bmap);
+        
+        void serialize(const std::string& path);
+        void deserialize(const std::string& path);
 
         //set weight for bshape
         void setWeight(const std::string& bname, double w);
@@ -44,6 +59,21 @@ class FaceModel
         {
             double weight;
             Eigen::MatrixXd V;
+
+            template<class Archive>
+            void save(Archive & archive) const
+            {   
+                archive(weight);
+                archive(V);
+             
+            }
+            
+            template<class Archive>
+            void load(Archive & archive)
+            {   
+                archive(weight);
+                archive(V);          
+            }
         };
 
         //int m_num_bshapes; // how many bshapes

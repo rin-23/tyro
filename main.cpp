@@ -42,12 +42,16 @@ int main(int argc, char **argv)
     //test_tensor();
     
     tyro::App appr;
-    if (argc<2) 
+    if (argc==1) 
     {
         int r_code = appr.Launch();
         //test_kdtree();
     }
-    else 
+    else if (argc == 2) 
+    {
+        
+    }
+    else if (argc == 3)
     {
         std::string path_ss1(argv[1]);
         std::string out_fldr1(argv[2]);

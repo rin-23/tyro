@@ -36,7 +36,11 @@ namespace tyro
         Window* m_tyro_window;
         ES2Renderer* m_gl_rend;
         iOSCamera* m_camera;
+
         ES2TextOverlaySPtr m_frame_overlay;
+        ES2TextOverlaySPtr m_dist1;
+        ES2TextOverlaySPtr m_dist2;
+
         std::atomic<bool> m_need_rendering;
         void FetchGamepadInputs();
         void mouse_down(Window& window, int button, int modifier);
@@ -55,7 +59,7 @@ namespace tyro
         int m_modifier;
         int m_mouse_btn_clicked;
         Console m_console;
-        bool m_update_camera;
+        //bool m_update_camera;
         bool m_show_wire;
         int m_frame;
         int file_selected = -1; //(1 << 2); // Dumb representation of what may be user-side selection state. You may carry selection state inside or outside your objects in whatever format you see fit.

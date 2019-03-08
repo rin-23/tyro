@@ -231,6 +231,7 @@ int Window::JoystickAxes(std::map<std::string, float>& axes_map)
     
     int axesCount;
     const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axesCount);
+    
     /*
     RA_LOG_INFO("%i axes found", axesCount);
     std::cout << "Left Stick X Axis: "  << axes[0] << std::endl; 
@@ -262,15 +263,24 @@ int Window::JoystickButtons(std::map<std::string, bool>& buttons_map)
     int buttonCount;
     const unsigned char *buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
     
-    for (int i=0;i<buttonCount;++i) 
-    {   
+    buttons_map["triangle"] = buttons[0];
+    buttons_map["square"] = buttons[1];
+    buttons_map["circle"] = buttons[2];
+    buttons_map["cross"] = buttons[3];
+    buttons_map["R1"] = buttons[4];
+    buttons_map["L1"] = buttons[5];
+    
+    //for (int i=0;i<buttonCount;++i) 
+    //{      
+
+        
         /*
         if (GLFW_PRESS == buttons[i])
             std::cout << "Button " << i << "Pressed" << std::endl;
         else if (GLFW_RELEASE == buttons[i] )
             std::cout << "Button " << i << "Released" << std::endl;
         */
-    }
+   // }
     
 }
 

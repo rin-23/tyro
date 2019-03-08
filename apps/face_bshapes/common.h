@@ -110,12 +110,12 @@ const std::vector<std::string> ALL_BSHAPES =
     "jaw.rotateY"
     "jaw.translateX",                  
     "blink_ctl.translateY",
-    "loBlink_ctl.translateY"
+    "loBlink_ctl.translateY"    
 };
 
 //remove index 46 to get rid of "jaw.rotateY"
 std::vector<int> lower_face_bshape_index = {10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,26,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,46}; 
-
+std::vector<int> upper_face_bshape_index = {0,1,2,3,4,5,6,7,8,9,25,27,28,47,48}; 
 
 const std::vector<std::string> OpengFaceAUs = 
 {
@@ -153,20 +153,7 @@ const std::map<std::string, std::vector<std::string>> OPENFACE_TO_BSHAPES_MAP =
     //{"AU45_r",
 };
    
-const std::map<std::string, std::vector<std::string>> GAMEPAD_TO_AUS
-= 
-{
-    //{,  {"faceMuscles.labSup_AN"}},
-    //{,  {"faceMuscles.labSup"}},
-    {"L_S_Y",  {"faceMuscles.zygomatic"}},
-    {"R_S_X",  {"faceMuscles.buccinator"}},
-    //{,  {"faceMuscles.triangularis"}},
-    {"R_S_Y",  {"faceMuscles.mentalis"}},
-    //{,  {"faceMuscles.risoriusPlatysma"}},
-    //{,  {"faceMuscles.incisivus"}},
-    //{,  {"faceMuscles.orbOris_loose_lo", "faceMuscles.orbOris_loose_hi"}},
-    {"L_S_X",  {"jaw.rotateZ"}}
-};
+
 
 const std::string RENDER_IMGS_PATH = "/home/rinat/Workspace/FacialManifoldSource/data_anim/images";
 const std::string RENDER_VIDEOS_PATH = "/home/rinat/Workspace/FacialManifoldSource/data_anim/videos";

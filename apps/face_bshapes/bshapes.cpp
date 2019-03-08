@@ -1,7 +1,7 @@
 #include "bshapes.h"
 #include "load_mesh_sequence.h"
 #include <assert.h>
-#include <filesystem/path.h>
+
 
 using namespace std;
 
@@ -36,6 +36,28 @@ namespace tyro
             mBnames.push_back(maya_au);
             mBdata.push_back({0.0, V - mVneut});
         }
+    }
+
+    void FaceModel::serialize(const std::string& path) 
+    {
+        std::ofstream os(path, std::ios::binary);
+        cereal::BinaryOutputArchive archive(os);
+        archive(mBnames);
+        archive(mBdata);
+        archive(mNneut);
+        archive(mVneut);
+        archive(mF);
+    }
+
+    void FaceModel::deserialize(const std::string& path) 
+    {
+        std::ifstream in(path, std::ios::binary);
+        cereal::BinaryInputArchive archive(in);
+        archive(mBnames);
+        archive(mBdata);
+        archive(mNneut);
+        archive(mVneut);
+        archive(mF);
     }
 
     //set weight for bshape

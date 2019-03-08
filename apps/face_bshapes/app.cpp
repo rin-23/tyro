@@ -130,7 +130,7 @@ namespace tyro
     m_need_rendering(false),
     //m_sel_primitive(App::SelectionPrimitive::Faces),
     //m_sel_method(App::SelectionMethod::OneClick),
-    m_update_camera(false),
+    //m_update_camera(false),
     m_frame_overlay(nullptr),
     m_show_wire(true)
     //add_seg_faces(false),
@@ -157,7 +157,7 @@ namespace tyro
     {
         //setup windowshapes
         m_tyro_window = new Window();
-        m_tyro_window->Init(1600,1200);
+        m_tyro_window->Init(1600, 1200);
                 
         //setup renderer
         m_gl_rend = new ES2Renderer(m_tyro_window->GetGLContext());
@@ -217,18 +217,8 @@ namespace tyro
         };
      
         m_state = App::State::Launched;
-        // Loop until the user closes the window
-       // m_tyro_window->GetGLContext()->swapBuffers();
         
         m_need_rendering = true;
-        //render(); //do initial render
-
-        //while (!m_tyro_window->ShouldClose()) 
-       // {
-            //RA_LOG_INFO("Looping GLFW");
-        //    m_tyro_window->Wait();
-        //}
-
 
         register_console_function("render_to_image", console_render_to_image, ""); 
         register_console_function("render_to_images", console_render_to_images, ""); 
@@ -238,7 +228,7 @@ namespace tyro
         float ppi = 144;
         fManager->Setup(ppi, scale);
 
-          // show current number of frames
+        // show current number of frames
         ES2FontSPtr font = FontManager::GetSingleton()->GetSystemFontOfSize12();
         
         m_frame_overlay = ES2TextOverlay::Create(std::string("Not initialized text"), 
@@ -246,11 +236,24 @@ namespace tyro
                                                  font, 
                                                  Wm5::Vector4f(0,0,1,1), 
                                                  viewport);
-                                                 
         m_frame_overlay->SetTranslate(Wm5::Vector2i(-viewport[2]/2 + 50,-viewport[3]/2 + 50));
-    
-        //setup imgui
-       // Setup Dear ImGui context
+
+        m_dist1 = ES2TextOverlay::Create(std::string("Min distance to manifold"), 
+                                        Wm5::Vector2f(0, 0), 
+                                        font, 
+                                        Wm5::Vector4f(0,0,1,1), 
+                                        viewport);
+        m_dist1->SetTranslate(Wm5::Vector2i(-viewport[2]/2 + 250,-viewport[3]/2 + 150));
+
+        m_dist2 = ES2TextOverlay::Create(std::string("Min distance to manifold"), 
+                                         Wm5::Vector2f(0, 0), 
+                                         font, 
+                                         Wm5::Vector4f(0,0,1,1), 
+                                         viewport);
+
+        m_dist2->SetTranslate(Wm5::Vector2i(viewport[2]/2 - 600,-viewport[3]/2 + 150));
+
+        // Setup Dear ImGui context
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -259,16 +262,23 @@ namespace tyro
 
         // Setup Dear ImGui style
         ImGui::StyleColorsDark();
-        //ImGui::StyleColorsClassic();
-
-        // Setup Platform/Renderer bindings
         ImGui_ImplGlfw_InitForOpenGL(m_tyro_window->GetGLFWWindow(), true);
         ImGui_ImplOpenGL3_Init("#version 400");
 
         //load all bshapes and neuteral expression
-        mFaceModel.setNeuteralMesh(NEUT);
-        mFaceModel.setBshapes(BSHAPES_MAP); // ORDER IS VERY IMPORTANT to match BSHAPES in arig.py
-
+        std::string modelPath("/home/rinat/Workspace/tyro/apps/face_bshapes/resources/facemodel");
+        const bool load_serialized = true;
+        if (load_serialized) 
+        {
+            mFaceModel.deserialize(modelPath);
+        }
+        else
+        {
+            mFaceModel.setNeuteralMesh(NEUT);
+            mFaceModel.setBshapes(BSHAPES_MAP); // ORDER IS VERY IMPORTANT to match BSHAPES in arig.py
+            mFaceModel.serialize(modelPath);
+        }
+        
         //load neuteral expression
         Eigen::MatrixXd V, N;
         Eigen::MatrixXi F;
@@ -279,25 +289,23 @@ namespace tyro
         Wm5::Transform tr;
         tr.SetTranslate(Wm5::APoint(-1.5*RENDER.mesh->WorldBoundBox.GetRadius(), 0, 0));
         RENDER.mesh2->LocalTransform = tr * RENDER.mesh2->LocalTransform;  
-        
-        //RENDER.avg->LocalTransform = tr * RENDER.avg->LocalTransform;
+        RENDER.mesh2->Update(true);
+        update_camera();
 
         // create a video stream
-        //m_camera_texture = OpenFaceTexture::Create();
+        // m_camera_texture = OpenFaceTexture::Create();
 
         //setup torch model
         mTorchModel.Init("/home/rinat/Workspace/FacialManifoldSource/data_anim/traced.pth");
 
+        //find joystick
         int present = m_tyro_window->JoystickConnected(); 
         RA_LOG_INFO("Found joystik %i", present);
 
+        //init kd tree
         std::string csv_file = "/home/rinat/Workspace/FacialManifoldSource/data_anim/clusters/augemented.txt";
-        //std::vector<std::vector<double>> data;
         tyro::csvToVector(csv_file, MOTION_DATA);
-        
-        std::cout << "LOL\n";
         mTree.InitWithData(MOTION_DATA);
-        std::cout << "LOL2\n";
     }
     
     int App::Launch()
@@ -307,42 +315,35 @@ namespace tyro
         Setup();
 
         //load animation
-        loadAnimation(ANIM_LIST[0]);
+        //loadAnimation(ANIM_LIST[0]);
                 
-        m_update_camera = true;
         m_state = App::State::LoadedModel;
 
         while (!m_tyro_window->ShouldClose())
         {   
+            m_gl_rend->ClearScreen();
+
             m_tyro_window->ProcessUserEvents();
 
-            //if (m_need_rendering) 
-            {   
+            DrawUI();
+            //loadOpenFace(); 
+            //loadFrame(m_frame);
+            FetchGamepadInputs();
+            //ComputeDistanceToManifold();
+       
+            DrawMeshes();
+            
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-                DrawUI();
-                //if (m_state == App::State::Launched) 
-                //{
-                m_gl_rend->ClearScreen();
-                //}
-                //else if (m_state == App::State::LoadedModel) 
-                //{   
-                    //if (m_need_rendering)
-                DrawMeshes();
-                //}
-                
-                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-                // Draw console
-                if (show_console) 
-                {
-                    glUseProgram(0);
-                    m_console.display(2);
-                }
-                // Poll for and process events
-                m_tyro_window->GetGLContext()->swapBuffers();
-                m_need_rendering = false;             
+            // Draw console
+            if (show_console) 
+            {
+                glUseProgram(0);
+                m_console.display(2);
             }
-        
+            
+            m_tyro_window->GetGLContext()->swapBuffers();
+            m_need_rendering = false;             
             //m_tyro_window->Wait();
         }
 
@@ -372,9 +373,11 @@ namespace tyro
         m_camera = new iOSCamera(Wm5::APoint(0,0,0), 1.0, 1.0, 2, viewport, true);
 
         //load all bshapes and neuteral expression
-        mFaceModel.setNeuteralMesh(NEUT);
-        mFaceModel.setBshapes(BSHAPES_MAP); // ORDER IS VERY IMPORTANT to match BSHAPES in arig.py
-
+        //mFaceModel.setNeuteralMesh(NEUT);
+        //mFaceModel.setBshapes(BSHAPES_MAP); // ORDER IS VERY IMPORTANT to match BSHAPES in arig.py
+        std::string modelPath("/home/rinat/Workspace/tyro/apps/face_bshapes/resources/facemodel");
+        mFaceModel.deserialize(modelPath);
+        
         //load neuteral expression
         Eigen::MatrixXd V, N;
         Eigen::MatrixXi F;
@@ -428,8 +431,7 @@ namespace tyro
                         
             auto fldr_to_write = out_path/filesystem::path(std::to_string(i)+".png");
 
-            cv::imwrite(fldr_to_write.str(), image3);
-   
+            cv::imwrite(fldr_to_write.str(), image3);   
         }
 
         free(texture);
@@ -448,12 +450,12 @@ namespace tyro
 
         if (ImGui::TreeNode("Animations"))
         {
-            //ShowHelpMarker("This is a more standard looking tree with selectable nodes.\nClick to select, CTRL+Click to toggle, click on arrows or double-click to open.");
-            //static bool align_label_with_current_x_position = false;
-            //ImGui::Checkbox("Align label with current X position)", &align_label_with_current_x_position);
-            //ImGui::Text("Hello!");
-            //if (align_label_with_current_x_position)
-                //ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
+            // ShowHelpMarker("This is a more standard looking tree with selectable nodes.\nClick to select, CTRL+Click to toggle, click on arrows or double-click to open.");
+            // static bool align_label_with_current_x_position = false;
+            // ImGui::Checkbox("Align label with current X position)", &align_label_with_current_x_position);
+            // ImGui::Text("Hello!");
+            // if (align_label_with_current_x_position)
+            // ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
 
             ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ImGui::GetFontSize()*3); // Increase spacing to differentiate leaves from expanded contents.
             for (int i = 0; i < ANIM_LIST.size(); i++)
@@ -500,13 +502,7 @@ namespace tyro
 
         //m_camera_texture->showFrame();
         //vis_set.Insert(m_camera_texture.get());
-        
-        //loadOpenFace(); 
-        //loadFrame(m_frame);
-        FetchGamepadInputs();
-
-        ComputeDistanceToManifold();
-        
+               
         // update face geometry
         for (int i=0;i < lower_bnames.size(); ++i) 
         {
@@ -531,17 +527,20 @@ namespace tyro
         
         vis_set.Insert(RENDER.mesh.get());
         vis_set.Insert(RENDER.mesh2.get());
+        
         // update timeline text
         std::string fstr = std::string("Frame ") + std::to_string(m_frame) + std::string("/") + std::to_string(mCurAnimation.getNumFrames());
         m_frame_overlay->SetText(fstr);
         vis_set.Insert(m_frame_overlay.get());
-        
+        vis_set.Insert(m_dist1.get());
+        vis_set.Insert(m_dist2.get());
+
         // update camera 
-        if (m_update_camera) 
-        {
-            update_camera();
-            m_update_camera = false;
-        }
+        //if (m_update_camera) 
+       // {
+       //     update_camera();
+       //     m_update_camera = false;
+       // }
         
         m_gl_rend->RenderVisibleSet(&vis_set, m_camera);       
     }
@@ -569,7 +568,7 @@ namespace tyro
             lower_bnames.push_back(a);
             lower_values.push_back(0.0);
         }
-        std::cout << lower_bnames <<"\n";
+        std::cout << lower_bnames << "\n";
 
         //std::vector<std::string> A; 
         //std::vector<double> W;
@@ -641,9 +640,13 @@ namespace tyro
     void App::ComputeDistanceToManifold() 
     {   
         double c_dist1, c_dist2;
-        mTree.FindClosest(lower_values, c_dist1);
-        mTree.FindClosest(lower_values_denoised, c_dist2);
-        RA_LOG_INFO("Distances denoised  %f  noisy %f", c_dist2, c_dist1);
+        mTree.FindClosest(lower_values_denoised, c_dist1);
+        mTree.FindClosest(lower_values, c_dist2);
+        RA_LOG_INFO("Distances denoised  %f  noisy %f", c_dist1, c_dist2);
+        std::string fstr1 = std::string("(denoised) Min distance to manifold ") + std::to_string(c_dist1);
+        std::string fstr2 = std::string("(1to1) Min distance to manifold ") + std::to_string(c_dist2);
+        m_dist1->SetText(fstr1);
+        m_dist2->SetText(fstr2);
     }
 
     void App::loadAnimation(const std::string& name) 

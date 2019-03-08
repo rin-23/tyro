@@ -174,8 +174,6 @@ namespace tyro
         int JoystickAxes(std::map<std::string, float>& axes_map);
         int JoystickButtons(std::map<std::string, bool>& buttons_map);
 
-
-
         std::function<bool(Window& window)> callback_init;
         std::function<bool(Window& window)> callback_pre_draw;
         std::function<bool(Window& window)> callback_post_draw;
