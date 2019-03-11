@@ -5,7 +5,6 @@
 #include "RAiOSCamera.h"
 #include "Console.h"
 #include <vector>
-//#include <Eigen/Core>
 #include <atomic>
 #include "Wm5Transform.h"
 #include "bshapes.h"
@@ -14,6 +13,7 @@
 #include <opencv2/opencv.hpp>
 #include "torch_model.h"
 #include "kdtree.h"
+#include "gamepad.h"
 
 namespace tyro
 {   
@@ -42,7 +42,6 @@ namespace tyro
         ES2TextOverlaySPtr m_dist2;
 
         std::atomic<bool> m_need_rendering;
-        void FetchGamepadInputs();
         void mouse_down(Window& window, int button, int modifier);
         void mouse_up(Window& window, int button, int modifier);
         void mouse_move(Window& window, int mouse_x, int mouse_y);
@@ -79,11 +78,18 @@ namespace tyro
         FaceModel mFaceModel2;
 
         Animation mCurAnimation;
-        TorchModel mTorchModel;
+        TorchModel mTorchModelLow;
+        TorchModel mTorchModelUp;
 
-        std::vector<double> lower_values_denoised;
-        std::vector<std::string> lower_bnames;
-        std::vector<double> lower_values; 
+        Gamepad mGamepad;
+
+        std::vector<double> low_values_denoised;
+        std::vector<std::string> low_bnames;
+        std::vector<double> low_values; 
+
+        std::vector<double> up_values_denoised;
+        std::vector<std::string> up_bnames;
+        std::vector<double> up_values; 
 
         void register_console_function(const std::string& name,
                                        const std::function<void(App*, const std::vector<std::string>&)>& con_fun,
@@ -91,11 +97,14 @@ namespace tyro
         void update_camera();
         void render();
         void DrawMeshes();
-        void loadAnimation(const std::string& name);
-        void loadFrame(int frame);
-        void loadOpenFace();
-        void DrawUI();
-        void ComputeDistanceToManifold();
+        //void DrawUI();
+        void FetchGamepadInputs();
+
+        //void loadAnimation(const std::string& name);
+        //void loadFrame(int frame);
+        //void loadOpenFace();
+        
+        //void ComputeDistanceToManifold();
 
         std::vector<std::vector<double>> MOTION_DATA;
 

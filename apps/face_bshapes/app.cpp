@@ -15,7 +15,7 @@
 #include <random>
 #include "load_mesh_sequence.h"
 #include "TyroIGLMesh.h"
-#include "common.h"
+
 #include <filesystem/path.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -62,6 +62,8 @@ namespace tyro
         cv::cvtColor(image1, image2, CV_RGBA2BGR);
         cv::flip(image2, image3, 0);
         
+        const std::string RENDER_IMGS_PATH = "/home/rinat/Workspace/FacialManifoldSource/data_anim/images";
+
         auto fldr = filesystem::path(RENDER_IMGS_PATH)/name;
         if (!fldr.exists())
             filesystem::create_directory(fldr); 
@@ -78,6 +80,7 @@ namespace tyro
             return;
         
         auto name = filesystem::path(args[0]);
+        const std::string RENDER_IMGS_PATH = "/home/rinat/Workspace/FacialManifoldSource/data_anim/images";
         auto fldr = filesystem::path(RENDER_IMGS_PATH)/name;
         if (!fldr.exists()) 
         {
@@ -128,14 +131,8 @@ namespace tyro
     m_frame(0),
     m_state(App::State::None),
     m_need_rendering(false),
-    //m_sel_primitive(App::SelectionPrimitive::Faces),
-    //m_sel_method(App::SelectionMethod::OneClick),
-    //m_update_camera(false),
     m_frame_overlay(nullptr),
     m_show_wire(true)
-    //add_seg_faces(false),
-    //m_video_texture(nullptr),
-    //m_frame_offset(0)
     {}
 
     App::~App() 
@@ -274,8 +271,7 @@ namespace tyro
         }
         else
         {
-            mFaceModel.setNeuteralMesh(NEUT);
-            mFaceModel.setBshapes(BSHAPES_MAP); // ORDER IS VERY IMPORTANT to match BSHAPES in arig.py
+            mFaceModel.InitDefault();
             mFaceModel.serialize(modelPath);
         }
         
@@ -296,7 +292,8 @@ namespace tyro
         // m_camera_texture = OpenFaceTexture::Create();
 
         //setup torch model
-        mTorchModel.Init("/home/rinat/Workspace/FacialManifoldSource/data_anim/traced.pth");
+        mTorchModelUp.Init("/home/rinat/Workspace/FacialManifoldSource/data_anim/traced.pth");
+        mTorchModelLow.Init("/home/rinat/Workspace/FacialManifoldSource/data_anim/traced.pth");
 
         //find joystick
         int present = m_tyro_window->JoystickConnected(); 
@@ -325,7 +322,7 @@ namespace tyro
 
             m_tyro_window->ProcessUserEvents();
 
-            DrawUI();
+            //DrawUI();
             //loadOpenFace(); 
             //loadFrame(m_frame);
             FetchGamepadInputs();
@@ -439,6 +436,7 @@ namespace tyro
 	    return 0;
     }
 
+    /*
     void App::DrawUI()
     {
         // Start the Dear ImGui frame
@@ -494,6 +492,7 @@ namespace tyro
         
         ImGui::Render();
     }
+    */
 
     void App::DrawMeshes() 
     {
@@ -504,24 +503,25 @@ namespace tyro
         //vis_set.Insert(m_camera_texture.get());
                
         // update face geometry
-        for (int i=0;i < lower_bnames.size(); ++i) 
-        {
-            //RA_LOG_INFO("%s, %f",lower_bnames[i].data(), lower_values[i]);
-            //RA_LOG_INFO("Denoised %s, %f",lower_bnames[i].data(), lower_values_denoised[i]);
-        }
+        //for (int i=0;i < low_bnames.size(); ++i) 
+        //{
+            //RA_LOG_INFO("%s, %f",low_bnames[i].data(), low_values[i]);
+            //RA_LOG_INFO("Denoised %s, %f",low_bnames[i].data(), low_values_denoised[i]);
+        //}
 
-        mFaceModel.setWeights(lower_bnames, lower_values);
+        mFaceModel.setWeights(low_bnames, low_values);
+        mFaceModel.setWeights(up_bnames, up_values);
         Eigen::MatrixXd V, N;
         Eigen::MatrixXi F;
         mFaceModel.getExpression(V, F, N);
         RENDER.mesh->UpdateData(V, F, N, MESH_COLOR);
         RENDER.mesh->Update(true);
 
-        mFaceModel.setWeights(lower_bnames, lower_values_denoised);
+        mFaceModel.setWeights(low_bnames, low_values_denoised);
+        mFaceModel.setWeights(up_bnames, up_values_denoised);
         Eigen::MatrixXd V2, N2;
         Eigen::MatrixXi F2;
         mFaceModel.getExpression(V2, F2, N2);
-        
         RENDER.mesh2->UpdateData(V2, F2, N2, MESH_COLOR);
         RENDER.mesh2->Update(true);
         
@@ -545,6 +545,7 @@ namespace tyro
         m_gl_rend->RenderVisibleSet(&vis_set, m_camera);       
     }
 
+    /*
     void App::loadFrame(int frame) 
     {
         std::vector<double> W;
@@ -552,23 +553,25 @@ namespace tyro
         mCurAnimation.getWeights(frame, A, W);
         mFaceModel.setWeights(A, W);
     }
+    */
 
+    /*
     void App::loadOpenFace() 
     {   
         std::vector<std::string> names; 
         std::vector<double> values;
         m_camera_texture->getAUs(names, values);
         
-        lower_bnames.clear();
-        lower_values.clear(); 
+        low_bnames.clear();
+        low_values.clear(); 
                 
         //for (auto i : lower_face_bshape_index) 
         for (auto& a : OpengFaceAUs) 
         {
-            lower_bnames.push_back(a);
-            lower_values.push_back(0.0);
+            low_bnames.push_back(a);
+            low_values.push_back(0.0);
         }
-        std::cout << lower_bnames << "\n";
+        std::cout << low_bnames << "\n";
 
         //std::vector<std::string> A; 
         //std::vector<double> W;
@@ -589,10 +592,10 @@ namespace tyro
                     assert(scaled <= 1.0 && scaled >=0);
 
                     //construct lower values vector to feed to NN
-                    auto it = std::find(lower_bnames.begin(), lower_bnames.end(), au);
-                    assert(it != lower_bnames.end());
-                    int index = std::distance(lower_bnames.begin(), it);
-                    lower_values[index] = scaled;
+                    auto it = std::find(low_bnames.begin(), low_bnames.end(), au);
+                    assert(it != low_bnames.end());
+                    int index = std::distance(low_bnames.begin(), it);
+                    low_values[index] = scaled;
                     //RA_LOG_INFO("%s, %0.3f", k.c_str(), scaled);
                     
                     //W.push_back(scaled);
@@ -600,25 +603,34 @@ namespace tyro
             }
         }
 
-        lower_values_denoised.clear();
-        mTorchModel.Compute(lower_values, lower_values_denoised); 
+        low_values_denoised.clear();
+        mTorchModel.Compute(low_values, low_values_denoised); 
     }
-
+    */
+   
     void App::FetchGamepadInputs() 
     {   
-        std::map<std::string, float> axes; 
+        std::map<std::string, double> axes; 
         std::map<std::string, bool> btns;
-        
         m_tyro_window->JoystickAxes(axes);
         m_tyro_window->JoystickButtons(btns);
         
-        lower_bnames.clear();
-        lower_values.clear();
+        mGamepad.UpdateFrame(axes, btns);
+
+        low_values_denoised.clear();
+        mTorchModelLow.Compute(mGamepad.low_values, low_values_denoised);
+
+        up_values_denoised.clear();
+        mTorchModelUp.Compute(mGamepad.up_values, up_values_denoised); 
+
+        /*
+        low_bnames.clear();
+        low_values.clear();
 
         for (auto& a : OpengFaceAUs)
         {
-            lower_bnames.push_back(a);
-            lower_values.push_back(0.0);
+            low_bnames.push_back(a);
+            low_values.push_back(0.0);
         } 
 
         for (auto const& a : GAMEPAD_TO_AUS) 
@@ -626,29 +638,32 @@ namespace tyro
             auto value = fabs(axes[a.first]);
             for (auto& au : a.second) 
             {   
-                auto it = std::find(lower_bnames.begin(), lower_bnames.end(), au);
-                assert(it != lower_bnames.end());
-                int index = std::distance(lower_bnames.begin(), it);
-                lower_values[index] = value;
+                auto it = std::find(low_bnames.begin(), low_bnames.end(), au);
+                assert(it != low_bnames.end());
+                int index = std::distance(low_bnames.begin(), it);
+                low_values[index] = value;
             }
         }
-
-        lower_values_denoised.clear();
-        mTorchModel.Compute(lower_values, lower_values_denoised); 
+        */
+        
+   
     }
 
+    /*
     void App::ComputeDistanceToManifold() 
     {   
         double c_dist1, c_dist2;
-        mTree.FindClosest(lower_values_denoised, c_dist1);
-        mTree.FindClosest(lower_values, c_dist2);
+        mTree.FindClosest(low_values_denoised, c_dist1);
+        mTree.FindClosest(low_values, c_dist2);
         RA_LOG_INFO("Distances denoised  %f  noisy %f", c_dist1, c_dist2);
         std::string fstr1 = std::string("(denoised) Min distance to manifold ") + std::to_string(c_dist1);
         std::string fstr2 = std::string("(1to1) Min distance to manifold ") + std::to_string(c_dist2);
         m_dist1->SetText(fstr1);
         m_dist2->SetText(fstr2);
     }
-
+    */
+    
+    /*
     void App::loadAnimation(const std::string& name) 
     {
         mCurAnimation.readPandasCsv(name, 0);
@@ -657,6 +672,7 @@ namespace tyro
         m_timeline->SetFrameRange(mCurAnimation.getNumFrames()-1);
         m_timeline->SetFrame(0);
     }
+    */
 
     void App::render() 
     {   

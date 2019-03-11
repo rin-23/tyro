@@ -4,6 +4,8 @@
 #include <string>
 #include <map>
 
+namespace tyro
+{
 const std::string NEUT = "/home/rinat/Workspace/tyro/apps/face_bshapes/resources/bshapes/neuteral.obj";
 
 const std::map<std::string, std::string> BSHAPES_MAP = 
@@ -114,8 +116,8 @@ const std::vector<std::string> ALL_BSHAPES =
 };
 
 //remove index 46 to get rid of "jaw.rotateY"
-std::vector<int> lower_face_bshape_index = {10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,26,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,46}; 
-std::vector<int> upper_face_bshape_index = {0,1,2,3,4,5,6,7,8,9,25,27,28,47,48}; 
+const std::vector<int> lower_face_bshape_index = {10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,26,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,46}; 
+const std::vector<int> upper_face_bshape_index = {0,1,2,3,4,5,6,7,8,9,25,27,28,47,48}; 
 
 const std::vector<std::string> OpengFaceAUs = 
 {
@@ -152,11 +154,9 @@ const std::map<std::string, std::vector<std::string>> OPENFACE_TO_BSHAPES_MAP =
     {"AU26",  {"jaw.rotateZ"}}
     //{"AU45_r",
 };
-   
+  
 
-
-const std::string RENDER_IMGS_PATH = "/home/rinat/Workspace/FacialManifoldSource/data_anim/images";
-const std::string RENDER_VIDEOS_PATH = "/home/rinat/Workspace/FacialManifoldSource/data_anim/videos";
+//const std::string RENDER_VIDEOS_PATH = "/home/rinat/Workspace/FacialManifoldSource/data_anim/videos";
 
 const std::vector<std::string> ANIM_LIST =
 {
@@ -323,3 +323,5 @@ const std::vector<std::string> ANIM_LIST =
 "/home/rinat/Workspace/FacialManifoldSource/data_anim/maya_exports2/processed/08_0120_02_animation_workshop_0071_Charles.txt",
 "/home/rinat/Workspace/FacialManifoldSource/data_anim/maya_exports2/processed/14_0010_02_animation_workshop_0032_Charles.txt"
 };*/
+
+}

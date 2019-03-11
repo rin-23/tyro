@@ -1,72 +1,69 @@
 #include "gamepad.h"
-#include "common.h"
 #include "math.h"
 #include <algorithm>
-#include <assert>
+#include <assert.h>
+#include "common.h"
 
 namespace tyro 
 {
 const std::map<std::string, std::vector<std::string>> UPPER_MAP
 = 
 {
-    //{,  {"faceMuscles.labSup_AN"}},
-    //{,  {"faceMuscles.labSup"}},
-    {"L_S_Y",  {"faceMuscles.zygomatic"}},
-    {"R_S_X",  {"faceMuscles.buccinator"}},
+    {"L_T",  {"faceMuscles.frontalis"}},
+    {"L_S_Y",  {"faceMuscles.orbOculi"}},
+    {"L_S_X",  {"faceMuscles.currogator"}}
+    //todo: add eyelids bshapes
+
+    //{"R_S_X",  {"faceMuscles.buccinator"}},
     //{,  {"faceMuscles.triangularis"}},
-    {"R_S_Y",  {"faceMuscles.mentalis"}},
+    //{"R_S_Y",  {"faceMuscles.mentalis"}},
     //{,  {"faceMuscles.risoriusPlatysma"}},
     //{,  {"faceMuscles.incisivus"}},
     //{,  {"faceMuscles.orbOris_loose_lo", "faceMuscles.orbOris_loose_hi"}},
-    {"L_S_X",  {"jaw.rotateZ"}}
 };
 
 const std::map<std::string, std::vector<std::string>> MIDJAW_MAP
 = 
 {
-    //{,  {"faceMuscles.labSup_AN"}},
-    //{,  {"faceMuscles.labSup"}},
-    {"L_S_Y",  {"faceMuscles.zygomatic"}},
-    {"R_S_X",  {"faceMuscles.buccinator"}},
-    //{,  {"faceMuscles.triangularis"}},
-    {"R_S_Y",  {"faceMuscles.mentalis"}},
-    //{,  {"faceMuscles.risoriusPlatysma"}},
-    //{,  {"faceMuscles.incisivus"}},
-    //{,  {"faceMuscles.orbOris_loose_lo", "faceMuscles.orbOris_loose_hi"}},
-    {"L_S_X",  {"jaw.rotateZ"}}
+    {"L_T",  {"jaw.rotateZ"}},
+    {"R_T",  {"faceMuscles.zygomatic"}},
+
+    {"L_S_Y",  {"faceMuscles.translateX"}},
+    //    {"L_S_X",  {"faceMuscles.zygomatic"}}, jaw left right 
+
+    {"R_S_X",  {"faceMuscles.labSup"}},
+    {"R_S_Y",  {"faceMuscles.labSup_AN"}},
 };
 
 const std::map<std::string, std::vector<std::string>> LIP_MAP
 = 
 {
-    //{,  {"faceMuscles.labSup_AN"}},
-    //{,  {"faceMuscles.labSup"}},
-    {"L_S_Y",  {"faceMuscles.zygomatic"}},
-    {"R_S_X",  {"faceMuscles.buccinator"}},
-    //{,  {"faceMuscles.triangularis"}},
+    {"L_T",  {"faceMuscles.triangularis"}},
+    {"R_T",  {"faceMuscles.blow"}},
+    
+    {"R_S_X",  {"faceMuscles.risoriusPlatysma"}},
     {"R_S_Y",  {"faceMuscles.mentalis"}},
-    //{,  {"faceMuscles.risoriusPlatysma"}},
-    //{,  {"faceMuscles.incisivus"}},
-    //{,  {"faceMuscles.orbOris_loose_lo", "faceMuscles.orbOris_loose_hi"}},
-    {"L_S_X",  {"jaw.rotateZ"}}
+    
+    {"L_S_X",  {"faceMuscles.incisivus"}},
+    {"L_S_Y",  {"faceMuscles.LabInf"}}
 };
 
 Gamepad::Gamepad() 
 {
     for (auto i : upper_face_bshape_index)
     {
-        lower_bnames.push_back(ALL_BSHAPES[i]);
-        lower_values.push_back(0.0);
+        up_bnames.push_back(ALL_BSHAPES[i]);
+        up_values.push_back(0.0);
     }
 
     for (auto i : lower_face_bshape_index)
     {
-        lower_bnames.push_back(ALL_BSHAPES[i]);
-        lower_values.push_back(0.0);
+        low_bnames.push_back(ALL_BSHAPES[i]);
+        low_values.push_back(0.0);
     }
 }
 
-void Gamepad::UpdateFrame(std::map<std::string, float>& axes, std::map<std::string, bool>& buttons_map) 
+void Gamepad::UpdateFrame(std::map<std::string, double>& axes, std::map<std::string, bool>& buttons_map) 
 {
     if (buttons_map["triangle"]) 
     {
@@ -85,9 +82,9 @@ void Gamepad::UpdateFrame(std::map<std::string, float>& axes, std::map<std::stri
         //save current face
     }
 
-    auto compute = [&] (std::map<std::string, std::vector<std::string>>& PART_MAP,
-                        std::vector<std::string>& bnames,
-                        std::vector<float>& values)
+    auto computeValues = [&] (const std::map<std::string, std::vector<std::string>>& PART_MAP,
+                              std::vector<std::string>& bnames,
+                              std::vector<double>& values)
     {
         for (auto const& a : PART_MAP) 
         {   
@@ -104,17 +101,17 @@ void Gamepad::UpdateFrame(std::map<std::string, float>& axes, std::map<std::stri
 
     if (face_part == FacePart::UPPER) 
     {
-       compute(UPPER_MAP, upper_bnames, upper_values)
+        computeValues(UPPER_MAP, up_bnames, up_values);
     }
     else if (face_part == FacePart::MID_JAW)  
     {
-        compute(MIDJAW_MAP, lower_bnames, lower_values)
+        computeValues(MIDJAW_MAP, low_bnames, low_values);
     }   
 }
 
-void Gamepad::isLower()
+bool Gamepad::isLower()
 {   
-    bool isLower = face_part == FacePart::UPPER? true:false;
+    bool isLower = face_part == FacePart::UPPER ? true : false;
     return isLower;
 }
 

@@ -171,7 +171,7 @@ namespace tyro
         inline void Wait() { glfwWaitEvents(); }
         
         int JoystickConnected();
-        int JoystickAxes(std::map<std::string, float>& axes_map);
+        int JoystickAxes(std::map<std::string, double>& axes_map);
         int JoystickButtons(std::map<std::string, bool>& buttons_map);
 
         std::function<bool(Window& window)> callback_init;

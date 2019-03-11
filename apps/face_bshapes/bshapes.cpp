@@ -1,7 +1,7 @@
 #include "bshapes.h"
 #include "load_mesh_sequence.h"
 #include <assert.h>
-
+#include "common.h"
 
 using namespace std;
 
@@ -12,6 +12,12 @@ namespace tyro
     
     FaceModel::~FaceModel()
     {}
+
+    void FaceModel::InitDefault() 
+    {
+        setNeuteralMesh(NEUT);
+        setBshapes(BSHAPES_MAP); // ORDER IS VERY IMPORTANT to match BSHAPES in arig.py
+    }
 
     void FaceModel::setNeuteralMesh(const std::string& obj_path)
     {
@@ -111,14 +117,5 @@ namespace tyro
         return mBnames;
     }
 
-    /*
-    void FaceModel::getLowerWeights(std::vector<std::string>& lower_bnames) 
-    {
-        for (auto i : lower_face_bshape_index) 
-        {
-            lower_bnames.push_back(ALL_BSHAPES[i]);
-        }
-    }
-    */
 
 }

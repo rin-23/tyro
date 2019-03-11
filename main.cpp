@@ -1,9 +1,10 @@
 
-#include "app.h"
-#include "torch_model.h"
-#include <Eigen/Dense>
-#include "kdtree.h"
+#include "tyroapp.h"
+//#include "torch_model.h"
+//#include <Eigen/Dense>
+//#include "kdtree.h"
 
+/*
 void test_kdtree()
 {
 
@@ -36,7 +37,7 @@ void test_tensor()
 
     std::cout << tensor_out << "\n";
 }
-
+*/
 int main(int argc, char **argv) 
 {
     //test_tensor();
@@ -56,7 +57,7 @@ int main(int argc, char **argv)
         std::string path_ss1(argv[1]);
         std::string out_fldr1(argv[2]);
         std::cout << path_ss1 << "\n";
-        appr.LaunchOffScreen(path_ss1, out_fldr1);
+        //appr.LaunchOffScreen(path_ss1, out_fldr1);
 
     }
     // int r_code = appr.VideoToImages();

@@ -19,14 +19,17 @@ public:
     Gamepad();
     ~Gamepad() {}
 
-    void UpdateFrame(std::map<std::string, float> axes, std::map<std::string, bool> buttons_map);
+    void UpdateFrame(std::map<std::string, double>& axes, 
+                     std::map<std::string, bool>& buttons_map);
     
+    bool isLower();
+
     FacePart face_part;
     
-    std::vector<std::string> lower_bnames;
-    std::vector<float> lower_values;
+    std::vector<std::string> low_bnames;
+    std::vector<double> low_values;
 
-    std::vector<std::string> upper_bnames;
-    std::vector<float> upper_values;
+    std::vector<std::string> up_bnames;
+    std::vector<double> up_values;
 };
 }

@@ -221,7 +221,7 @@ int Window::JoystickConnected()
     return present;
 }
 
-int Window::JoystickAxes(std::map<std::string, float>& axes_map) 
+int Window::JoystickAxes(std::map<std::string, double>& axes_map) 
 {   
     if (!JoystickConnected()) 
     {
@@ -242,10 +242,11 @@ int Window::JoystickAxes(std::map<std::string, float>& axes_map)
     std::cout << "Right Trigger/R2: "   << axes[5] << std::endl; 
     */
 
-    axes_map["L_S_X"] = axes[0];
-    axes_map["L_S_Y"] = axes[1];
-    axes_map["R_S_X"] = axes[3];
-    axes_map["R_S_Y"] = axes[4];
+    //todo differentite between pos and neg values
+    axes_map["L_S_X_POS"] = axes[0]>0?axes[0]:0;
+    axes_map["L_S_Y"] = axes[1]>0?axes[0]:0;
+    axes_map["R_S_X"] = axes[3]>0?axes[0]:0;
+    axes_map["R_S_Y"] = axes[4]>0?axes[0]:0;
     axes_map["L_T"] = (axes[2] + 1.0)/2.0;
     axes_map["R_T"] = (axes[5] + 1.0)/2.0;
 
@@ -270,6 +271,7 @@ int Window::JoystickButtons(std::map<std::string, bool>& buttons_map)
     buttons_map["R1"] = buttons[4];
     buttons_map["L1"] = buttons[5];
     
+    return 1;
     //for (int i=0;i<buttonCount;++i) 
     //{      
 

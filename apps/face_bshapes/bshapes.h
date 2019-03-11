@@ -28,6 +28,8 @@ class FaceModel
         
         ~FaceModel();
 
+        void InitDefault(); 
+
         void setNeuteralMesh(const std::string& obj_path);
         
         void setBshapes(const std::map<std::string, std::string>& bmap);
