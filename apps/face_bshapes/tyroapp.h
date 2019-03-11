@@ -18,7 +18,7 @@ namespace tyro
         virtual ~App();
         
         virtual int Launch();
-        virtual int Setup(int width=1600, int height=1200);
+        virtual int Setup(int width, int height);
         
         Window* m_tyro_window;
         ES2Renderer* m_gl_rend;

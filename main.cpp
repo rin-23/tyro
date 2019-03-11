@@ -1,5 +1,5 @@
 
-#include "tyroapp.h"
+#include "bshape_app.h"
 //#include "torch_model.h"
 //#include <Eigen/Dense>
 //#include "kdtree.h"
@@ -42,7 +42,9 @@ int main(int argc, char **argv)
 {
     //test_tensor();
     
-    tyro::App appr;
+    tyro::BshapeApp appr;
+    appr.Setup(1600,1200);
+
     if (argc==1) 
     {
         int r_code = appr.Launch();
@@ -57,7 +59,7 @@ int main(int argc, char **argv)
         std::string path_ss1(argv[1]);
         std::string out_fldr1(argv[2]);
         std::cout << path_ss1 << "\n";
-        //appr.LaunchOffScreen(path_ss1, out_fldr1);
+        appr.LaunchOffScreen(path_ss1, out_fldr1);
 
     }
     // int r_code = appr.VideoToImages();

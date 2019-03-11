@@ -9,7 +9,6 @@
 #include "Wm5Vector4.h"
 #include <random>
 #include <iostream>
-#include "utils.h"
 
 using namespace std;
 
@@ -102,9 +101,7 @@ namespace tyro
     int App::Launch()
     {   
         RA_LOG_INFO("Launching the app");
-
-        Setup();
-      
+     
         while (!m_tyro_window->ShouldClose())
         {   
             m_gl_rend->ClearScreen();

@@ -1,3 +1,5 @@
+#pragma once 
+
 #include <Eigen/Dense>
 #define CSV_IO_NO_THREAD
 #include <csv-parser/parser.hpp>

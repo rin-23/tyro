@@ -50,13 +50,18 @@ const std::map<std::string, std::vector<std::string>> LIP_MAP
 
 Gamepad::Gamepad() 
 {
-    for (auto i : upper_face_bshape_index)
+  
+}
+
+void Gamepad::Init() 
+{   
+    for (const auto& i : upper_face_bshape_index)
     {
         up_bnames.push_back(ALL_BSHAPES[i]);
         up_values.push_back(0.0);
     }
 
-    for (auto i : lower_face_bshape_index)
+    for (const auto& i : lower_face_bshape_index)
     {
         low_bnames.push_back(ALL_BSHAPES[i]);
         low_values.push_back(0.0);

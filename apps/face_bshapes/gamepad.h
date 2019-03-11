@@ -3,6 +3,7 @@
 #include "TyroWindow.h"
 #include <vector>
 #include <map>
+#include <string>
 
 namespace tyro 
 {
@@ -18,6 +19,8 @@ public:
     
     Gamepad();
     ~Gamepad() {}
+
+    void Init(); 
 
     void UpdateFrame(std::map<std::string, double>& axes, 
                      std::map<std::string, bool>& buttons_map);

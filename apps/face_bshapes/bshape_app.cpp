@@ -1,21 +1,17 @@
-#include "app.h"
+#include "bshape_app.h"
 #include "RAEnginePrerequisites.h"
 #include "RAES2TextOverlay.h"
 #include "RAFont.h"
 #include "RAVisibleSet.h"
-//#include "RAES2StandardMesh.h"
-//#include "RAAxisAlignedBBox.h"
 #include <stdio.h>
 #include <functional>
 #include "Wm5APoint.h"
 #include "Wm5Vector2.h"
 #include "Wm5Vector4.h"
 #include "TyroIGLMesh.h"
-//#include "TyroFileUtils.h"
 #include <random>
 #include "load_mesh_sequence.h"
 #include "TyroIGLMesh.h"
-
 #include <filesystem/path.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -37,13 +33,14 @@ using Wm5::APoint;
 namespace tyro
 {   
     void console_render_to_image(App* app, const std::vector<std::string>& args) 
-    {
+    {   
+        BshapeApp* bapp =(BshapeApp*) app;
         if (args.size()!=1) return;
         auto name = filesystem::path(args[0]);
-        app->DrawMeshes();
+        bapp->DrawMeshes();
 
         // Poll for and process events
-        app->m_tyro_window->GetGLContext()->swapBuffers();
+        bapp->m_tyro_window->GetGLContext()->swapBuffers();
 
         //make sure everything was drawn
         glFlush();
@@ -51,7 +48,7 @@ namespace tyro
         GL_CHECK_ERROR;
         
         int v_width, v_height;
-        app->m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
+        bapp->m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
         u_int8_t* texture = (u_int8_t*) malloc(4*v_width *v_height);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         glReadPixels(0, 0, v_width, v_height, GL_RGBA, GL_UNSIGNED_BYTE, texture);
@@ -79,6 +76,8 @@ namespace tyro
         if (args.size()!=1) 
             return;
         
+        
+        BshapeApp* bapp =(BshapeApp*) app;
         auto name = filesystem::path(args[0]);
         const std::string RENDER_IMGS_PATH = "/home/rinat/Workspace/FacialManifoldSource/data_anim/images";
         auto fldr = filesystem::path(RENDER_IMGS_PATH)/name;
@@ -88,16 +87,16 @@ namespace tyro
         }
         
         int v_width, v_height;
-        app->m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
+        bapp->m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
         u_int8_t* texture = (u_int8_t*) malloc(4*v_width *v_height);
 
-        for (int frame = 0; frame < app->mCurAnimation.getNumFrames(); ++frame) 
+        for (int frame = 0; frame < bapp->mCurAnimation.getNumFrames(); ++frame) 
         { 
-            app->m_frame = frame;
-            app->DrawMeshes();
+            bapp->m_frame = frame;
+            bapp->DrawMeshes();
 
             // Poll for and process events
-            app->m_tyro_window->GetGLContext()->swapBuffers();
+            bapp->m_tyro_window->GetGLContext()->swapBuffers();
 
             //make sure everything was drawn
             glFlush();
@@ -120,51 +119,30 @@ namespace tyro
         free(texture);
     }
 
-    App::App()
+    BshapeApp::BshapeApp()
     :
-    m_tyro_window(nullptr),
-    m_gl_rend(nullptr),
-    m_camera(nullptr),
-    mouse_is_down(false),
-    gesture_state(0),
-    show_console(false),
+    App(),
     m_frame(0),
-    m_state(App::State::None),
+    m_state(BshapeApp::State::None),
     m_need_rendering(false),
     m_frame_overlay(nullptr),
     m_show_wire(true)
     {}
 
-    App::~App() 
-    {
-        if (m_tyro_window)
-        {
-            m_tyro_window->Terminate();
-            delete m_tyro_window; 
-        }
-
-        if (m_gl_rend) 
-            delete m_gl_rend;
-        
-        if (m_camera)
-            delete m_camera;
-    }
+    BshapeApp::~BshapeApp() 
+    {}
     
-    int App::Setup() 
-    {
-        //setup windowshapes
-        m_tyro_window = new Window();
-        m_tyro_window->Init(1600, 1200);
-                
-        //setup renderer
-        m_gl_rend = new ES2Renderer(m_tyro_window->GetGLContext());
-        m_gl_rend->SetClearColor(Wm5::Vector4f(150/255.0, 150/255.0, 150/255.0, 1));
+    int BshapeApp::Setup(int width, int height) 
+    {   
+        App::Setup(width, height);
 
         int v_width, v_height;
         m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
         Wm5::Vector4i viewport(0, 0, v_width, v_height);
-        m_camera = new iOSCamera(Wm5::APoint(0,0,0), 1.0, 1.0, 2, viewport, true);
-        
+
+        m_state = BshapeApp::State::Launched;
+        m_need_rendering = true;
+     
         m_timeline = new Timeline(24, 300);
         m_timeline->frameChanged = [&](Timeline& timeline, int frame)->void 
         {   
@@ -174,56 +152,9 @@ namespace tyro
             //glfwPostEmptyEvent();
             //RA_LOG_INFO("Frame Change END");
         };
-        
-       
-        //set up window callbacks
-        //@TODO use std::bind instead
-        m_tyro_window->callback_mouse_down = [&](Window& window, int button, int modifier)->bool 
-        {
-            this->mouse_down(window, button, modifier);
-        };
-
-        m_tyro_window->callback_mouse_up = [&](Window& window, int button, int modifier)->bool 
-        {
-            this->mouse_up(window, button, modifier);
-        };
-
-        m_tyro_window->callback_mouse_move = [&](Window& window, int mouse_x, int mouse_y)->bool 
-        {
-            this->mouse_move(window, mouse_x, mouse_y);
-        };
-
-        m_tyro_window->callback_window_resize = [&](Window& window, unsigned int w, unsigned int h)->bool 
-        {
-            this->window_resize(window, w, h);
-        };
-
-        m_tyro_window->callback_key_pressed = [&](Window& window, unsigned int key, int modifiers)->bool 
-        {
-            this->key_pressed(window, key, modifiers);
-        };
-
-        m_tyro_window->callback_key_down = [&](Window& window, unsigned int key, int modifiers)->bool 
-        {
-            this->key_down(window, key, modifiers);
-        };
-        
-        m_tyro_window->callback_mouse_scroll = [&](Window& window, float ydelta)->bool 
-        {
-            this->mouse_scroll(window, ydelta);
-        };
      
-        m_state = App::State::Launched;
-        
-        m_need_rendering = true;
-
         register_console_function("render_to_image", console_render_to_image, ""); 
         register_console_function("render_to_images", console_render_to_images, ""); 
-
-        FontManager* fManager = FontManager::GetSingleton();
-        float scale = 1;
-        float ppi = 144;
-        fManager->Setup(ppi, scale);
 
         // show current number of frames
         ES2FontSPtr font = FontManager::GetSingleton()->GetSystemFontOfSize12();
@@ -303,18 +234,17 @@ namespace tyro
         std::string csv_file = "/home/rinat/Workspace/FacialManifoldSource/data_anim/clusters/augemented.txt";
         tyro::csvToVector(csv_file, MOTION_DATA);
         mTree.InitWithData(MOTION_DATA);
+
+        //init gamepad
+        mGamepad.Init();
     }
     
-    int App::Launch()
+    int BshapeApp::Launch()
     {   
-        RA_LOG_INFO("Launching the app");
-
-        Setup();
-
         //load animation
         //loadAnimation(ANIM_LIST[0]);
                 
-        m_state = App::State::LoadedModel;
+        m_state = BshapeApp::State::LoadedModel;
 
         while (!m_tyro_window->ShouldClose())
         {   
@@ -330,7 +260,7 @@ namespace tyro
        
             DrawMeshes();
             
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+            //ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
             // Draw console
             if (show_console) 
@@ -345,14 +275,14 @@ namespace tyro
         }
 
         // Cleanup
-        ImGui_ImplOpenGL3_Shutdown();
-        ImGui_ImplGlfw_Shutdown();
-        ImGui::DestroyContext();
+        //ImGui_ImplOpenGL3_Shutdown();
+        //ImGui_ImplGlfw_Shutdown();
+        //ImGui::DestroyContext();
 
 	    return 0;
     }
 
-    int App::LaunchOffScreen(const std::string& csv_file, const std::string& out_fldr) 
+    int BshapeApp::LaunchOffScreen(const std::string& csv_file, const std::string& out_fldr) 
     {   
         RA_LOG_INFO("Launching the app in offscreen mode");
  
@@ -494,7 +424,7 @@ namespace tyro
     }
     */
 
-    void App::DrawMeshes() 
+    void BshapeApp::DrawMeshes() 
     {
         //RA_LOG_INFO("RENDER BEGIN");
         VisibleSet vis_set;
@@ -517,13 +447,13 @@ namespace tyro
         RENDER.mesh->UpdateData(V, F, N, MESH_COLOR);
         RENDER.mesh->Update(true);
 
-        mFaceModel.setWeights(low_bnames, low_values_denoised);
-        mFaceModel.setWeights(up_bnames, up_values_denoised);
-        Eigen::MatrixXd V2, N2;
-        Eigen::MatrixXi F2;
-        mFaceModel.getExpression(V2, F2, N2);
-        RENDER.mesh2->UpdateData(V2, F2, N2, MESH_COLOR);
-        RENDER.mesh2->Update(true);
+        //mFaceModel.setWeights(low_bnames, low_values_denoised);
+        //mFaceModel.setWeights(up_bnames, up_values_denoised);
+        //Eigen::MatrixXd V2, N2;
+        //Eigen::MatrixXi F2;
+        //mFaceModel.getExpression(V2, F2, N2);
+        //RENDER.mesh2->UpdateData(V2, F2, N2, MESH_COLOR);
+        //RENDER.mesh2->Update(true);
         
         vis_set.Insert(RENDER.mesh.get());
         vis_set.Insert(RENDER.mesh2.get());
@@ -608,7 +538,7 @@ namespace tyro
     }
     */
    
-    void App::FetchGamepadInputs() 
+    void BshapeApp::FetchGamepadInputs() 
     {   
         std::map<std::string, double> axes; 
         std::map<std::string, bool> btns;
@@ -618,10 +548,10 @@ namespace tyro
         mGamepad.UpdateFrame(axes, btns);
 
         low_values_denoised.clear();
-        mTorchModelLow.Compute(mGamepad.low_values, low_values_denoised);
+        //mTorchModelLow.Compute(mGamepad.low_values, low_values_denoised);
 
         up_values_denoised.clear();
-        mTorchModelUp.Compute(mGamepad.up_values, up_values_denoised); 
+        //mTorchModelUp.Compute(mGamepad.up_values, up_values_denoised); 
 
         /*
         low_bnames.clear();
@@ -674,13 +604,15 @@ namespace tyro
     }
     */
 
+    /*
     void App::render() 
     {   
         //RA_LOG_INFO("NEED RENDERING");
         m_need_rendering = true;
     }
+    */
 
-    void App::update_camera() 
+    void BshapeApp::update_camera() 
     {
         //setup camera
         AxisAlignedBBox WorldBoundBox = RENDER.mesh->WorldBoundBox;
@@ -702,95 +634,7 @@ namespace tyro
         m_camera = new iOSCamera(world_center, radius, aspect, 2, viewport, true);
     }
 
-    void App::mouse_down(Window& window, int button, int modifier) 
-    {   
-        //RA_LOG_INFO("mouse down %i", button);
-        if (m_state != App::State::LoadedModel) return;
-
-        mouse_is_down = true;
-        m_modifier = modifier;
-        m_mouse_btn_clicked = button;
-
-        if (m_modifier == TYRO_MOD_CONTROL) return; //rotating
-        if (button == 0 && m_modifier == TYRO_MOD_SHIFT) 
-        {   
-            //m_square_sel_start_x = current_mouse_x;
-            //m_square_sel_start_y = current_mouse_y;
-            return; //selection
-        }
-        if (m_mouse_btn_clicked == 2) return; //translating
-        
-        // Cast a ray in the view direction starting from the mouse position
-        double x = current_mouse_x;
-        double y = m_camera->GetViewport()[3] - current_mouse_y;
-        //Eigen::Vector2f mouse_pos(x,y);
-        //selectVertex(mouse_pos, button, modifier);     
-    }
-
-    void App::mouse_up(Window& window, int button, int modifier) 
-    {   
-        if (m_state != App::State::LoadedModel) return;
-        //RA_LOG_INFO("MOUSE_UP");
-        if (mouse_is_down && m_modifier == TYRO_MOD_CONTROL) 
-        {   
-            gesture_state = 2;
-            m_camera->HandleOneFingerPanGesture(gesture_state, Wm5::Vector2i(current_mouse_x, current_mouse_y));
-            render();
-        }
-        else if (mouse_is_down && m_mouse_btn_clicked == 2) 
-        {
-            gesture_state = 2;
-            m_camera->HandleTwoFingerPanGesture(gesture_state, Wm5::Vector2i(current_mouse_x, -current_mouse_y));
-            render();
-        }
-        
-        mouse_is_down = false;
-        gesture_state = 0;
-    }
-
-    void App::mouse_move(Window& window, int mouse_x, int mouse_y) 
-    {   
-        //RA_LOG_INFO("mouse move state %i", m_state);
-        if (m_state != App::State::LoadedModel) return;
-        
-        current_mouse_x = mouse_x;
-        current_mouse_y = mouse_y;
-
-        if (mouse_is_down && m_modifier == TYRO_MOD_CONTROL) 
-        {   
-            m_camera->HandleOneFingerPanGesture(gesture_state, Wm5::Vector2i(mouse_x, mouse_y));
-            gesture_state = 1;
-            render();
-        } 
-        else if (mouse_is_down && m_mouse_btn_clicked == 2) 
-        {
-            m_camera->HandleTwoFingerPanGesture(gesture_state, Wm5::Vector2i(mouse_x, -mouse_y));
-            gesture_state = 1;
-            render();
-        } 
-    }
-
-    void App::mouse_scroll(Window& window, float ydelta) 
-    {   
-        //RA_LOG_INFO("mouse scroll delta %f", ydelta);
-        if (m_state != App::State::LoadedModel) return;
-        
-        m_camera->HandlePinchGesture(gesture_state, Wm5::Vector2i(current_mouse_x, current_mouse_y), ydelta);
-        render();
-    } 
-
-    void App::window_resize(Window& window, unsigned int w, unsigned int h)
-    {
-        //RA_LOG_INFO("window resized")
-        //float  aspect = m_gl_rend->GetViewWidth()/ (float) m_gl_rend->GetViewHeight();
-        //Vector4i viewport(0, 0, m_gl_rend->GetViewWidth(), m_gl_rend->GetViewHeight());
-        //m_camera->SetAspect(aspect);
-        //m_camera->SetViewport(viewport);
-        
-        render();
-    }
-
-    void App::key_pressed(Window& window, unsigned int key, int modifiers) 
+    void BshapeApp::key_pressed(Window& window, unsigned int key, int modifiers) 
     {   
         //RA_LOG_INFO("Key pressed %c", key);
         
@@ -828,38 +672,5 @@ namespace tyro
                 render();
             }            
         }
-    }
-    
-    void App::key_down(Window& window, unsigned int key, int modifiers) 
-   {   
-        //RA_LOG_INFO("Key down %i", key)
-        // handle not text keys   
-
-        if (key == TYRO_KEY_LEFT){ 
-            m_console.key_left();
-            render();}
-        else if (key == TYRO_KEY_RIGHT){ 
-            m_console.key_right();
-            render();}
-        else if (key == TYRO_KEY_ENTER){
-            m_console.key_enter();
-            render();
-            }
-        else if (key == TYRO_KEY_BACKSPACE){
-            m_console.key_backspace();render();}
-        else if (key == TYRO_KEY_UP){
-            m_console.key_up();render();}
-        else if (key == TYRO_KEY_DOWN){
-            m_console.key_down();render();}
-        else if (key == TYRO_KEY_TAB){
-            m_console.key_tab();render();}
-    }
-
-    void App::register_console_function(const std::string& name,
-                                        const std::function<void(App*, const std::vector<std::string>&)>& con_fun,
-                                        const std::string& help_txt)
-    {
-        std::function<void (const std::vector<std::string>&)> f = bind(con_fun, this, std::placeholders::_1);
-        m_console.reg_cmdN(name, f, help_txt);
     }
 }
