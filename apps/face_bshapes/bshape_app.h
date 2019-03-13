@@ -22,10 +22,12 @@ namespace tyro
         int Setup(int width, int height) override;
         void key_pressed(Window& window, unsigned int key, int modifiers) override; 
         void update_camera() override;
+        //void DrawMeshes();
+        //void FetchGamepadInputs();
+        void GamepadExample();
+        
         //void render();
-        void DrawMeshes();
         //void DrawUI();
-        void FetchGamepadInputs();
         //void loadAnimation(const std::string& name);
         //void loadFrame(int frame);
         //void loadOpenFace();
@@ -65,13 +67,13 @@ namespace tyro
 
         Gamepad mGamepad;
 
-        std::vector<double> low_values_denoised;
-        std::vector<std::string> low_bnames;
-        std::vector<double> low_values; 
+        //std::vector<double> low_values_denoised;
+        //std::vector<std::string> low_bnames;
+        //std::vector<double> low_values; 
 
-        std::vector<double> up_values_denoised;
-        std::vector<std::string> up_bnames;
-        std::vector<double> up_values; 
+        //std::vector<double> up_values_denoised;
+        //std::vector<std::string> up_bnames;
+        //std::vector<double> up_values; 
 
         std::vector<std::vector<double>> MOTION_DATA;
     };

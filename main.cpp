@@ -38,6 +38,7 @@ void test_tensor()
     std::cout << tensor_out << "\n";
 }
 */
+
 int main(int argc, char **argv) 
 {
     //test_tensor();
@@ -60,15 +61,13 @@ int main(int argc, char **argv)
         std::string out_fldr1(argv[2]);
         std::cout << path_ss1 << "\n";
         appr.LaunchOffScreen(path_ss1, out_fldr1);
-
     }
     // int r_code = appr.VideoToImages();
     // return r_code;
-
     //std::string path_ss1( "/home/rinat/Workspace/FacialManifoldSource/data_anim/clusters/cluster_4/features.txt");
     //std::string out_fldr1("/home/rinat/Workspace/FacialManifoldSource/data_anim/clusters/cluster_4/imgs");
-
-	return 0;
+	
+    return 0;
 }
 /*
 

@@ -47,6 +47,7 @@ namespace tyro
 
         assert(mAttrs.size() == mData[0].size());
 
+        /*
         for (auto& a : mData) 
         {
             for (auto&b : a) 
@@ -56,6 +57,7 @@ namespace tyro
             std::cout <<"\n";
         }
         std::cout << row_idx << "\n";
+        */
         //populate eigen matrix
         /*
         int rows = data.size();

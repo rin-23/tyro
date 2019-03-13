@@ -37,7 +37,9 @@ namespace tyro
         BshapeApp* bapp =(BshapeApp*) app;
         if (args.size()!=1) return;
         auto name = filesystem::path(args[0]);
-        bapp->DrawMeshes();
+        
+        //TODOD DRAW SHIT HERE
+        //bapp->DrawMeshes();
 
         // Poll for and process events
         bapp->m_tyro_window->GetGLContext()->swapBuffers();
@@ -93,7 +95,8 @@ namespace tyro
         for (int frame = 0; frame < bapp->mCurAnimation.getNumFrames(); ++frame) 
         { 
             bapp->m_frame = frame;
-            bapp->DrawMeshes();
+            /*DRAW SHIT HERE*/
+            //bapp->DrawMeshes();
 
             // Poll for and process events
             bapp->m_tyro_window->GetGLContext()->swapBuffers();
@@ -252,14 +255,13 @@ namespace tyro
 
             m_tyro_window->ProcessUserEvents();
 
+            GamepadExample();    
             //DrawUI();
             //loadOpenFace(); 
             //loadFrame(m_frame);
-            FetchGamepadInputs();
+            //FetchGamepadInputs();
             //ComputeDistanceToManifold();
-       
-            DrawMeshes();
-            
+            //DrawMeshes();
             //ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
             // Draw console
@@ -280,6 +282,59 @@ namespace tyro
         //ImGui::DestroyContext();
 
 	    return 0;
+    }
+
+    // method is called once per render frame.
+    // all update/draw logic fog gamepad example goes here
+    void BshapeApp::GamepadExample() 
+    {   
+        /*******  FETCH GAMEPAD INPUTS ********/
+        std::map<std::string, double> axes; 
+        std::map<std::string, bool> btns;
+        m_tyro_window->JoystickAxes(axes);
+        m_tyro_window->JoystickButtons(btns);
+        mGamepad.UpdateFrame(axes, btns);
+
+        std::vector<double> low_values_denoised;
+        //mTorchModelLow.Compute(mGamepad.low_values, low_values_denoised);
+
+        std::vector<double> up_values_denoised;
+        //mTorchModelUp.Compute(mGamepad.up_values, up_values_denoised); 
+
+        /****** RENDER MESH *******/
+        VisibleSet vis_set;
+        
+        mFaceModel.setWeights(mGamepad.low_bnames, mGamepad.low_values);
+        mFaceModel.setWeights(mGamepad.up_bnames, mGamepad.up_values);
+        Eigen::MatrixXd V, N;
+        Eigen::MatrixXi F;
+        mFaceModel.getExpression(V, F, N);
+        RENDER.mesh->UpdateData(V, F, N, MESH_COLOR);
+        RENDER.mesh->Update(true);
+
+        //mFaceModel.setWeights(low_bnames, low_values_denoised);
+        //mFaceModel.setWeights(up_bnames, up_values_denoised);
+        Eigen::MatrixXd V2, N2;
+        Eigen::MatrixXi F2;
+        mFaceModel.getExpression(V2, F2, N2);
+        RENDER.mesh2->UpdateData(V2, F2, N2, MESH_COLOR);
+        RENDER.mesh2->Update(true);
+        
+
+        vis_set.Insert(RENDER.mesh.get());
+        vis_set.Insert(RENDER.mesh2.get());
+        //vis_set.Insert(m_dist1.get());
+        //vis_set.Insert(m_dist2.get());
+  
+        m_gl_rend->RenderVisibleSet(&vis_set, m_camera);      
+
+        //DrawUI();
+        //loadOpenFace(); 
+        //loadFrame(m_frame);
+        //FetchGamepadInputs();
+        //ComputeDistanceToManifold();
+        //DrawMeshes();
+        //ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
     int BshapeApp::LaunchOffScreen(const std::string& csv_file, const std::string& out_fldr) 
@@ -423,7 +478,7 @@ namespace tyro
         ImGui::Render();
     }
     */
-
+    /*
     void BshapeApp::DrawMeshes() 
     {
         //RA_LOG_INFO("RENDER BEGIN");
@@ -431,7 +486,6 @@ namespace tyro
 
         //m_camera_texture->showFrame();
         //vis_set.Insert(m_camera_texture.get());
-               
         // update face geometry
         //for (int i=0;i < low_bnames.size(); ++i) 
         //{
@@ -474,7 +528,7 @@ namespace tyro
         
         m_gl_rend->RenderVisibleSet(&vis_set, m_camera);       
     }
-
+    */
     /*
     void App::loadFrame(int frame) 
     {
@@ -537,47 +591,45 @@ namespace tyro
         mTorchModel.Compute(low_values, low_values_denoised); 
     }
     */
-   
-    void BshapeApp::FetchGamepadInputs() 
-    {   
-        std::map<std::string, double> axes; 
-        std::map<std::string, bool> btns;
-        m_tyro_window->JoystickAxes(axes);
-        m_tyro_window->JoystickButtons(btns);
+    
+    // void BshapeApp::FetchGamepadInputs() 
+    // {   
+    //     std::map<std::string, double> axes; 
+    //     std::map<std::string, bool> btns;
+    //     m_tyro_window->JoystickAxes(axes);
+    //     m_tyro_window->JoystickButtons(btns);
         
-        mGamepad.UpdateFrame(axes, btns);
+    //     mGamepad.UpdateFrame(axes, btns);
 
-        low_values_denoised.clear();
-        //mTorchModelLow.Compute(mGamepad.low_values, low_values_denoised);
+    //     low_values_denoised.clear();
+    //     //mTorchModelLow.Compute(mGamepad.low_values, low_values_denoised);
 
-        up_values_denoised.clear();
-        //mTorchModelUp.Compute(mGamepad.up_values, up_values_denoised); 
+    //     up_values_denoised.clear();
+    //     //mTorchModelUp.Compute(mGamepad.up_values, up_values_denoised); 
 
-        /*
-        low_bnames.clear();
-        low_values.clear();
+    //     /*
+    //     low_bnames.clear();
+    //     low_values.clear();
 
-        for (auto& a : OpengFaceAUs)
-        {
-            low_bnames.push_back(a);
-            low_values.push_back(0.0);
-        } 
+    //     for (auto& a : OpengFaceAUs)
+    //     {
+    //         low_bnames.push_back(a);
+    //         low_values.push_back(0.0);
+    //     } 
 
-        for (auto const& a : GAMEPAD_TO_AUS) 
-        {   
-            auto value = fabs(axes[a.first]);
-            for (auto& au : a.second) 
-            {   
-                auto it = std::find(low_bnames.begin(), low_bnames.end(), au);
-                assert(it != low_bnames.end());
-                int index = std::distance(low_bnames.begin(), it);
-                low_values[index] = value;
-            }
-        }
-        */
-        
-   
-    }
+    //     for (auto const& a : GAMEPAD_TO_AUS) 
+    //     {   
+    //         auto value = fabs(axes[a.first]);
+    //         for (auto& au : a.second) 
+    //         {   
+    //             auto it = std::find(low_bnames.begin(), low_bnames.end(), au);
+    //             assert(it != low_bnames.end());
+    //             int index = std::distance(low_bnames.begin(), it);
+    //             low_values[index] = value;
+    //         }
+    //     }
+    //     */
+    // }
 
     /*
     void App::ComputeDistanceToManifold() 

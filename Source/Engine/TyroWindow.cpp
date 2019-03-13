@@ -1,5 +1,6 @@
 #include "TyroWindow.h"
 #include "RAEnginePrerequisites.h"
+
 /*
  * C-style callbacks for GLFW
  */
@@ -232,23 +233,40 @@ int Window::JoystickAxes(std::map<std::string, double>& axes_map)
     int axesCount;
     const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axesCount);
     
-    /*
-    RA_LOG_INFO("%i axes found", axesCount);
-    std::cout << "Left Stick X Axis: "  << axes[0] << std::endl; 
-    std::cout << "Left Stick Y Axis: "  << axes[1] << std::endl; 
-    std::cout << "Right Stick X Axis: " << axes[3] << std::endl; 
-    std::cout << "Right Stick Y Axis: " << axes[4] << std::endl; 
-    std::cout << "Left Trigger/L2: "    << axes[2] << std::endl; 
-    std::cout << "Right Trigger/R2: "   << axes[5] << std::endl; 
-    */
-
     //todo differentite between pos and neg values
-    axes_map["L_S_X_POS"] = axes[0]>0?axes[0]:0;
-    axes_map["L_S_Y"] = axes[1]>0?axes[0]:0;
-    axes_map["R_S_X"] = axes[3]>0?axes[0]:0;
-    axes_map["R_S_Y"] = axes[4]>0?axes[0]:0;
+
+    axes_map["L_S_X_RIGHT"] = axes[0]>0 ? axes[0] : 0;
+    axes_map["L_S_X_LEFT"] = axes[0]<0 ? -1*axes[0] : 0;
+    axes_map["L_S_Y_DOWN"] = axes[1]>0 ? axes[1] : 0;
+    axes_map["L_S_Y_UP"] = axes[1]<0 ?-1*axes[1] : 0;
+    axes_map["R_S_X_RIGHT"] = axes[3]>0 ? axes[3] : 0;
+    axes_map["R_S_X_LEFT"] = axes[3]<0 ? -1*axes[3] : 0;
+    axes_map["R_S_Y_DOWN"] = axes[4]>0 ? axes[4] : 0;
+    axes_map["R_S_Y_UP"] = axes[4]<0 ? -1*axes[4] : 0;
     axes_map["L_T"] = (axes[2] + 1.0)/2.0;
     axes_map["R_T"] = (axes[5] + 1.0)/2.0;
+
+    if (true) 
+    {
+        RA_LOG_INFO("%i axes found", axesCount);
+        std::cout << "Left Stick X Axis: "  << axes[0] << std::endl; 
+        std::cout << "Left Stick Y Axis: "  << axes[1] << std::endl; 
+        std::cout << "Right Stick X Axis: " << axes[3] << std::endl; 
+        std::cout << "Right Stick Y Axis: " << axes[4] << std::endl; 
+        std::cout << "Left Trigger/L2: "    << axes[2] << std::endl; 
+        std::cout << "Right Trigger/R2: "   << axes[5] << std::endl; 
+
+        std::cout << "L_S_X_RIGHT: "   << axes_map["L_S_X_RIGHT"] << std::endl; 
+        std::cout << "L_S_X_LEFT: "   << axes_map["L_S_X_LEFT"] << std::endl; 
+        std::cout << "L_S_Y_DOWN: "   << axes_map["L_S_Y_DOWN"] << std::endl; 
+        std::cout << "L_S_Y_UP: "   << axes_map["L_S_Y_UP"] << std::endl; 
+        std::cout << "R_S_X_RIGHT: "   << axes_map["R_S_X_RIGHT"] << std::endl; 
+        std::cout << "R_S_X_LEFT: "   << axes_map["R_S_X_LEFT"] << std::endl; 
+        std::cout << "R_S_Y_DOWN: "   << axes_map["R_S_Y_DOWN"] << std::endl; 
+        std::cout << "R_S_Y_UP: "   << axes_map["R_S_Y_UP"] << std::endl; 
+        std::cout << "L_T: "   << axes_map["L_T"] << std::endl; 
+        std::cout << "R_T: "   << axes_map["R_T"] << std::endl; 
+    }
 
     return 1;
 }
@@ -264,25 +282,26 @@ int Window::JoystickButtons(std::map<std::string, bool>& buttons_map)
     int buttonCount;
     const unsigned char *buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
     
-    buttons_map["triangle"] = buttons[0];
-    buttons_map["square"] = buttons[1];
-    buttons_map["circle"] = buttons[2];
-    buttons_map["cross"] = buttons[3];
-    buttons_map["R1"] = buttons[4];
-    buttons_map["L1"] = buttons[5];
-    
-    return 1;
-    //for (int i=0;i<buttonCount;++i) 
-    //{      
+    buttons_map["triangle"] = buttons[2];
+    buttons_map["square"] = buttons[3];
+    buttons_map["circle"] = buttons[1];
+    buttons_map["cross"] = buttons[0];
+    buttons_map["R1"] = buttons[5];
+    buttons_map["L1"] = buttons[4];
+    buttons_map["R3"] = buttons[12];
+    buttons_map["L3"] = buttons[11];
+    buttons_map["options"] = buttons[7];
+    buttons_map["share"] = buttons[7];
 
-        
-        /*
-        if (GLFW_PRESS == buttons[i])
-            std::cout << "Button " << i << "Pressed" << std::endl;
-        else if (GLFW_RELEASE == buttons[i] )
-            std::cout << "Button " << i << "Released" << std::endl;
-        */
-   // }
+    
+    for (int i=0;i<buttonCount;++i) 
+    {      
+        //if (GLFW_PRESS == buttons[i])
+        //    std::cout << "Button " << i << "Pressed" << std::endl;
+        //else if (GLFW_RELEASE == buttons[i] )
+        //    std::cout << "Button " << i << "Released" << std::endl;
+    }
+    return 1;
     
 }
 
