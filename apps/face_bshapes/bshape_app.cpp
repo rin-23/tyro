@@ -198,7 +198,7 @@ namespace tyro
 
         //load all bshapes and neuteral expression
         std::string modelPath("/home/rinat/Workspace/tyro/apps/face_bshapes/resources/facemodel");
-        const bool load_serialized = true;
+        const bool load_serialized = false;
         if (load_serialized) 
         {
             mFaceModel.deserialize(modelPath);
@@ -226,17 +226,17 @@ namespace tyro
         // m_camera_texture = OpenFaceTexture::Create();
 
         //setup torch model
-        mTorchModelUp.Init("/home/rinat/Workspace/FacialManifoldSource/data_anim/traced.pth");
-        mTorchModelLow.Init("/home/rinat/Workspace/FacialManifoldSource/data_anim/traced.pth");
+        //mTorchModelUp.Init( "/home/rinat/Workspace/FacialManifoldSource/data_anim/traced_upper.pth");
+        mTorchModelLow.Init("/home/rinat/Workspace/FacialManifoldSource/data_anim/traced_lower.pth");
 
         //find joystick
         int present = m_tyro_window->JoystickConnected(); 
         RA_LOG_INFO("Found joystik %i", present);
 
         //init kd tree
-        std::string csv_file = "/home/rinat/Workspace/FacialManifoldSource/data_anim/clusters/augemented.txt";
-        tyro::csvToVector(csv_file, MOTION_DATA);
-        mTree.InitWithData(MOTION_DATA);
+        //std::string csv_file = "/home/rinat/Workspace/FacialManifoldSource/data_anim/clusters_lower/augemented.txt";
+        //tyro::csvToVector(csv_file, MOTION_DATA);
+        //mTree.InitWithData(MOTION_DATA);
 
         //init gamepad
         mGamepad.Init();
@@ -296,7 +296,7 @@ namespace tyro
         mGamepad.UpdateFrame(axes, btns);
 
         std::vector<double> low_values_denoised;
-        //mTorchModelLow.Compute(mGamepad.low_values, low_values_denoised);
+        mTorchModelLow.Compute(mGamepad.low_values, low_values_denoised);
 
         std::vector<double> up_values_denoised;
         //mTorchModelUp.Compute(mGamepad.up_values, up_values_denoised); 
@@ -312,15 +312,14 @@ namespace tyro
         RENDER.mesh->UpdateData(V, F, N, MESH_COLOR);
         RENDER.mesh->Update(true);
 
-        //mFaceModel.setWeights(low_bnames, low_values_denoised);
-        //mFaceModel.setWeights(up_bnames, up_values_denoised);
+        mFaceModel.setWeights(mGamepad.low_bnames, low_values_denoised);
+        //mFaceModel.setWeights(mGamepad.up_bnames, up_values_denoised);
         Eigen::MatrixXd V2, N2;
         Eigen::MatrixXi F2;
         mFaceModel.getExpression(V2, F2, N2);
         RENDER.mesh2->UpdateData(V2, F2, N2, MESH_COLOR);
         RENDER.mesh2->Update(true);
         
-
         vis_set.Insert(RENDER.mesh.get());
         vis_set.Insert(RENDER.mesh2.get());
         //vis_set.Insert(m_dist1.get());

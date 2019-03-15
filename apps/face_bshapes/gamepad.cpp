@@ -7,14 +7,32 @@
 
 namespace tyro 
 {
+const std::vector<std::string> UPPER_STUFF = {
+ "jaw.rotateZ",
+ "jaw.translateX",
+ "faceMuscles.zygomatic",
+ "faceMuscles.labSup",
+ "faceMuscles.labSup_AN",
+ "faceMuscles.orbOris_loose_lo",
+ "faceMuscles.risoriusPlatysma",
+ "faceMuscles.mentalis",
+ "faceMuscles.triangularis",
+ "faceMuscles.LabInf",
+ "faceMuscles.incisivus"};
+
 const std::map<std::string, std::vector<std::string>> UPPER_MAP
 = 
 {
-    {"L_T",         {"faceMuscles.frontalis"}},
-    {"L_S_Y_UP",    {"faceMuscles.orbOculi"}},
-    {"L_S_X_LEFT",  {"faceMuscles.currogator"}}
-    //todo: add eyelids bshapes
+    {"L_T",          {"faceMuscles.frontalis"}},
+    {"L_S_Y_UP",     {"faceMuscles.orbOculi"}},
+    {"L_S_X_LEFT",   {"faceMuscles.currogator"}},
+   
+    {"R_S_X_LEFT",   {"blink_ctl_pos.translateY_neg"}},                      
+    {"R_S_X_RIGHT",  {"blink_ctl_neg.translateY_pos"}},                     
+    {"R_S_Y_UP",     {"loBlink_ctl_pos.translateY_pos"}},                  
+    {"R_S_Y_DOWN",   {"loBlink_ctl_neg.translateY_neg" }}                 
 
+    //todo: add eyelids bshapes
     //{"R_S_X",  {"faceMuscles.buccinator"}},
     //{,  {"faceMuscles.triangularis"}},
     //{"R_S_Y",  {"faceMuscles.mentalis"}},
@@ -23,15 +41,28 @@ const std::map<std::string, std::vector<std::string>> UPPER_MAP
     //{,  {"faceMuscles.orbOris_loose_lo", "faceMuscles.orbOris_loose_hi"}},
 };
 
+const std::vector<std::string> LOWER_STUFF = {
+ "jaw.rotateZ",
+ "jaw.translateX",
+ "faceMuscles.zygomatic",
+ "faceMuscles.labSup",
+ "faceMuscles.labSup_AN",
+ "faceMuscles.orbOris_loose_lo",
+ "faceMuscles.risoriusPlatysma",
+ "faceMuscles.mentalis",
+ "faceMuscles.triangularis",
+ "faceMuscles.LabInf",
+ "faceMuscles.incisivus"};
+
 const std::map<std::string, std::vector<std::string>> MIDJAW_MAP
 = 
 {
     {"L_T",          {"jaw.rotateZ"}},
-    {"R_T",          {"faceMuscles.zygomatic"}},
-
     {"L_S_Y_UP",     {"jaw.translateX"}},
-//    {"L_S_X",        {"faceMuscles.zygomatic"}}, jaw left right 
+    //{"L_S_X_LEFT",   {"jaw.rotateY"}},  
+    //{"L_S_X_RIGHT",  {"jaw.rotateY"}},  
 
+    {"R_T",          {"faceMuscles.zygomatic"}},
     {"R_S_X_RIGHT",  {"faceMuscles.labSup"}},
     {"R_S_Y_UP",     {"faceMuscles.labSup_AN"}},
 };
@@ -39,14 +70,13 @@ const std::map<std::string, std::vector<std::string>> MIDJAW_MAP
 const std::map<std::string, std::vector<std::string>> LIP_MAP
 = 
 {
-    {"L_T",         {"faceMuscles.triangularis"}},
-    {"R_T",         {"faceMuscles.blow"}},
-    
+    {"R_T",         {"faceMuscles.orbOris_loose_lo"}},
     {"R_S_X_LEFT",  {"faceMuscles.risoriusPlatysma"}},
     {"R_S_Y_UP",    {"faceMuscles.mentalis"}},
-    
-    {"L_S_X_LEFT",  {"faceMuscles.incisivus"}},
-    {"L_S_Y_UP",    {"faceMuscles.LabInf"}}
+
+    {"L_T",         {"faceMuscles.triangularis"}},
+    {"L_S_X_LEFT",  {"faceMuscles.LabInf"}},
+    {"L_S_Y_UP",    {"faceMuscles.incisivus"}}
 };
 
 Gamepad::Gamepad()
@@ -57,17 +87,19 @@ mState(State::NONE_STATE)
 
 void Gamepad::Init() 
 {   
+    
     for (const auto& i : upper_face_bshape_index)
     {
         up_bnames.push_back(ALL_BSHAPES[i]);
-        up_values.push_back(0.0);
+        up_values.push_back(0.0);   
     }
 
-    for (const auto& i : lower_face_bshape_index)
+    for (auto& a : LOWER_STUFF)
     {
-        low_bnames.push_back(ALL_BSHAPES[i]);
+        low_bnames.push_back(a);
         low_values.push_back(0.0);
     }
+    
 }
 
 void Gamepad::UpdateFrame(std::map<std::string, double>& axes, 
