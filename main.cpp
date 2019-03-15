@@ -42,14 +42,14 @@ void test_tensor()
 int main(int argc, char **argv) 
 {
     //test_tensor();
+    //test_kdtree();
     
     tyro::BshapeApp appr;
-    appr.Setup(1600,1200);
-
+    
     if (argc==1) 
     {
+        appr.Setup(1600,1200);
         int r_code = appr.Launch();
-        //test_kdtree();
     }
     else if (argc == 2) 
     {

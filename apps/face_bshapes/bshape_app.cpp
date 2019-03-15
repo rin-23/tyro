@@ -198,7 +198,7 @@ namespace tyro
 
         //load all bshapes and neuteral expression
         std::string modelPath("/home/rinat/Workspace/tyro/apps/face_bshapes/resources/facemodel");
-        const bool load_serialized = false;
+        const bool load_serialized = true;
         if (load_serialized) 
         {
             mFaceModel.deserialize(modelPath);
@@ -354,8 +354,6 @@ namespace tyro
         m_camera = new iOSCamera(Wm5::APoint(0,0,0), 1.0, 1.0, 2, viewport, true);
 
         //load all bshapes and neuteral expression
-        //mFaceModel.setNeuteralMesh(NEUT);
-        //mFaceModel.setBshapes(BSHAPES_MAP); // ORDER IS VERY IMPORTANT to match BSHAPES in arig.py
         std::string modelPath("/home/rinat/Workspace/tyro/apps/face_bshapes/resources/facemodel");
         mFaceModel.deserialize(modelPath);
         
@@ -367,12 +365,12 @@ namespace tyro
         RENDER.mesh->Update(true);
         mCurAnimation.readPandasCsv(csv_file, 0);
         assert(mCurAnimation.getNumFrames() > 0);
-
+        std::cout << mCurAnimation.mAttrs << "\n";
         update_camera();
 
         u_int8_t* texture = (u_int8_t*) malloc(4*v_width *v_height);
         auto out_path = filesystem::path(out_fldr);
-
+        
         for (int i=0;i<mCurAnimation.getNumFrames(); ++i) 
         {
             m_gl_rend->ClearScreen();

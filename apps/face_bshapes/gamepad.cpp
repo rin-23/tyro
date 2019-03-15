@@ -8,17 +8,13 @@
 namespace tyro 
 {
 const std::vector<std::string> UPPER_STUFF = {
- "jaw.rotateZ",
- "jaw.translateX",
- "faceMuscles.zygomatic",
- "faceMuscles.labSup",
- "faceMuscles.labSup_AN",
- "faceMuscles.orbOris_loose_lo",
- "faceMuscles.risoriusPlatysma",
- "faceMuscles.mentalis",
- "faceMuscles.triangularis",
- "faceMuscles.LabInf",
- "faceMuscles.incisivus"};
+           "faceMuscles.frontalis",
+           "faceMuscles.orbOculi",
+           "faceMuscles.currogator",
+           "blink_ctl_pos.translateY_neg",                      
+           "blink_ctl_neg.translateY_pos",                     
+           "loBlink_ctl_pos.translateY_pos",                  
+           "loBlink_ctl_neg.translateY_neg"};
 
 const std::map<std::string, std::vector<std::string>> UPPER_MAP
 = 
@@ -27,7 +23,7 @@ const std::map<std::string, std::vector<std::string>> UPPER_MAP
     {"L_S_Y_UP",     {"faceMuscles.orbOculi"}},
     {"L_S_X_LEFT",   {"faceMuscles.currogator"}},
    
-    {"R_S_X_LEFT",   {"blink_ctl_pos.translateY_neg"}},                      
+    {"R_S_X_LEFT",   {"blink_ctl_pos.translateY_neg"}},                     
     {"R_S_X_RIGHT",  {"blink_ctl_neg.translateY_pos"}},                     
     {"R_S_Y_UP",     {"loBlink_ctl_pos.translateY_pos"}},                  
     {"R_S_Y_DOWN",   {"loBlink_ctl_neg.translateY_neg" }}                 
