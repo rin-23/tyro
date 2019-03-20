@@ -13,6 +13,9 @@ set(TYRO_SRC_LOCAL
 "apps/face_bshapes/torch_model.cpp"
 "apps/face_bshapes/kdtree.cpp"
 "apps/face_bshapes/gamepad.cpp"
+"apps/face_bshapes/sliders.cpp"
+"apps/face_bshapes/cameracontrol.cpp"
+"apps/face_bshapes/ES2VideoTexture.cpp"
 )
 
 set(TYROAPP_SRC

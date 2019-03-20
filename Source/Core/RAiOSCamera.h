@@ -37,7 +37,7 @@ namespace tyro
         void HandleTwoFingerPanGesture(int state, Wm5::Vector2i glTouch);
         //void HandleRotationGesture(UIRotationGestureRecognizer* sender);
         void HandlePinchGesture(int state, Wm5::Vector2i glTouch, double offset);
-        
+        void Translate(const Wm5::Vector2i& offset);
         //Eigen::Matrix4f GetEigenViewMatrix();
         //Eigen::Matrix4f GetEigenProjMatrix();
         //Eigen::Vector4f GetEigenViewport();

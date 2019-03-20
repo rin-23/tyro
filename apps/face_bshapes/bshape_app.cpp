@@ -122,14 +122,15 @@ namespace tyro
         free(texture);
     }
 
-    BshapeApp::BshapeApp()
+    BshapeApp::BshapeApp(Experiment exp)
     :
     App(),
     m_frame(0),
     m_state(BshapeApp::State::None),
     m_need_rendering(false),
     m_frame_overlay(nullptr),
-    m_show_wire(true)
+    m_show_wire(true),
+    mExperiment(exp)
     {}
 
     BshapeApp::~BshapeApp() 
@@ -220,26 +221,41 @@ namespace tyro
         tr.SetTranslate(Wm5::APoint(-1.5*RENDER.mesh->WorldBoundBox.GetRadius(), 0, 0));
         RENDER.mesh2->LocalTransform = tr * RENDER.mesh2->LocalTransform;  
         RENDER.mesh2->Update(true);
+
         update_camera();
 
-        // create a video stream
-        // m_camera_texture = OpenFaceTexture::Create();
-
         //setup torch model
-        //mTorchModelUp.Init( "/home/rinat/Workspace/FacialManifoldSource/data_anim/traced_upper.pth");
-        mTorchModelLow.Init("/home/rinat/Workspace/FacialManifoldSource/data_anim/traced_lower.pth");
+        if (mExperiment == Experiment::PS4) 
+        {
+            mTorchModelUp.Init("/home/rinat/Workspace/FacialManifoldSource/data_anim/traced_upper_sliders.pth");
+            mTorchModelLow.Init("/home/rinat/Workspace/FacialManifoldSource/data_anim/traced_lower_sliders.pth");
+           
+            int present = m_tyro_window->JoystickConnected(); 
+            RA_LOG_INFO("Found joystik %i", present);
 
-        //find joystick
-        int present = m_tyro_window->JoystickConnected(); 
-        RA_LOG_INFO("Found joystik %i", present);
+            mGamepad.Init();
+        }
+        else if (mExperiment == Experiment::SLIDERS)
+        {
+            mTorchModelUp.Init("/home/rinat/Workspace/FacialManifoldSource/data_anim/traced_upper_sliders.pth");
+            mTorchModelLow.Init("/home/rinat/Workspace/FacialManifoldSource/data_anim/traced_lower_sliders.pth");
+            
+            mSliders.Init();
+        }
+        else if (mExperiment == Experiment::CAMERA)
+        {
+            mTorchModelUp.Init("/home/rinat/Workspace/FacialManifoldSource/data_anim/traced_upper_sliders.pth");
+            mTorchModelLow.Init("/home/rinat/Workspace/FacialManifoldSource/data_anim/traced_lower_sliders.pth");
+           
+            // create a video stream
+            m_camera_texture = OpenFaceTexture::Create();
+            mCameraControl.Init();
+        } 
 
         //init kd tree
         //std::string csv_file = "/home/rinat/Workspace/FacialManifoldSource/data_anim/clusters_lower/augemented.txt";
         //tyro::csvToVector(csv_file, MOTION_DATA);
         //mTree.InitWithData(MOTION_DATA);
-
-        //init gamepad
-        mGamepad.Init();
     }
     
     int BshapeApp::Launch()
@@ -255,14 +271,20 @@ namespace tyro
 
             m_tyro_window->ProcessUserEvents();
 
-            GamepadExample();    
+            if (mExperiment == Experiment::PS4) 
+                GamepadExample();
+            else if (mExperiment == Experiment::SLIDERS)
+                SliderExample();    
+            else if (mExperiment == Experiment::CAMERA)
+                CameraExample();
+
             //DrawUI();
             //loadOpenFace(); 
             //loadFrame(m_frame);
             //FetchGamepadInputs();
             //ComputeDistanceToManifold();
             //DrawMeshes();
-            //ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+            
 
             // Draw console
             if (show_console) 
@@ -277,9 +299,9 @@ namespace tyro
         }
 
         // Cleanup
-        //ImGui_ImplOpenGL3_Shutdown();
-        //ImGui_ImplGlfw_Shutdown();
-        //ImGui::DestroyContext();
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
 
 	    return 0;
     }
@@ -295,11 +317,9 @@ namespace tyro
         m_tyro_window->JoystickButtons(btns);
         mGamepad.UpdateFrame(axes, btns);
 
-        std::vector<double> low_values_denoised;
+        std::vector<double> low_values_denoised, up_values_denoised;
         mTorchModelLow.Compute(mGamepad.low_values, low_values_denoised);
-
-        std::vector<double> up_values_denoised;
-        //mTorchModelUp.Compute(mGamepad.up_values, up_values_denoised); 
+        mTorchModelUp.Compute(mGamepad.up_values, up_values_denoised); 
 
         /****** RENDER MESH *******/
         VisibleSet vis_set;
@@ -311,21 +331,56 @@ namespace tyro
         mFaceModel.getExpression(V, F, N);
         RENDER.mesh->UpdateData(V, F, N, MESH_COLOR);
         RENDER.mesh->Update(true);
+        vis_set.Insert(RENDER.mesh.get());
+
 
         mFaceModel.setWeights(mGamepad.low_bnames, low_values_denoised);
-        //mFaceModel.setWeights(mGamepad.up_bnames, up_values_denoised);
+        mFaceModel.setWeights(mGamepad.up_bnames, up_values_denoised);
         Eigen::MatrixXd V2, N2;
         Eigen::MatrixXi F2;
         mFaceModel.getExpression(V2, F2, N2);
         RENDER.mesh2->UpdateData(V2, F2, N2, MESH_COLOR);
         RENDER.mesh2->Update(true);
-        
-        vis_set.Insert(RENDER.mesh.get());
         vis_set.Insert(RENDER.mesh2.get());
-        //vis_set.Insert(m_dist1.get());
-        //vis_set.Insert(m_dist2.get());
-  
+    
         m_gl_rend->RenderVisibleSet(&vis_set, m_camera);      
+
+
+        // Start the Dear ImGui frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        ImGui::SetNextWindowSize(ImVec2(430,450), ImGuiCond_FirstUseEver);
+        bool flag = true;
+        ImGui::Begin("Blendshapes", &flag);
+        
+        ImGui::Text("Upper");
+        
+        for (int i = 0; i < mGamepad.up_values.size(); ++i)
+        {   
+            ImGui::PushID(i);
+            ImGui::Text("%0.2f den %0.2f", mGamepad.up_values[i], up_values_denoised[i]);
+            ImGui::SameLine();
+            ImGui::Text("%s", mGamepad.up_bnames[i].c_str());
+            ImGui::PopID();
+        }
+        
+        ImGui::Separator();
+        
+        ImGui::Text("Lower");
+        for (int i = 0; i < mGamepad.low_values.size(); ++i)
+        {   
+            ImGui::PushID(i);
+            ImGui::Text("%0.2f den %0.2f", mGamepad.low_values[i], low_values_denoised[i]);
+            ImGui::SameLine();
+            ImGui::Text("%s", mGamepad.low_bnames[i].c_str());
+            ImGui::PopID();
+        }
+        
+        ImGui::End();        
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 
         //DrawUI();
         //loadOpenFace(); 
@@ -336,22 +391,137 @@ namespace tyro
         //ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
-    int BshapeApp::LaunchOffScreen(const std::string& csv_file, const std::string& out_fldr) 
+    void BshapeApp::SliderExample() 
+    {   
+        /******   DRAW UI  *******/
+        std::vector<double> low_values_denoised, up_values_denoised;
+        mTorchModelLow.Compute(mSliders.low_values, low_values_denoised);
+        mTorchModelUp.Compute(mSliders.up_values, up_values_denoised); 
+
+        /****** RENDER MESH *******/
+        VisibleSet vis_set;
+        
+        mFaceModel.setWeights(mSliders.low_bnames, mSliders.low_values);
+        mFaceModel.setWeights(mSliders.up_bnames,  mSliders.up_values);
+        Eigen::MatrixXd V, N;
+        Eigen::MatrixXi F;
+        mFaceModel.getExpression(V, F, N);
+        RENDER.mesh->UpdateData(V, F, N, MESH_COLOR);
+        RENDER.mesh->Update(true);
+        vis_set.Insert(RENDER.mesh.get());
+
+        mFaceModel.setWeights(mSliders.low_bnames, low_values_denoised);
+        mFaceModel.setWeights(mSliders.up_bnames, up_values_denoised);
+        Eigen::MatrixXd V2, N2;
+        Eigen::MatrixXi F2;
+        mFaceModel.getExpression(V2, F2, N2);
+        RENDER.mesh2->UpdateData(V2, F2, N2, MESH_COLOR);
+        RENDER.mesh2->Update(true);
+        vis_set.Insert(RENDER.mesh2.get());
+  
+        m_gl_rend->RenderVisibleSet(&vis_set, m_camera);      
+
+        // Start the Dear ImGui frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        ImGui::SetNextWindowSize(ImVec2(430,450), ImGuiCond_FirstUseEver);
+        bool flag = true;
+        ImGui::Begin("Blendshapes", &flag);
+        ImGui::Text("Upper");
+        for (int i = 0; i < mSliders.up_values.size(); ++i)
+        {   
+            ImGui::PushID(i);
+            ImGui::Text("%0.2f", up_values_denoised[i]);
+            ImGui::SameLine();
+            float val = mSliders.up_values[i];
+            ImGui::SliderFloat(mSliders.up_bnames[i].c_str(), &val, 0.0f, 1.0f, "%.2f");
+            mSliders.up_values[i] = (double)val;
+            
+            ImGui::PopID();
+        }
+        ImGui::Separator();
+        ImGui::Text("Lower");
+        for (int i = 0; i < mSliders.low_values.size(); ++i)
+        {   
+            ImGui::PushID(mSliders.up_values.size() + i);
+            ImGui::Text("%0.2f", low_values_denoised[i]);
+            ImGui::SameLine();
+            float val = mSliders.low_values[i];
+            ImGui::SliderFloat(mSliders.low_bnames[i].c_str(), &val, 0.0f, 1.0f, "%.2f");
+            mSliders.low_values[i] = val;
+            ImGui::PopID();
+        }
+        ImGui::End();        
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        //DrawUI();
+        //loadOpenFace(); 
+        //loadFrame(m_frame);
+        //FetchGamepadInputs();
+        //ComputeDistanceToManifold();
+        //DrawMeshes();
+        //ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
+
+    void BshapeApp::CameraExample() 
+    {      
+        // Fetch OpenFace frame 
+        VisibleSet vis_set;
+        m_camera_texture->showFrame();
+        vis_set.Insert(m_camera_texture.get());
+
+        // Fetch OpenFace AUs 
+        std::vector<std::string> names; 
+        std::vector<double> values;
+        m_camera_texture->getAUs(names, values);
+        mCameraControl.Update(names, values);
+
+        // Denoise
+        std::vector<double> low_values_denoised, up_values_denoised;
+        mTorchModelLow.Compute(mCameraControl.low_values, low_values_denoised);
+        mTorchModelUp.Compute(mCameraControl.up_values, up_values_denoised); 
+  
+        // Render Mesh
+        mFaceModel.setWeights(mCameraControl.low_bnames, mCameraControl.low_values);
+        mFaceModel.setWeights(mCameraControl.up_bnames,  mCameraControl.up_values);
+        Eigen::MatrixXd V, N;
+        Eigen::MatrixXi F;
+        mFaceModel.getExpression(V, F, N);
+        RENDER.mesh->UpdateData(V, F, N, MESH_COLOR);
+        RENDER.mesh->Update(true);
+        vis_set.Insert(RENDER.mesh.get());
+
+        mFaceModel.setWeights(mCameraControl.low_bnames, low_values_denoised);
+        mFaceModel.setWeights(mCameraControl.up_bnames, up_values_denoised);
+        Eigen::MatrixXd V2, N2;
+        Eigen::MatrixXi F2;
+        mFaceModel.getExpression(V2, F2, N2);
+        RENDER.mesh2->UpdateData(V2, F2, N2, MESH_COLOR);
+        RENDER.mesh2->Update(true);
+        vis_set.Insert(RENDER.mesh2.get());
+  
+        m_gl_rend->RenderVisibleSet(&vis_set, m_camera);      
+    }
+
+    int BshapeApp::LaunchOffScreen(const std::string& csv_file, const std::string& out_fldr,  const std::string& video_stream, bool isOpenFace) 
     {   
         RA_LOG_INFO("Launching the app in offscreen mode");
  
         //setup windowshapes
         m_tyro_window = new Window();
-        m_tyro_window->InitOffscreen(1600,1200);
+        m_tyro_window->InitOffscreen(1920,1080);
                 
         //setup renderer
         m_gl_rend = new ES2Renderer(m_tyro_window->GetGLContext());
         m_gl_rend->SetClearColor(Wm5::Vector4f(150/255.0, 150/255.0, 150/255.0, 1));
-
+        
         int v_width, v_height;
         m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
         Wm5::Vector4i viewport(0, 0, v_width, v_height);
-        m_camera = new iOSCamera(Wm5::APoint(0,0,0), 1.0, 1.0, 2, viewport, true);
+        //m_camera = new iOSCamera(Wm5::APoint(0,0,0), 1.0, 1.0, 2, viewport, true);
+        
 
         //load all bshapes and neuteral expression
         std::string modelPath("/home/rinat/Workspace/tyro/apps/face_bshapes/resources/facemodel");
@@ -363,11 +533,41 @@ namespace tyro
         mFaceModel.getExpression(V, F, N);
         RENDER.mesh = IGLMesh::Create(V, F, N, MESH_COLOR);
         RENDER.mesh->Update(true);
-        mCurAnimation.readPandasCsv(csv_file, 0);
+        
+        if (isOpenFace) 
+        {
+            //load neuteral expression
+            RENDER.mesh2 = IGLMesh::Create(V, F, N, MESH_COLOR);
+            Wm5::Transform tr;
+            tr.SetTranslate(Wm5::APoint(-1.5*RENDER.mesh->WorldBoundBox.GetRadius(), 0, 0));
+            RENDER.mesh2->LocalTransform = tr * RENDER.mesh2->LocalTransform;  
+            RENDER.mesh2->Update(true);
+
+            mCurAnimation.readOpenFaceCsv(csv_file,-1);
+            
+            mTorchModelUp.Init("/home/rinat/Workspace/FacialManifoldSource/data_anim/traced_upper_sliders.pth");
+            mTorchModelLow.Init("/home/rinat/Workspace/FacialManifoldSource/data_anim/traced_lower_sliders.pth");
+           
+            // create a video stream
+            mCameraControl.Init();
+
+            m_video_texture = ES2VideoTexture::Create(video_stream);
+
+        } 
+        else
+        {
+            mCurAnimation.readPandasCsv(csv_file, 0);
+        }
+        
+        //update_camera();
+
+
         assert(mCurAnimation.getNumFrames() > 0);
         std::cout << mCurAnimation.mAttrs << "\n";
         update_camera();
 
+        if (isOpenFace) m_camera->Translate(Wm5::Vector2i(200,0));
+ 
         u_int8_t* texture = (u_int8_t*) malloc(4*v_width *v_height);
         auto out_path = filesystem::path(out_fldr);
         
@@ -378,22 +578,59 @@ namespace tyro
             std::vector<double> W;
             std::vector<std::string> A;
             mCurAnimation.getWeights(i, A, W);
-            mFaceModel.setWeights(A, W);
-            
-            Eigen::MatrixXd V, N;
-            Eigen::MatrixXi F;
-            mFaceModel.getExpression(V, F, N);
-            
-            RENDER.mesh->UpdateData(V, F, N, MESH_COLOR);
-            RENDER.mesh->Update(true);
             
             VisibleSet vis_set;
-            vis_set.Insert(RENDER.mesh.get());
-            m_gl_rend->RenderVisibleSet(&vis_set, m_camera);       
 
+            if (isOpenFace) 
+            {
+                // Fetch OpenFace AUs 
+                mCameraControl.Update(A, W, true);
+                mCameraControl.Print();
+                
+                // Denoise
+                std::vector<double> low_values_denoised, up_values_denoised;
+                mTorchModelUp.Compute(mCameraControl.up_values,   up_values_denoised); 
+                mTorchModelLow.Compute(mCameraControl.low_values, low_values_denoised);
+                
+                // Render Mesh
+                mFaceModel.setWeights(mCameraControl.low_bnames, mCameraControl.low_values);
+                mFaceModel.setWeights(mCameraControl.up_bnames,  mCameraControl.up_values);
+                Eigen::MatrixXd V, N;
+                Eigen::MatrixXi F;
+                mFaceModel.getExpression(V, F, N);
+                RENDER.mesh->UpdateData(V, F, N, MESH_COLOR);
+                RENDER.mesh->Update(true);
+                vis_set.Insert(RENDER.mesh.get());
+                
+                mFaceModel.setWeights(mCameraControl.up_bnames, up_values_denoised);
+                mFaceModel.setWeights(mCameraControl.low_bnames, low_values_denoised);
+                Eigen::MatrixXd V2, N2;
+                Eigen::MatrixXi F2;
+                mFaceModel.getExpression(V2, F2, N2);
+                RENDER.mesh2->UpdateData(V2, F2, N2, MESH_COLOR);
+                RENDER.mesh2->Update(true);
+                vis_set.Insert(RENDER.mesh2.get());
+
+                m_video_texture->showFrame(i);
+                vis_set.Insert(m_video_texture.get());
+            }
+            else 
+            {
+                mFaceModel.setWeights(A, W);
+                
+                Eigen::MatrixXd V, N;
+                Eigen::MatrixXi F;
+                mFaceModel.getExpression(V, F, N);
+                
+                RENDER.mesh->UpdateData(V, F, N, MESH_COLOR);
+                RENDER.mesh->Update(true);
+                
+                vis_set.Insert(RENDER.mesh.get());
+            }            
+            
+            m_gl_rend->RenderVisibleSet(&vis_set, m_camera);       
             // Poll for and process events
             m_tyro_window->GetGLContext()->swapBuffers();
-
             //make sure everything was drawn
             glFlush();
             glFinish();
@@ -410,7 +647,8 @@ namespace tyro
                         
             auto fldr_to_write = out_path/filesystem::path(std::to_string(i)+".png");
 
-            cv::imwrite(fldr_to_write.str(), image3);   
+            cv::imwrite(fldr_to_write.str(), image3);  
+         //   break; 
         }
 
         free(texture);
@@ -418,63 +656,92 @@ namespace tyro
 	    return 0;
     }
 
-    /*
-    void App::DrawUI()
+
+    void BshapeApp::update_camera() 
     {
-        // Start the Dear ImGui frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        //if (show_demo_window)
-        //ImGui::ShowDemoWindow();
-
-        if (ImGui::TreeNode("Animations"))
-        {
-            // ShowHelpMarker("This is a more standard looking tree with selectable nodes.\nClick to select, CTRL+Click to toggle, click on arrows or double-click to open.");
-            // static bool align_label_with_current_x_position = false;
-            // ImGui::Checkbox("Align label with current X position)", &align_label_with_current_x_position);
-            // ImGui::Text("Hello!");
-            // if (align_label_with_current_x_position)
-            // ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
-
-            ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ImGui::GetFontSize()*3); // Increase spacing to differentiate leaves from expanded contents.
-            for (int i = 0; i < ANIM_LIST.size(); i++)
-            {
-                // Disable the default open on single-click behavior and pass in Selected flag according to our selection state.
-                ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ((file_selected == i) ? ImGuiTreeNodeFlags_Selected : 0);
-                // Leaf: The only reason we have a TreeNode at all is to allow selection of the leaf. Otherwise we can use BulletText() or TreeAdvanceToLabelPos()+Text().
-                node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen; // ImGuiTreeNodeFlags_Bullet
-                auto p = filesystem::path(ANIM_LIST[i]);
-                ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, "%i %s", i, p.basename().c_str());
-                if (ImGui::IsItemClicked()) 
-                {
-                    file_selected = i;
-                    RA_LOG_INFO("file selected %i", file_selected);      
-                }      
-            }
-
-            ImGui::PopStyleVar();
-            if(ImGui::Button("Load Animation"))
-            {   
-                if (file_selected >= 0)
-                    RA_LOG_INFO("load animation %s", ANIM_LIST[file_selected].c_str());
-                
-                loadAnimation(ANIM_LIST[file_selected]);
-                m_frame = 0;
-            }
-            //if (align_label_with_current_x_position)
-            //    ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
-            ImGui::TreePop();
-        }
+        //setup camera
+        AxisAlignedBBox WorldBoundBox = RENDER.mesh->WorldBoundBox;
+        if (RENDER.mesh2)
+            WorldBoundBox.Merge(RENDER.mesh2->WorldBoundBox);
         
-        //ImGui::End();
-        //ImGui::Begin("Animations", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-        // ImGui::Text("Hello from another window!");
-        //ImGui::End();
+        Wm5::APoint world_center = WorldBoundBox.GetCenter();
+        float radius = std::abs(WorldBoundBox.GetRadius()*1.5);
+        //Wm5::APoint world_center = Wm5::APoint::ORIGIN;
+        //float radius = 1;
+        int v_width, v_height;
+        m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
+        Wm5::Vector4i viewport(0, 0, v_width, v_height);
+        float aspect = (float)v_width/v_height;
         
-        ImGui::Render();
+        if (m_camera)
+            delete m_camera;
+        
+        m_camera = new iOSCamera(world_center, radius, aspect, 2, viewport, true);
     }
-    */
+
+    void BshapeApp::key_pressed(Window& window, unsigned int key, int modifiers) 
+    {   
+        //RA_LOG_INFO("Key pressed %c", key);
+        
+        if (key == '`') 
+        {   
+            //RA_LOG_INFO("Pressed %c", key);
+            show_console = !show_console;
+            render();
+            return;
+        }
+
+        if (show_console) 
+        {  
+           m_console.keyboard(key);
+           render();
+           return;
+        }
+        else 
+        {
+            if (key == 'p') 
+            {
+                if (m_timeline->state == Timeline::State::Running)
+                    m_timeline->Pause();
+                else
+                    m_timeline->Start();
+            }
+            else if (key == ']') //next frame
+            {
+                m_timeline->NextFrame();
+                render();
+            }
+            else if (key == '[')
+            {
+                m_timeline->PrevFrame();
+                render();
+            }            
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
     /*
     void BshapeApp::DrawMeshes() 
     {
@@ -541,7 +808,7 @@ namespace tyro
     {   
         std::vector<std::string> names; 
         std::vector<double> values;
-        m_camera_texture->getAUs(names, values);
+        m_camera_texture-8>getAUs(names, values);
         
         low_bnames.clear();
         low_values.clear(); 
@@ -660,66 +927,3 @@ namespace tyro
         m_need_rendering = true;
     }
     */
-
-    void BshapeApp::update_camera() 
-    {
-        //setup camera
-        AxisAlignedBBox WorldBoundBox = RENDER.mesh->WorldBoundBox;
-        if (RENDER.mesh2)
-            WorldBoundBox.Merge(RENDER.mesh2->WorldBoundBox);
-        
-        Wm5::APoint world_center = WorldBoundBox.GetCenter();
-        float radius = std::abs(WorldBoundBox.GetRadius()*1.5);
-        //Wm5::APoint world_center = Wm5::APoint::ORIGIN;
-        //float radius = 1;
-        int v_width, v_height;
-        m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
-        Wm5::Vector4i viewport(0, 0, v_width, v_height);
-        float aspect = (float)v_width/v_height;
-        
-        if (m_camera)
-            delete m_camera;
-        
-        m_camera = new iOSCamera(world_center, radius, aspect, 2, viewport, true);
-    }
-
-    void BshapeApp::key_pressed(Window& window, unsigned int key, int modifiers) 
-    {   
-        //RA_LOG_INFO("Key pressed %c", key);
-        
-        if (key == '`') 
-        {   
-            //RA_LOG_INFO("Pressed %c", key);
-            show_console = !show_console;
-            render();
-            return;
-        }
-
-        if (show_console) 
-        {  
-           m_console.keyboard(key);
-           render();
-           return;
-        }
-        else 
-        {
-            if (key == 'p') 
-            {
-                if (m_timeline->state == Timeline::State::Running)
-                    m_timeline->Pause();
-                else
-                    m_timeline->Start();
-            }
-            else if (key == ']') //next frame
-            {
-                m_timeline->NextFrame();
-                render();
-            }
-            else if (key == '[')
-            {
-                m_timeline->PrevFrame();
-                render();
-            }            
-        }
-    }
-}

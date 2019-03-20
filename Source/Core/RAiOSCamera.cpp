@@ -146,6 +146,22 @@ namespace tyro
         }
     }
 
+    void iOSCamera::Translate(const Wm5::Vector2i& translation) 
+    {   
+        Vector3f screen1(0, 0, 0.0f);
+        Vector3f world1 = Camera::ScreenToCamera(screen1);
+        world1.Z() = 0;
+
+        Vector3f screen2(translation.X(), translation.Y(), 0.0f);
+        Vector3f world2 = Camera::ScreenToCamera(screen2);
+        world2.Z() = 0;
+        
+        AVector diff(world2-world1);
+        HMatrix temp(diff);
+        mTranslationMatrix = temp;
+        UpdateViewMatrix();
+    }
+
     /*
     void iOSCamera::HandleRotationGesture(UIRotationGestureRecognizer* sender)
     {

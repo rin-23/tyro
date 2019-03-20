@@ -72,7 +72,7 @@ namespace tyro
         auto idx = std::find(mBnames.begin(), mBnames.end(), bshape_name);
         if (idx == mBnames.end()) 
         {
-            //RA_LOG_WARN("couldnt find the name %s", bshape_name.c_str());
+            RA_LOG_WARN("couldnt find the name %s", bshape_name.c_str());
         } 
         else 
         {   

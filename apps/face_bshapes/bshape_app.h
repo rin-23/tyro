@@ -8,24 +8,36 @@
 #include "torch_model.h"
 #include "kdtree.h"
 #include "gamepad.h"
+#include "sliders.h"
+#include "cameracontrol.h"
+#include "ES2VideoTexture.h"
 
 namespace tyro
 {   
     class BshapeApp : public App 
     {
     public:
-        BshapeApp();
+        
+        typedef enum 
+        {   
+            PS4,
+            CAMERA,
+            SLIDERS
+        } Experiment;
+        
+        BshapeApp(Experiment exp);
         virtual ~BshapeApp();
         
         int Launch() override;
-        int LaunchOffScreen(const std::string& csv_file, const std::string& out_fldr); 
+        int LaunchOffScreen(const std::string& csv_file, const std::string& out_fldr, const std::string& video_stream, bool isOpenFace); 
         int Setup(int width, int height) override;
         void key_pressed(Window& window, unsigned int key, int modifiers) override; 
         void update_camera() override;
-        //void DrawMeshes();
-        //void FetchGamepadInputs();
+
         void GamepadExample();
-        
+        void SliderExample();
+        void CameraExample();
+
         //void render();
         //void DrawUI();
         //void loadAnimation(const std::string& name);
@@ -48,6 +60,7 @@ namespace tyro
         int file_selected = -1; //(1 << 2); // Dumb representation of what may be user-side selection state. You may carry selection state inside or outside your objects in whatever format you see fit.
 
         OpenFaceTextureSPtr m_camera_texture;
+        ES2VideoTextureSPtr m_video_texture;
 
         KDTree mTree;
 
@@ -59,13 +72,14 @@ namespace tyro
         MRenderData RENDER;
 
         FaceModel mFaceModel;
-        FaceModel mFaceModel2;
 
         Animation mCurAnimation;
         TorchModel mTorchModelLow;
         TorchModel mTorchModelUp;
 
         Gamepad mGamepad;
+        Sliders mSliders;
+        CameraControl mCameraControl;
 
         //std::vector<double> low_values_denoised;
         //std::vector<std::string> low_bnames;
@@ -76,6 +90,8 @@ namespace tyro
         //std::vector<double> up_values; 
 
         std::vector<std::vector<double>> MOTION_DATA;
+
+        Experiment mExperiment;
     };
 
     

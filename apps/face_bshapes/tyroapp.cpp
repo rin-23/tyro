@@ -219,8 +219,8 @@ namespace tyro
         //Vector4i viewport(0, 0, m_gl_rend->GetViewWidth(), m_gl_rend->GetViewHeight());
         //m_camera->SetAspect(aspect);
         //m_camera->SetViewport(viewport);
-        
-        render();
+        //render();
+        //update_camera();
     }
 
     void App::key_pressed(Window& window, unsigned int key, int modifiers) 

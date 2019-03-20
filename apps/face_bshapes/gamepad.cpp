@@ -9,55 +9,49 @@ namespace tyro
 {
 const std::vector<std::string> UPPER_STUFF = {
            "faceMuscles.frontalis",
+           "faceMuscles.medFrontalis",
            "faceMuscles.orbOculi",
+           "faceMuscles.orbOculi_lo",
            "faceMuscles.currogator",
-           "blink_ctl_pos.translateY_neg",                      
-           "blink_ctl_neg.translateY_pos",                     
-           "loBlink_ctl_pos.translateY_pos",                  
-           "loBlink_ctl_neg.translateY_neg"};
+           "blink_ctl.translateY_neg",
+           "blink_ctl.translateY_pos",
+           "loBlink_ctl.translateY_pos",
+           "loBlink_ctl.translateY_neg"};
+
+const std::vector<std::string> LOWER_STUFF = {
+            "jaw.rotateZ",
+            "jaw.translateX",
+            "faceMuscles.zygomatic",
+            "faceMuscles.labSup",
+            "faceMuscles.labSup_AN",
+            "faceMuscles.orbOris_loose_lo",
+            "faceMuscles.orbOris_loose_hi",
+            "faceMuscles.mouthClose",
+            "faceMuscles.risoriusPlatysma",
+            "faceMuscles.mentalis",
+            "faceMuscles.triangularis",
+            "faceMuscles.LabInf",
+            "faceMuscles.incisivus",
+            "faceMuscles.buccinator"};
 
 const std::map<std::string, std::vector<std::string>> UPPER_MAP
 = 
 {
     {"L_T",          {"faceMuscles.frontalis"}},
     {"L_S_Y_UP",     {"faceMuscles.orbOculi"}},
-    {"L_S_X_LEFT",   {"faceMuscles.currogator"}},
-   
-    {"R_S_X_LEFT",   {"blink_ctl_pos.translateY_neg"}},                     
-    {"R_S_X_RIGHT",  {"blink_ctl_neg.translateY_pos"}},                     
-    {"R_S_Y_UP",     {"loBlink_ctl_pos.translateY_pos"}},                  
-    {"R_S_Y_DOWN",   {"loBlink_ctl_neg.translateY_neg" }}                 
-
-    //todo: add eyelids bshapes
-    //{"R_S_X",  {"faceMuscles.buccinator"}},
-    //{,  {"faceMuscles.triangularis"}},
-    //{"R_S_Y",  {"faceMuscles.mentalis"}},
-    //{,  {"faceMuscles.risoriusPlatysma"}},
-    //{,  {"faceMuscles.incisivus"}},
-    //{,  {"faceMuscles.orbOris_loose_lo", "faceMuscles.orbOris_loose_hi"}},
+    {"L_S_X_LEFT",   {"faceMuscles.currogator"}},    
+    {"R_T",          {"faceMuscles.medFrontalis"}},
+    {"R_S_X_LEFT",   {"blink_ctl.translateY_neg"}},                     
+    {"R_S_X_RIGHT",  {"blink_ctl.translateY_pos"}},                     
+    {"R_S_Y_UP",     {"loBlink_ctl.translateY_pos"}},                  
+    {"R_S_Y_DOWN",   {"loBlink_ctl.translateY_neg" }}                 
 };
-
-const std::vector<std::string> LOWER_STUFF = {
- "jaw.rotateZ",
- "jaw.translateX",
- "faceMuscles.zygomatic",
- "faceMuscles.labSup",
- "faceMuscles.labSup_AN",
- "faceMuscles.orbOris_loose_lo",
- "faceMuscles.risoriusPlatysma",
- "faceMuscles.mentalis",
- "faceMuscles.triangularis",
- "faceMuscles.LabInf",
- "faceMuscles.incisivus"};
 
 const std::map<std::string, std::vector<std::string>> MIDJAW_MAP
 = 
 {
     {"L_T",          {"jaw.rotateZ"}},
     {"L_S_Y_UP",     {"jaw.translateX"}},
-    //{"L_S_X_LEFT",   {"jaw.rotateY"}},  
-    //{"L_S_X_RIGHT",  {"jaw.rotateY"}},  
-
     {"R_T",          {"faceMuscles.zygomatic"}},
     {"R_S_X_RIGHT",  {"faceMuscles.labSup"}},
     {"R_S_Y_UP",     {"faceMuscles.labSup_AN"}},
@@ -69,7 +63,6 @@ const std::map<std::string, std::vector<std::string>> LIP_MAP
     {"R_T",         {"faceMuscles.orbOris_loose_lo"}},
     {"R_S_X_LEFT",  {"faceMuscles.risoriusPlatysma"}},
     {"R_S_Y_UP",    {"faceMuscles.mentalis"}},
-
     {"L_T",         {"faceMuscles.triangularis"}},
     {"L_S_X_LEFT",  {"faceMuscles.LabInf"}},
     {"L_S_Y_UP",    {"faceMuscles.incisivus"}}
@@ -82,12 +75,24 @@ mState(State::NONE_STATE)
 {}
 
 void Gamepad::Init() 
-{   
-    
-    for (const auto& i : upper_face_bshape_index)
+{       
+#if USE_ALL_BSHAPES   
+    for (int i : upper_face_bshape_index)
     {
         up_bnames.push_back(ALL_BSHAPES[i]);
-        up_values.push_back(0.0);   
+        up_values.push_back(0.0);
+    }
+
+    for (int i : lower_face_bshape_index)
+    {
+        low_bnames.push_back(ALL_BSHAPES[i]);
+        low_values.push_back(0.0);
+    }    
+#else
+    for (auto& a : UPPER_STUFF)
+    {
+        up_bnames.push_back(a);
+        up_values.push_back(0.0);
     }
 
     for (auto& a : LOWER_STUFF)
@@ -95,11 +100,10 @@ void Gamepad::Init()
         low_bnames.push_back(a);
         low_values.push_back(0.0);
     }
-    
+#endif
 }
 
-void Gamepad::UpdateFrame(std::map<std::string, double>& axes, 
-                          std::map<std::string, bool>&   buttons_map) 
+void Gamepad::UpdateFrame(std::map<std::string, double>& axes, std::map<std::string, bool>& buttons_map) 
 {   
     RA_LOG_INFO("Current state %i", mState);
     RA_LOG_INFO("Current part %i", face_part);
@@ -164,8 +168,7 @@ void Gamepad::UpdateFrame(std::map<std::string, double>& axes,
         {
             computeValues(LIP_MAP, low_bnames, low_values);
         }
-    }
-      
+    }      
 }
 
 bool Gamepad::isLower()

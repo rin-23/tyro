@@ -1,43 +1,32 @@
 #pragma once
 
-#include "TyroWindow.h"
 #include <vector>
 #include <map>
 #include <string>
 
 namespace tyro 
 {
-class Gamepad 
+class CameraControl
 {
 public:
     typedef enum 
     {
         UPPER,
+        LOWER,
         MID_JAW,
         LIPS,
         NONE_PART
     } FacePart;
-
-    typedef enum 
-    {
-        MOD_UPPER,
-        MOD_MID,
-        MOD_LIPS,
-        SAVED,
-        NONE_STATE
-    } State;
     
-    Gamepad();
-    ~Gamepad() {}
+    CameraControl();
+    ~CameraControl() {}
 
     void Init(); 
 
-    void UpdateFrame(std::map<std::string, double>& axes, std::map<std::string, bool>& buttons_map);
+    void Update(std::vector<std::string>& names, std::vector<double>& values, bool fromcsv=false);
     
-    bool isLower();
-
+    void Print();
     FacePart face_part;
-    State mState;
 
     std::vector<std::string> low_bnames;
     std::vector<double> low_values;

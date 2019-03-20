@@ -12,7 +12,7 @@ namespace tyro
     void csvToVector(const std::string& csv_file, 
                      std::vector<std::vector<double>>& mData,
                      int index_col = 0,
-                     bool has_header = true,
+                     bool has_header = true, //didn't implement that
                      int max_rows = 100) 
     {
         using namespace aria::csv;

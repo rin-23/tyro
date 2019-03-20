@@ -5,8 +5,11 @@
 #include <map>
 #include "animlist.h"
 
+#define USE_ALL_BSHAPES 0
+
 namespace tyro
 {
+
 const std::string NEUT = "/home/rinat/Workspace/tyro/apps/face_bshapes/resources/bshapes/neuteral.obj";
 
 const std::map<std::string, std::string> BSHAPES_MAP = 
@@ -125,40 +128,5 @@ const std::vector<std::string> ALL_BSHAPES =
 const std::vector<int> lower_face_bshape_index = {10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,26,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}; 
 const std::vector<int> upper_face_bshape_index = {0,1,2,3,4,5,6,7,8,9,25,27,28,46,47,48,49}; 
 
-const std::vector<std::string> OpengFaceAUs = 
-{
-    "faceMuscles.labSup_AN",
-    "faceMuscles.labSup",
-    "faceMuscles.zygomatic",
-    "faceMuscles.buccinator",
-    "faceMuscles.triangularis",
-    "faceMuscles.mentalis",
-    "faceMuscles.risoriusPlatysma",
-    "faceMuscles.incisivus",
-    "faceMuscles.orbOris_loose_lo", 
-    "faceMuscles.orbOris_loose_hi",
-    "jaw.rotateZ"
-};
-
-const std::map<std::string, std::vector<std::string>> OPENFACE_TO_BSHAPES_MAP = 
-{
-    //{"AU01_r",
-    //{"AU02_r",
-    //{"AU04_r",
-    //{"AU05_r",
-    //{"AU06_r",
-    //{"AU07_r",
-    {"AU09",  {"faceMuscles.labSup_AN"}},
-    {"AU10",  {"faceMuscles.labSup"}},
-    {"AU12",  {"faceMuscles.zygomatic"}},
-    {"AU14",  {"faceMuscles.buccinator"}},
-    {"AU15",  {"faceMuscles.triangularis"}},
-    {"AU17",  {"faceMuscles.mentalis"}},
-    {"AU20",  {"faceMuscles.risoriusPlatysma"}},
-    {"AU23",  {"faceMuscles.incisivus"}},
-    {"AU25",  {"faceMuscles.orbOris_loose_lo", "faceMuscles.orbOris_loose_hi"}},
-    {"AU26",  {"jaw.rotateZ"}}
-    //{"AU45_r",
-};
   
 }

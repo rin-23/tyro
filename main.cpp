@@ -1,4 +1,3 @@
-
 #include "bshape_app.h"
 //#include "torch_model.h"
 //#include <Eigen/Dense>
@@ -44,11 +43,17 @@ int main(int argc, char **argv)
     //test_tensor();
     //test_kdtree();
     
-    tyro::BshapeApp appr;
+    /***********TODO REMOVE********************/
     
+   //argc = 4;
+    
+    /***********TODO REMOVE********************/
+    
+    tyro::BshapeApp::Experiment exper = tyro::BshapeApp::Experiment::PS4; 
+    tyro::BshapeApp appr(exper);
     if (argc==1) 
     {
-        appr.Setup(1600,1200);
+        appr.Setup(2560, 1440);
         int r_code = appr.Launch();
     }
     else if (argc == 2) 
@@ -60,7 +65,15 @@ int main(int argc, char **argv)
         std::string path_ss1(argv[1]);
         std::string out_fldr1(argv[2]);
         std::cout << path_ss1 << "\n";
-        appr.LaunchOffScreen(path_ss1, out_fldr1);
+        appr.LaunchOffScreen(path_ss1, out_fldr1, "", false);
+    }
+    else if (argc == 4)
+    {
+        std::string path_ss1(argv[1]);
+        std::string out_fldr1(argv[2]);
+        std::string video(argv[3]);
+        std::cout << path_ss1 << "\n";
+        appr.LaunchOffScreen(path_ss1, out_fldr1, video, true);
     }
     // int r_code = appr.VideoToImages();
     // return r_code;
