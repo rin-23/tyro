@@ -382,4 +382,9 @@ bool Window::window_resize(unsigned int w, unsigned int h)
     return false;
 }
 
+double Window::TimeNow() 
+{
+    return glfwGetTime();
+}
+
 }

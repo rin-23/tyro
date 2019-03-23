@@ -11,6 +11,7 @@
 #include "sliders.h"
 #include "cameracontrol.h"
 #include "ES2VideoTexture.h"
+#include "renderdata.h"
 
 namespace tyro
 {   
@@ -30,7 +31,8 @@ namespace tyro
         
         int Launch() override;
         int LaunchOffScreen(const std::string& csv_file, const std::string& out_fldr, const std::string& video_stream, bool isOpenFace); 
-        int Setup(int width, int height) override;
+        int LaunchRefinment(); 
+        int Setup(int width, int height, bool refinment=false);
         void key_pressed(Window& window, unsigned int key, int modifiers) override; 
         void update_camera() override;
 
@@ -63,12 +65,7 @@ namespace tyro
         ES2VideoTextureSPtr m_video_texture;
 
         KDTree mTree;
-
-        struct MRenderData 
-        {
-            IGLMeshSPtr mesh;
-            IGLMeshSPtr mesh2;
-        };
+        
         MRenderData RENDER;
 
         FaceModel mFaceModel;

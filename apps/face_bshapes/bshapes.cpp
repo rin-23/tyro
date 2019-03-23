@@ -17,6 +17,7 @@ namespace tyro
     {
         setNeuteralMesh(NEUT);
         setBshapes(BSHAPES_MAP); // ORDER IS VERY IMPORTANT to match BSHAPES in arig.py
+        setEyes(EYES);
     }
 
     void FaceModel::setNeuteralMesh(const std::string& obj_path)
@@ -44,6 +45,17 @@ namespace tyro
         }
     }
 
+    void FaceModel::setEyes(const std::vector<std::string>& eyes) 
+    {
+        tyro::load_mesh(eyes[0], mRightEye.whiteV, mRightEye.whiteN, mRightEye.whiteF);
+        tyro::load_mesh(eyes[1], mRightEye.brownV, mRightEye.brownN, mRightEye.brownF);
+        tyro::load_mesh(eyes[2], mRightEye.blackV, mRightEye.blackN, mRightEye.blackF);
+
+        tyro::load_mesh(eyes[3], mLeftEye.whiteV, mLeftEye.whiteN, mLeftEye.whiteF);
+        tyro::load_mesh(eyes[4], mLeftEye.brownV, mLeftEye.brownN, mLeftEye.brownF);
+        tyro::load_mesh(eyes[5], mLeftEye.blackV, mLeftEye.blackN, mLeftEye.blackF);
+    }
+
     void FaceModel::serialize(const std::string& path) 
     {
         std::ofstream os(path, std::ios::binary);
@@ -53,6 +65,8 @@ namespace tyro
         archive(mNneut);
         archive(mVneut);
         archive(mF);
+        archive(mLeftEye);
+        archive(mRightEye);
     }
 
     void FaceModel::deserialize(const std::string& path) 
@@ -64,6 +78,8 @@ namespace tyro
         archive(mNneut);
         archive(mVneut);
         archive(mF);
+        archive(mLeftEye);
+        archive(mRightEye);
     }
 
     //set weight for bshape

@@ -67,6 +67,16 @@ const std::map<std::string, std::string> BSHAPES_MAP =
    { "loBlink_ctl.translateY_neg",      "/home/rinat/Workspace/tyro/apps/face_bshapes/resources/bshapes/btmeyelids_down.obj"}
 };
 
+const std::vector<std::string> EYES = 
+{
+    "/home/rinat/Workspace/tyro/apps/face_bshapes/resources/eye_white.obj",
+    "/home/rinat/Workspace/tyro/apps/face_bshapes/resources/eye_brown.obj",
+    "/home/rinat/Workspace/tyro/apps/face_bshapes/resources/eye_black.obj",
+    "/home/rinat/Workspace/tyro/apps/face_bshapes/resources/eye_left_white.obj",
+    "/home/rinat/Workspace/tyro/apps/face_bshapes/resources/eye_left_brown.obj",
+    "/home/rinat/Workspace/tyro/apps/face_bshapes/resources/eye_left_black.obj"
+};
+
 const std::vector<std::string> ALL_BSHAPES = 
 {
     "faceMuscles.frontalis",                        //0

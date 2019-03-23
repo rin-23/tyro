@@ -34,7 +34,10 @@ class FaceModel
         
         void setBshapes(const std::map<std::string, std::string>& bmap);
         
+        void setEyes(const std::vector<std::string>& eyes);
+
         void serialize(const std::string& path);
+
         void deserialize(const std::string& path);
 
         //set weight for bshape
@@ -55,7 +58,6 @@ class FaceModel
         // TODO: get lower data
         // void getUpperWeights(std::vector<std::string>& lower_bnames, std::vector<double>& lower_weights);
         
-    private:
 
         struct BShape
         {
@@ -67,7 +69,6 @@ class FaceModel
             {   
                 archive(weight);
                 archive(V);
-             
             }
             
             template<class Archive>
@@ -78,9 +79,32 @@ class FaceModel
             }
         };
 
+        struct Eye 
+        {
+            Eigen::MatrixXd whiteV,brownV,blackV;
+            Eigen::MatrixXi whiteF,brownF,blackF;
+            Eigen::MatrixXd whiteN,brownN,blackN;
+
+            template<class Archive>
+            void save(Archive & archive) const
+            {   
+                archive(whiteV);archive(brownV);archive(blackV);
+                archive(whiteF);archive(brownF);archive(blackF);
+                archive(whiteN);archive(brownN);archive(blackN);             
+            }
+            
+            template<class Archive>
+            void load(Archive & archive)
+            {   
+                archive(whiteV);archive(brownV);archive(blackV);
+                archive(whiteF);archive(brownF);archive(blackF);
+                archive(whiteN);archive(brownN);archive(blackN);         
+            }
+        };
+
         //int m_num_bshapes; // how many bshapes
         std::vector<std::string> mBnames;
-        std::vector<BShape> mBdata;
+        std::vector<BShape>      mBdata;
         //std::map<std::string, BShape> m_bshapes; // map bshape name to weight value
         
         //std::vector<Eigen::MatrixXd> m_normalsN; // normal data of bshapes
@@ -89,5 +113,8 @@ class FaceModel
         Eigen::MatrixXd mNneut; //normal data of the neuteral expression
         Eigen::MatrixXd mVneut; //vertex data of the neuteral expression
         Eigen::MatrixXi mF; // connectivity. Assume to be same for all bshapes and neut mesh
+
+        Eye mLeftEye;
+        Eye mRightEye;
 };
 }

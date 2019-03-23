@@ -18,8 +18,7 @@ namespace tyro
                              float max_error, 
                              Eigen::Vector3f& EmaxColor)
     {
- 
-        int numVertices = V.rows();
+         int numVertices = V.rows();
         int numTriangles = F.rows();
         int numIndices = 3*numTriangles;
         int numNormals = N.rows();

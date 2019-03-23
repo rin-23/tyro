@@ -49,8 +49,13 @@ int main(int argc, char **argv)
     
     /***********TODO REMOVE********************/
     
-    tyro::BshapeApp::Experiment exper = tyro::BshapeApp::Experiment::PS4; 
+    tyro::BshapeApp::Experiment exper = tyro::BshapeApp::Experiment::SLIDERS; 
     tyro::BshapeApp appr(exper);
+    
+    //appr.Setup(700, 700, true);
+    //int r_code = appr.LaunchRefinment();
+    
+    
     if (argc==1) 
     {
         appr.Setup(2560, 1440);
@@ -75,6 +80,7 @@ int main(int argc, char **argv)
         std::cout << path_ss1 << "\n";
         appr.LaunchOffScreen(path_ss1, out_fldr1, video, true);
     }
+    
     // int r_code = appr.VideoToImages();
     // return r_code;
     //std::string path_ss1( "/home/rinat/Workspace/FacialManifoldSource/data_anim/clusters/cluster_4/features.txt");

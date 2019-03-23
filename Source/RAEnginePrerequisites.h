@@ -75,7 +75,8 @@ namespace tyro
     class ES2CameraTexture;
     class ShaderBox;
     class OpenFaceTexture;
-
+    class IGLMeshTwo;
+    
     using DepthProxySPtr = std::shared_ptr<DepthProxy>;
     using DepthProxyWPtr = std::weak_ptr<DepthProxy>;
     using DepthProxyUPtr = std::weak_ptr<DepthProxy>;
@@ -212,6 +213,10 @@ namespace tyro
     using OpenFaceTextureSPtr = std::shared_ptr<OpenFaceTexture>;
     using OpenFaceTextureUPtr = std::unique_ptr<OpenFaceTexture>;
     using OpenFaceTextureWPtr = std::weak_ptr<OpenFaceTexture>;
+
+    using IGLMeshTwoSPtr = std::shared_ptr<IGLMeshTwo>;
+    using IGLMeshTwoUPtr = std::unique_ptr<IGLMeshTwo>;
+    using IGLMeshTwoWPtr = std::weak_ptr<IGLMeshTwo>;
 }
 
 namespace Wm5

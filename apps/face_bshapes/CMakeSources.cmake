@@ -16,6 +16,7 @@ set(TYRO_SRC_LOCAL
 "apps/face_bshapes/sliders.cpp"
 "apps/face_bshapes/cameracontrol.cpp"
 "apps/face_bshapes/ES2VideoTexture.cpp"
+"apps/face_bshapes/iglmesh.cpp"
 )
 
 set(TYROAPP_SRC

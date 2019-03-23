@@ -170,6 +170,9 @@ namespace tyro
         inline void ProcessUserEvents() { glfwPollEvents(); }
         inline void Wait() { glfwWaitEvents(); }
         
+        double TimeNow();
+        
+
         int JoystickConnected();
         int JoystickAxes(std::map<std::string, double>& axes_map);
         int JoystickButtons(std::map<std::string, bool>& buttons_map);

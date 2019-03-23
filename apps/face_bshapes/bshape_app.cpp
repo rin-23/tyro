@@ -21,17 +21,90 @@
 #include <boost/filesystem.hpp>
 #include <iostream>
 #include "utils.h"
+#include "common.h"
 
 using namespace boost::filesystem;
 
 using namespace std;
 
 using Wm5::APoint;
-
-#define MESH_COLOR Eigen::Vector3d(109/255.0f, 150/255.0f, 144/255.0f)
+//255,223,196
 
 namespace tyro
 {   
+    void console_save_expression(App* app, const std::vector<std::string>& args) 
+    {
+        BshapeApp* bapp =(BshapeApp*) app;
+        //if (args.size()!=1) return;
+        auto name = "saved_expression.csv"; //filesystem::path(args[0]);
+        const std::string RENDER_IMGS_PATH = "/home/rinat/Workspace/FacialManifoldSource/data_anim";
+        auto fldr = filesystem::path(RENDER_IMGS_PATH)/name;
+
+        std::ofstream myfile;
+        myfile.open (fldr.str());
+        //setup torch model
+        
+        auto computeValues = [&] (const std::vector<std::string>& up_bnames,
+                                  const std::vector<double>& up_values,
+                                  const std::vector<std::string>& low_bnames,
+                                  const std::vector<double>& low_values)
+        {
+            for (int i=0; i < up_bnames.size(); ++i) 
+            {
+                myfile << up_bnames[i]; 
+                //if (i != up_bnames.size() -1) 
+                myfile << ",";
+            }
+
+            for (int i=0; i < low_bnames.size(); ++i)
+            {
+                myfile << low_bnames[i];
+                if (i !=  low_bnames.size() - 1) 
+                    myfile << ",";
+            }
+
+            myfile << "\n";
+
+            for (int i=0; i<up_values.size(); ++i) 
+            {
+                myfile << up_values[i];
+                //if (i != up_values.size() - 1) 
+                myfile << ",";
+            }
+
+            for (int i=0; i<low_values.size(); ++i) 
+            {
+                myfile << low_values[i];
+                if (i != low_values.size() - 1) 
+                    myfile << ",";
+            }
+        };
+
+        if (bapp->mExperiment == BshapeApp::Experiment::PS4) 
+        {   
+            computeValues(bapp->mGamepad.up_bnames, 
+                          bapp->mGamepad.up_values, 
+                          bapp->mGamepad.low_bnames, 
+                          bapp->mGamepad.low_values);
+        }
+        else if (bapp->mExperiment == BshapeApp::Experiment::SLIDERS)
+        {            
+            computeValues(bapp->mSliders.up_bnames, 
+                          bapp->mSliders.up_values, 
+                          bapp->mSliders.low_bnames, 
+                          bapp->mSliders.low_values);
+        }
+        else if (bapp->mExperiment == BshapeApp::Experiment::CAMERA)
+        {
+            computeValues(bapp->mCameraControl.up_bnames, 
+                          bapp->mCameraControl.up_values, 
+                          bapp->mCameraControl.low_bnames, 
+                          bapp->mCameraControl.low_values);
+        } 
+
+        myfile.close();
+    }
+
     void console_render_to_image(App* app, const std::vector<std::string>& args) 
     {   
         BshapeApp* bapp =(BshapeApp*) app;
@@ -136,7 +209,7 @@ namespace tyro
     BshapeApp::~BshapeApp() 
     {}
     
-    int BshapeApp::Setup(int width, int height) 
+    int BshapeApp::Setup(int width, int height, bool refinment) 
     {   
         App::Setup(width, height);
 
@@ -159,6 +232,7 @@ namespace tyro
      
         register_console_function("render_to_image", console_render_to_image, ""); 
         register_console_function("render_to_images", console_render_to_images, ""); 
+        register_console_function("save_face", console_save_expression, ""); 
 
         // show current number of frames
         ES2FontSPtr font = FontManager::GetSingleton()->GetSystemFontOfSize12();
@@ -199,7 +273,7 @@ namespace tyro
 
         //load all bshapes and neuteral expression
         std::string modelPath("/home/rinat/Workspace/tyro/apps/face_bshapes/resources/facemodel");
-        const bool load_serialized = true;
+        const bool load_serialized = false;
         if (load_serialized) 
         {
             mFaceModel.deserialize(modelPath);
@@ -210,18 +284,34 @@ namespace tyro
             mFaceModel.serialize(modelPath);
         }
         
+        RENDER.CreateMesh(mFaceModel);
+        
         //load neuteral expression
+        /*
         Eigen::MatrixXd V, N;
         Eigen::MatrixXi F;
         mFaceModel.getExpression(V, F, N);
         RENDER.mesh = IGLMesh::Create(V, F, N, MESH_COLOR);
         RENDER.mesh->Update(true);
-        RENDER.mesh2 = IGLMesh::Create(V, F, N, MESH_COLOR);
-        Wm5::Transform tr;
-        tr.SetTranslate(Wm5::APoint(-1.5*RENDER.mesh->WorldBoundBox.GetRadius(), 0, 0));
-        RENDER.mesh2->LocalTransform = tr * RENDER.mesh2->LocalTransform;  
-        RENDER.mesh2->Update(true);
 
+        mFaceModel.setEyes(EYES);
+        Eigen::MatrixXd Ve, Ne;
+        Eigen::MatrixXi Fe;
+        auto eye_color = Eigen::Vector3d(1.0f, 1.0f, 1.0f);
+        RENDER.eye_white = IGLMesh::Create(mFaceModel.mRightEye.whiteV, mFaceModel.mRightEye.whiteF, mFaceModel.mRightEye.whiteN, eye_color);
+        RENDER.eye_white->Update(true);
+        */
+        if (!refinment) 
+        {
+            /*
+            RENDER.mesh2 = IGLMesh::Create(V, F, N, MESH_COLOR);
+            Wm5::Transform tr;
+            tr.SetTranslate(Wm5::APoint(-1.5*RENDER.mesh->WorldBoundBox.GetRadius(), 0, 0));
+            RENDER.mesh2->LocalTransform = tr * RENDER.mesh2->LocalTransform;  
+            RENDER.mesh2->Update(true);
+            */
+           RENDER.CreateMesh2(mFaceModel);
+        }
         update_camera();
 
         //setup torch model
@@ -326,13 +416,14 @@ namespace tyro
         
         mFaceModel.setWeights(mGamepad.low_bnames, mGamepad.low_values);
         mFaceModel.setWeights(mGamepad.up_bnames, mGamepad.up_values);
+        
+        /*
         Eigen::MatrixXd V, N;
         Eigen::MatrixXi F;
         mFaceModel.getExpression(V, F, N);
         RENDER.mesh->UpdateData(V, F, N, MESH_COLOR);
         RENDER.mesh->Update(true);
         vis_set.Insert(RENDER.mesh.get());
-
 
         mFaceModel.setWeights(mGamepad.low_bnames, low_values_denoised);
         mFaceModel.setWeights(mGamepad.up_bnames, up_values_denoised);
@@ -342,7 +433,12 @@ namespace tyro
         RENDER.mesh2->UpdateData(V2, F2, N2, MESH_COLOR);
         RENDER.mesh2->Update(true);
         vis_set.Insert(RENDER.mesh2.get());
-    
+        */
+
+        RENDER.UpdateMesh(mFaceModel);
+        RENDER.UpdateMesh2(mFaceModel);
+        RENDER.AddToVisibleSet(vis_set);
+
         m_gl_rend->RenderVisibleSet(&vis_set, m_camera);      
 
 
@@ -403,6 +499,8 @@ namespace tyro
         
         mFaceModel.setWeights(mSliders.low_bnames, mSliders.low_values);
         mFaceModel.setWeights(mSliders.up_bnames,  mSliders.up_values);
+        
+        /*
         Eigen::MatrixXd V, N;
         Eigen::MatrixXi F;
         mFaceModel.getExpression(V, F, N);
@@ -418,7 +516,12 @@ namespace tyro
         RENDER.mesh2->UpdateData(V2, F2, N2, MESH_COLOR);
         RENDER.mesh2->Update(true);
         vis_set.Insert(RENDER.mesh2.get());
-  
+        vis_set.Insert(RENDER.eye_white.get());
+        */
+
+        RENDER.UpdateMesh(mFaceModel);
+        RENDER.UpdateMesh2(mFaceModel);
+        RENDER.AddToVisibleSet(vis_set);
         m_gl_rend->RenderVisibleSet(&vis_set, m_camera);      
 
         // Start the Dear ImGui frame
@@ -486,6 +589,8 @@ namespace tyro
         // Render Mesh
         mFaceModel.setWeights(mCameraControl.low_bnames, mCameraControl.low_values);
         mFaceModel.setWeights(mCameraControl.up_bnames,  mCameraControl.up_values);
+        
+        /*
         Eigen::MatrixXd V, N;
         Eigen::MatrixXi F;
         mFaceModel.getExpression(V, F, N);
@@ -501,8 +606,145 @@ namespace tyro
         RENDER.mesh2->UpdateData(V2, F2, N2, MESH_COLOR);
         RENDER.mesh2->Update(true);
         vis_set.Insert(RENDER.mesh2.get());
-  
+        */
+        RENDER.UpdateMesh(mFaceModel);
+        RENDER.UpdateMesh2(mFaceModel);
+        RENDER.AddToVisibleSet(vis_set);
         m_gl_rend->RenderVisibleSet(&vis_set, m_camera);      
+    }
+
+    int BshapeApp::LaunchRefinment() 
+    {
+        //load animation
+        //loadAnimation(ANIM_LIST[0]);
+        double previousTime = m_tyro_window->TimeNow();
+
+        auto render_refine = [&] (bool force = false)
+        {
+            double currentTime = m_tyro_window->TimeNow();
+
+            if (!force) 
+            {
+                if (currentTime - previousTime < 0.1 )  
+                    return;
+            }
+
+            previousTime = currentTime;
+
+            m_gl_rend->ClearScreen();
+
+           /******   DRAW UI  *******/
+            //std::vector<double> low_values_denoised, up_values_denoised;
+            //mTorchModelLow.Compute(mSliders.low_values, low_values_denoised);
+            //mTorchModelUp.Compute(mSliders.up_values, up_values_denoised); 
+
+            /****** RENDER MESH *******/
+            VisibleSet vis_set;
+            
+            mFaceModel.setWeights(mSliders.low_bnames, mSliders.low_values);
+            mFaceModel.setWeights(mSliders.up_bnames,  mSliders.up_values);
+            
+            /*
+            Eigen::MatrixXd V, N;
+            Eigen::MatrixXi F;
+            mFaceModel.getExpression(V, F, N);
+            RENDER.mesh->UpdateData(V, F, N, MESH_COLOR);
+            RENDER.mesh->Update(true);
+            vis_set.Insert(RENDER.mesh.get());
+            */
+            RENDER.UpdateMesh(mFaceModel);
+            RENDER.AddToVisibleSet(vis_set);
+    
+            //mFaceModel.setWeights(mSliders.low_bnames, low_values_denoised);
+            //mFaceModel.setWeights(mSliders.up_bnames, up_values_denoised);
+            //Eigen::MatrixXd V2, N2;
+            //Eigen::MatrixXi F2;
+            //mFaceModel.getExpression(V2, F2, N2);
+            //RENDER.mesh2->UpdateData(V2, F2, N2, MESH_COLOR);
+            //RENDER.mesh2->Update(true);
+            //vis_set.Insert(RENDER.mesh2.get());
+    
+            m_gl_rend->RenderVisibleSet(&vis_set, m_camera);      
+            /*
+            // Start the Dear ImGui frame
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+            ImGui::SetNextWindowSize(ImVec2(430,450), ImGuiCond_FirstUseEver);
+            bool flag = true;
+            ImGui::Begin("Blendshapes", &flag);
+            ImGui::Text("Upper");
+            for (int i = 0; i < mSliders.up_values.size(); ++i)
+            {   
+                ImGui::PushID(i);
+                //ImGui::Text("%0.2f", up_values_denoised[i]);
+                //ImGui::SameLine();
+                float val = mSliders.up_values[i];
+                ImGui::SliderFloat(mSliders.up_bnames[i].c_str(), &val, 0.0f, 1.0f, "%.2f");
+                mSliders.up_values[i] = (double)val;
+                
+                ImGui::PopID();
+            }
+            ImGui::Separator();
+            ImGui::Text("Lower");
+            for (int i = 0; i < mSliders.low_values.size(); ++i)
+            {   
+                ImGui::PushID(mSliders.up_values.size() + i);
+                //ImGui::Text("%0.2f", low_values_denoised[i]);
+                //ImGui::SameLine();
+                float val = mSliders.low_values[i];
+                ImGui::SliderFloat(mSliders.low_bnames[i].c_str(), &val, 0.0f, 1.0f, "%.2f");
+                mSliders.low_values[i] = val;
+                ImGui::PopID();
+            }
+            ImGui::End();        
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+            */
+            m_tyro_window->GetGLContext()->swapBuffers();
+
+
+        };
+
+        render_refine(true);
+
+        double a = 0;
+        int idx = 0;
+        while (true)
+        {   
+            std::cin >> a;
+            std::cout << "LUL " << a << "\n"; 
+            if (int(a) == -1) 
+            {   
+                render_refine();
+                std::cout << "Starting to read frame\n";
+                idx = 0;
+            } 
+            else if (int(a) == -2) 
+            {
+                break; 
+            }
+            else 
+            {   
+                if (idx < mSliders.up_values.size()) 
+                {
+                    mSliders.up_values[idx] = a;
+                }
+                else 
+                {
+                    int nidx = idx - mSliders.up_values.size();
+                    mSliders.low_values[nidx] = a;
+                }
+                idx++;                
+            }
+        }
+
+        // Cleanup
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
+
+	    return 0;
     }
 
     int BshapeApp::LaunchOffScreen(const std::string& csv_file, const std::string& out_fldr,  const std::string& video_stream, bool isOpenFace) 
@@ -515,7 +757,7 @@ namespace tyro
                 
         //setup renderer
         m_gl_rend = new ES2Renderer(m_tyro_window->GetGLContext());
-        m_gl_rend->SetClearColor(Wm5::Vector4f(150/255.0, 150/255.0, 150/255.0, 1));
+        m_gl_rend->SetClearColor(Wm5::Vector4f(220/255.0, 220/255.0, 220/255.0, 1));
         
         int v_width, v_height;
         m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
@@ -531,6 +773,8 @@ namespace tyro
         Eigen::MatrixXd V, N;
         Eigen::MatrixXi F;
         mFaceModel.getExpression(V, F, N);
+        
+        
         RENDER.mesh = IGLMesh::Create(V, F, N, MESH_COLOR);
         RENDER.mesh->Update(true);
         
