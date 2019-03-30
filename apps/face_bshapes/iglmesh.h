@@ -21,4 +21,22 @@ public:
 
     virtual void UpdateUniformsWithCamera(const Camera* camera) override;
 };
+
+
+class IGLMesh3 : public ES2TriMesh
+{
+public:
+    IGLMesh3() {}
+    virtual ~IGLMesh3() {}
+
+    static IGLMeshTwoSPtr Create(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::Vector3d& color); 
+    
+    void UpdateData(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C);
+    
+    void Init(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& C);
+
+    virtual void UpdateUniformsWithCamera(const Camera* camera) override;
+};
+
+
 }

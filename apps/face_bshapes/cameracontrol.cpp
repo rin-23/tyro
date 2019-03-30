@@ -12,7 +12,6 @@
 
 namespace tyro 
 {
-
 const std::vector<std::string> UPPER_STUFF = {
            "faceMuscles.frontalis",
            "faceMuscles.medFrontalis",

@@ -10,7 +10,6 @@ set(TYRO_SRC_EXTRENAL_CHOREOGRAPHER
 "Source/External/imgui/examples/imgui_impl_opengl3.cpp"
 "Source/External/imgui/examples/imgui_impl_glfw.cpp"
 "Source/External/easyppm/easyppm.c"
-
 )
 
 set(TYRO_EXTERNAL_SRC

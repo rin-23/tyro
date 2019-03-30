@@ -160,6 +160,7 @@ set(TYRO_EXTERNAL_INC_EXE
     "./Source/External/imgui/examples"
     "./Source/External/nanoflann/include"
     "./Source/External/nanoflann/examples"
+    "./Source/External/cxxopts/include"
     )
 
 #set(TYROVJ_INC_EXE

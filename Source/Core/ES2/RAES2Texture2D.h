@@ -20,13 +20,14 @@ namespace tyro
     {
     public:
         ES2Texture2D(TextureFormat format, int width, int height);
+        ES2Texture2D(const std::string& imagepath);
 
         virtual ~ES2Texture2D();
         
         void LoadData(const void* data);
         
         void LoadSubData(GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, const void* data);
-        
+
         GLuint GetTextureID() const;
     private:
         GLuint mTextureID;

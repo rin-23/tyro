@@ -29,10 +29,11 @@ namespace tyro
         BshapeApp(Experiment exp);
         virtual ~BshapeApp();
         
+        int Setup(int width, int height, bool refinment=false);
         int Launch() override;
         int LaunchOffScreen(const std::string& csv_file, const std::string& out_fldr, const std::string& video_stream, bool isOpenFace); 
-        int LaunchRefinment(); 
-        int Setup(int width, int height, bool refinment=false);
+        int LaunchRefinment();
+        int LaunchOpenFaceImages(const std::string& csv_file, const std::string& out_fldr);  
         void key_pressed(Window& window, unsigned int key, int modifiers) override; 
         void update_camera() override;
 

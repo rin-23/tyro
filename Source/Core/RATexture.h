@@ -29,7 +29,7 @@ namespace tyro
             TF_L8,
             TF_A8L8,
             TF_R8G8B8,
-            TF_A8R8G8B8,
+            TF_R8G8B8A8,
             TF_A8B8G8R8,
             
             // 16-bit integer formats.
@@ -61,6 +61,8 @@ namespace tyro
             TT_QUANTITY
         };
         
+        Texture() {};
+
         Texture(TextureFormat format, TextureType type);
 
         virtual ~Texture();

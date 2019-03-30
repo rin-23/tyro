@@ -1,4 +1,6 @@
 #include "bshape_app.h"
+#include <cxxopts.hpp>
+
 //#include "torch_model.h"
 //#include <Eigen/Dense>
 //#include "kdtree.h"
@@ -40,30 +42,70 @@ void test_tensor()
 
 int main(int argc, char **argv) 
 {
-    //test_tensor();
-    //test_kdtree();
-    
+    cxxopts::Options options("Bshape program", "One line description of MyProgram");
+    options.add_options()
+    ("of_v",       "Run in openface video mode")
+    ("of_i",       "Run in openface video mode")
+    ("ref",        "Run in refinment mode")
+    ("panda",      "Render panda data offsreen")
+    ("csv",        "Path to csv file", cxxopts::value<std::string>())
+    ("out_fldr",   "Path to output folder", cxxopts::value<std::string>())
+    ("video",      "Path to video", cxxopts::value<std::string>())
+    ;
+
+    auto result = options.parse(argc, argv);
+
     /***********TODO REMOVE********************/
-    
-   //argc = 4;
-    
-    /***********TODO REMOVE********************/
-    
     tyro::BshapeApp::Experiment exper = tyro::BshapeApp::Experiment::SLIDERS; 
     tyro::BshapeApp appr(exper);
+
+    //std::string path_ss1( "/home/rinat/Workspace/FacialManifoldSource/data_anim/OF_export/result2/frames_out/00560.csv");
+    //std::string out_fldr1("/home/rinat/Workspace/FacialManifoldSource/data_anim/OF_export/result2/frames_rendered");
+    //appr.LaunchOpenFaceImages(path_ss1, out_fldr1);
+
     
-    //appr.Setup(700, 700, true);
-    //int r_code = appr.LaunchRefinment();
+    if (result.count("of_v"))  
+    {
     
+    }
+    else if (result.count("of_i"))  
+    {   
+        //std::string path_ss1(argv[1]);
+        //std::string out_fldr1(argv[2]);
+        //std::string video(argv[3]);
+        //std::cout << path_ss1 << "\n";
+        //appr.LaunchOpenFaceImages(path_ss1, out_fldr1, video, true);
+    }
+    else if (result.count("panda"))  
+    {   
+        std::string path_ss1(argv[1]);
+        std::string out_fldr1(argv[2]);
+        std::string video(argv[3]);
+        std::cout << path_ss1 << "\n";
+        appr.LaunchOffScreen(path_ss1, out_fldr1, video, true);
+    }
+    else if (result.count("ref"))  
+    {   
+        appr.Setup(800, 800, true);
+        int r_code = appr.LaunchRefinment();
+    }
+    else 
+    {   
+        std::cout << "here" << "\n";
+        
+        appr.Setup(1920, 1020, false);
+        int r_code = appr.Launch();
+    }
     
+
+    /*
     if (argc==1) 
     {
-        appr.Setup(2560, 1440);
-        int r_code = appr.Launch();
+
     }
     else if (argc == 2) 
     {
-        
+
     }
     else if (argc == 3)
     {
@@ -74,17 +116,12 @@ int main(int argc, char **argv)
     }
     else if (argc == 4)
     {
-        std::string path_ss1(argv[1]);
-        std::string out_fldr1(argv[2]);
-        std::string video(argv[3]);
-        std::cout << path_ss1 << "\n";
-        appr.LaunchOffScreen(path_ss1, out_fldr1, video, true);
+        
     }
-    
+    */
+
     // int r_code = appr.VideoToImages();
     // return r_code;
-    //std::string path_ss1( "/home/rinat/Workspace/FacialManifoldSource/data_anim/clusters/cluster_4/features.txt");
-    //std::string out_fldr1("/home/rinat/Workspace/FacialManifoldSource/data_anim/clusters/cluster_4/imgs");
 	
     return 0;
 }

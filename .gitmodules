@@ -25,3 +25,9 @@
 [submodule "Source/External/nanoflann"]
 	path = Source/External/nanoflann
 	url = git@github.com:jlblancoc/nanoflann.git
+[submodule "Source/External/cxxopts"]
+	path = Source/External/cxxopts
+	url = git@github.com:jarro2783/cxxopts.git
+[submodule "Source/External/stb"]
+	path = Source/External/stb
+	url = git@github.com:nothings/stb.git

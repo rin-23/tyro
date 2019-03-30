@@ -31,9 +31,9 @@ namespace tyro
             for (int j = 0; j < 3; ++j) 
             {   
                 int vid = F(fid,j);
-                vba.Position<Wm5::Float3>(vIndex) = Wm5::Float3(V(vid,0), V(vid,1), V(vid,2));
-                vba.Normal<Wm5::Float3>(vIndex) = Wm5::Float3(N(vid, 0), N(vid, 1), N(vid, 2));
-                vba.Color<Wm5::Float3>(vIndex) = Wm5::Float3(C(fid, 0), C(fid, 1), C(fid, 2)); 
+                vba.Position<Wm5::Float3>(vIndex) =  Wm5::Float3(V(vid, 0), V(vid, 1), V(vid, 2));
+                vba.Normal<Wm5::Float3>(vIndex)   =  Wm5::Float3(N(vid, 0), N(vid, 1), N(vid, 2));
+                vba.Color<Wm5::Float3>(vIndex)    =  Wm5::Float3(C(fid, 0), C(fid, 1), C(fid, 2)); 
                 vIndex++;
             }                
         }
@@ -98,6 +98,4 @@ namespace tyro
         GetVisualEffect()->GetUniforms()->UpdateFloatUniform(1, normalMatrix.Transpose());
         //GetVisualEffect()->GetUniforms()->UpdateFloatUniform(2, mColor);
     }
-
-    
 }

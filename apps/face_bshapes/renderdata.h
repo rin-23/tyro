@@ -12,7 +12,7 @@ namespace tyro
 {  
 struct MRenderData 
 {
-    IGLMeshSPtr mesh=nullptr;
+    IGLMeshTwoSPtr mesh=nullptr;
     IGLMeshSPtr mesh2=nullptr;
 
     struct eye
@@ -32,7 +32,7 @@ struct MRenderData
         Eigen::MatrixXd V, N;
         Eigen::MatrixXi F;
         faceModel.getExpression(V, F, N);
-        mesh = IGLMesh::Create(V, F, N, MESH_COLOR);
+        mesh = IGLMeshTwo::Create(V, F, N, MESH_COLOR);
         mesh->Update(true);    
 
         auto eye_color_white = Eigen::Vector3d(0.8f, 0.8f, 0.8f);
@@ -59,8 +59,8 @@ struct MRenderData
         Eigen::MatrixXd V, N;
         Eigen::MatrixXi F;
         faceModel.getExpression(V, F, N);
-        mesh->UpdateData(V, F, N, MESH_COLOR);
-        mesh->Update(true);
+        //mesh->UpdateData(V, F, N, MESH_COLOR);
+        //mesh->Update(true);
     }
 
     void CreateMesh2(FaceModel& faceModel) 

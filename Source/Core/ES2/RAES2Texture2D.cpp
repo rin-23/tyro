@@ -11,6 +11,7 @@
 //#include <OpenGLES/ES2/glext.h>
 #include <GL/glew.h>
 #include "RALogManager.h"
+#include <stb/stb_image.h>
 
 namespace tyro
 {
@@ -21,6 +22,31 @@ Texture(format, TextureType::TT_2D)
 {
     mWidth = width;
     mHeight = height;
+}
+
+ES2Texture2D::ES2Texture2D(const std::string& imagepath)
+:
+Texture()
+{   
+    mType = TextureType::TT_2D;
+    int nrChannels;
+    unsigned char *data = stbi_load(imagepath.c_str(), &mWidth, &mHeight, &nrChannels, 0); 
+    
+    if (nrChannels==3) 
+    {
+       mFormat = TextureFormat::TF_R8G8B8;     
+    }
+    else if (nrChannels==4) 
+    {
+       mFormat = TextureFormat::TF_R8G8B8A8;     
+    }
+    else 
+    {
+        RA_LOG_ERROR_ASSERT("Only supporting 3 or 4 channels")
+    }
+
+    LoadData(data);
+    stbi_image_free(data);
 }
 
 ES2Texture2D::~ES2Texture2D()
@@ -73,6 +99,8 @@ void ES2Texture2D::LoadSubData(GLint xoffset, GLint yoffset, GLsizei width, GLsi
     GL_CHECK_ERROR;
 }
 
+
+
 GLuint ES2Texture2D::GetTextureID() const
 {
     return mTextureID;
@@ -90,7 +118,7 @@ GLenum ES2Texture2D::GetGLFormat(TextureFormat format)
             return GL_LUMINANCE_ALPHA;
         case Texture::TF_R8G8B8:
             return GL_RGB;
-        case Texture::TF_A8R8G8B8:
+        case Texture::TF_R8G8B8A8:
             return GL_RGBA;
         default:
             assert(false);
@@ -110,7 +138,7 @@ GLenum ES2Texture2D::GetGLDataType(TextureFormat format)
             return GL_UNSIGNED_BYTE;
         case Texture::TF_R8G8B8:
             return GL_UNSIGNED_BYTE;
-        case Texture::TF_A8R8G8B8:
+        case Texture::TF_R8G8B8A8:
             return GL_UNSIGNED_BYTE;
         default:
             assert(false);
