@@ -28,7 +28,7 @@ namespace tyro
         Window* m_tyro_window;
         ES2Renderer* m_gl_rend;
         iOSCamera* m_camera;
-        ES2TextOverlaySPtr m_frame_overlay;
+        //ES2TextOverlaySPtr m_frame_overlay;
         std::atomic<bool> m_need_rendering;
         //ShaderBoxSPtr m_shaderbox;
         void mouse_down(Window& window, int button, int modifier);
@@ -38,7 +38,8 @@ namespace tyro
         void window_resize(Window& window, unsigned int w, unsigned int h);    
         void key_pressed(Window& window, unsigned int key, int modifiers); 
         void key_down(Window& window, unsigned int key, int modifiers); 
-        
+        void selectVertex(Eigen::Vector2f& mouse_pos, int mouse_button, int modifier);
+
         bool mouse_is_down;
         int gesture_state; 
         int current_mouse_x;
@@ -54,11 +55,24 @@ namespace tyro
         bool m_update_camera;
         bool m_show_wire;
           
+        struct MGeometry 
+        {
+            Eigen::MatrixXd V;;
+            Eigen::MatrixXi F;
+            Eigen::MatrixXd N;
+        };
+        MGeometry GEOMETRY;
+
         struct MRenderData 
         {
             IGLMeshSPtr mesh;
+            IGLMeshWireframeSPtr mesh_wire;
         };
         MRenderData RENDER;
+
+        std::vector<SpatialSPtr> ball_list;
+        std::vector<int> vid_list;
+
 
         void register_console_function(const std::string& name,
                                        const std::function<void(App*, const std::vector<std::string>&)>& con_fun,
@@ -66,6 +80,10 @@ namespace tyro
         void update_camera();
         void render();
         void DrawMeshes();
+        void add_vertex(int vid);
+        void addSphere(int vid, const Eigen::MatrixXd& V, Wm5::Vector4f color = Wm5::Vector4f(1,0,0,1), Wm5::Transform worldT = Wm5::Transform::IDENTITY);        
+
+
     };
 
     

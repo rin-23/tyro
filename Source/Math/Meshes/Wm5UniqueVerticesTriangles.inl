@@ -12,8 +12,8 @@ UniqueVerticesTriangles<N,Real>::UniqueVerticesTriangles (int numTriangles,
     const Tuple<N,Real>* inVertices, int& numOutVertices,
     Tuple<N,Real>*& outVertices, int*& outIndices)
 {
-    //assertion(numTriangles > 0 && inVertices,
-        "Invalid inputs to UniqueVerticesTriangles constructor\n");
+    // assertion(numTriangles > 0 && inVertices,
+    //     "Invalid inputs to UniqueVerticesTriangles constructor\n");
 
     ConstructUniqueVertices(3*numTriangles,inVertices,numOutVertices,
         outVertices);
@@ -32,9 +32,9 @@ UniqueVerticesTriangles<N,Real>::UniqueVerticesTriangles (int numInVertices,
     const Tuple<N,Real>* inVertices, int numTriangles, const int* inIndices,
     int& numOutVertices, Tuple<N,Real>*& outVertices, int*& outIndices)
 {
-    //assertion(
-        numInVertices > 0 && inVertices && numTriangles > 0 && inIndices,
-        "Invalid inputs to UniqueVerticesTriangles constructor\n");
+    // assertion(
+    //     numInVertices > 0 && inVertices && numTriangles > 0 && inIndices,
+    //     "Invalid inputs to UniqueVerticesTriangles constructor\n");
 
     ConstructUniqueVertices(numInVertices, inVertices, numOutVertices,
         outVertices);
@@ -45,13 +45,13 @@ UniqueVerticesTriangles<N,Real>::UniqueVerticesTriangles (int numInVertices,
     outIndices = new1<int>(numIndices);
     for (int i = 0; i < numIndices; ++i)
     {
-        //assertion(0 <= inIndices[i] && inIndices[i] < numInVertices,
-            "Invalid condition in UniqueVerticesTriangles constructor\n");
+        // assertion(0 <= inIndices[i] && inIndices[i] < numInVertices,
+        //     "Invalid condition in UniqueVerticesTriangles constructor\n");
 
         outIndices[i] = mInToOutMapping[inIndices[i]];
 
-        //assertion(0 <= outIndices[i] && outIndices[i] < numOutVertices,
-            "Invalid condition in UniqueVerticesTriangles constructor\n");
+        // assertion(0 <= outIndices[i] && outIndices[i] < numOutVertices,
+        //     "Invalid condition in UniqueVerticesTriangles constructor\n");
     }
 }
 //----------------------------------------------------------------------------
@@ -64,8 +64,8 @@ UniqueVerticesTriangles<N,Real>::~UniqueVerticesTriangles ()
 template <int N, typename Real>
 int UniqueVerticesTriangles<N,Real>::GetOutputIndexFor (int inputIndex) const
 {
-    //assertion(0 <= inputIndex && inputIndex < mNumInVertices,
-        "Invalid condition in GetOutputIndexFor\n");
+    // assertion(0 <= inputIndex && inputIndex < mNumInVertices,
+    //     "Invalid condition in GetOutputIndexFor\n");
 
     return mInToOutMapping[inputIndex];
 }
@@ -104,8 +104,8 @@ void UniqueVerticesTriangles<N,Real>::ConstructUniqueVertices (
     outVertices = new1<Tuple<N,Real> >(mNumOutVertices);
     for (iter = table.begin(); iter != table.end(); iter++)
     {
-        //assertion(0 <= iter->second && iter->second < mNumOutVertices,
-            "Invalid condition in ConstructUniqueVertices\n");
+        // assertion(0 <= iter->second && iter->second < mNumOutVertices,
+        //     "Invalid condition in ConstructUniqueVertices\n");
 
         outVertices[iter->second] = iter->first;
     }

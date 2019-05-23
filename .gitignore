@@ -4,7 +4,7 @@
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 # user
 *.vcxproj.user
-
+.DS_Store
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/

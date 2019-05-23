@@ -16,7 +16,7 @@ Query2Filtered<Real>::Query2Filtered (int numVertices,
     mUncertainty(uncertainty)
 {
     //assertion((Real)0 <= mUncertainty && mUncertainty <= (Real)1,
-        "Invalid uncertainty\n");
+        //"Invalid uncertainty\n");
 }
 //----------------------------------------------------------------------------
 template <typename Real>

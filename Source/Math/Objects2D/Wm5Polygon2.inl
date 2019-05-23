@@ -14,7 +14,7 @@ Polygon2<Real>::Polygon2 (int numVertices, Vector2<Real>* vertices)
 {
     // The polygon must be at least a triangle.
     //assertion(numVertices >= 4 && vertices,
-        "Invalid input to Polygon2 constructor\n");
+        //"Invalid input to Polygon2 constructor\n");
 
     mVertices = vertices;
 }

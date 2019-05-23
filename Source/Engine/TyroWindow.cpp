@@ -1,6 +1,8 @@
 #include "TyroWindow.h"
 #include "RAEnginePrerequisites.h"
 
+static double highdpi = 1;
+
 /*
  * C-style callbacks for GLFW
  */
@@ -60,14 +62,14 @@ void glfw_window_size(GLFWwindow* window, int width, int height)
     int h = height;
     tyro::Window* tyro_window = nullptr;
     tyro_window = static_cast<tyro::Window*>(glfwGetWindowUserPointer(window));
-    tyro_window->window_resize(w, h);
+    tyro_window->window_resize(highdpi*w, highdpi*h);
 }
 
 void glfw_mouse_move(GLFWwindow* window, double x, double y)
 {   
     tyro::Window* tyro_window = nullptr;
     tyro_window = static_cast<tyro::Window*>(glfwGetWindowUserPointer(window));
-    tyro_window->mouse_move(x, y);
+    tyro_window->mouse_move(highdpi*x, highdpi*y);
 }
 
 void glfw_mouse_scroll(GLFWwindow* window, double x, double y)
@@ -117,9 +119,14 @@ int Window::InitOffscreen(int w, int h)
         return -1;
     
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    #ifdef __APPLE__
+      glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+      glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+      glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
+    #endif
+    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+    //glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
     /* Create a windowed mode window and its OpenGL context */
     m_glfw_window = glfwCreateWindow(w, h, "tyro", NULL, NULL);
@@ -159,8 +166,16 @@ int Window::Init(int w, int h)
         return -1;
     
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    #ifdef __APPLE__
+      //glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+      //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+      glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+      glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+      //glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
+    #endif
+    
+    
 
     /* Create a windowed mode window and its OpenGL context */
     m_glfw_window = glfwCreateWindow(w, h, "tyro", NULL, NULL);
@@ -181,8 +196,8 @@ int Window::Init(int w, int h)
     if (GLEW_OK != err)
         RA_LOG_ERROR_ASSERT("Failed to initialize GLEW %s\n", glewGetErrorString(err));
     
-    if (GLEW_VERSION_4_4) 
-        RA_LOG_INFO("Yay! OpenGL 4.4 is supported!");
+    if (GLEW_VERSION_4_1) 
+        RA_LOG_INFO("Yay! OpenGL 4.1 is supported!");
     
     // create opengl context
     // @TODO: make genetal opengl context
@@ -201,6 +216,20 @@ int Window::Init(int w, int h)
     glfwSetCharModsCallback(m_glfw_window, glfw_char_mods_callback);
     glfwSetDropCallback(m_glfw_window, glfw_drop_callback);
     
+
+    // Handle retina displays (windows and mac)
+    int width, height;
+    glfwGetFramebufferSize(m_glfw_window, &width, &height);
+    int width_window, height_window;
+    glfwGetWindowSize(m_glfw_window, &width_window, &height_window);
+    highdpi = width/width_window;
+    //glfw_window_size(window,width_window,height_window);
+    int w1 = width_window*highdpi;
+    int h1 = height_window*highdpi;
+
+    RA_LOG_INFO("viewport %i %i %i %i %i %i", width, height, width_window, height_window, w1, h1);
+   // core.viewport = Eigen::Vector4f(0,0,w,h);
+
     //@TODO seems to be a bug with glew
     GL_CHECK_ERROR_GLEW_HACK;
 

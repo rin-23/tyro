@@ -1,6 +1,3 @@
-[submodule "Source/External/libigl"]
-	path = Source/External/libigl
-	url = git@github.com:rin-23/libigl.git
 [submodule "Source/External/Choreograph"]
 	path = Source/External/Choreograph
 	url = git@github.com:sansumbrella/Choreograph.git
@@ -31,3 +28,6 @@
 [submodule "Source/External/stb"]
 	path = Source/External/stb
 	url = git@github.com:nothings/stb.git
+[submodule "Source/External/libigl"]
+	path = Source/External/libigl
+	url = https://github.com/libigl/libigl.git

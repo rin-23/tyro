@@ -17,7 +17,7 @@ Polyhedron3<Real>::Polyhedron3 (int numVertices, Vector3<Real>* vertices,
 {
     // The polyhedron must be at least a tetrahedron.
     //assertion(numVertices >= 4 && vertices && numTriangles >= 4 && indices,
-        "Invalid input to Polyhedron3 constructor\n");
+        //"Invalid input to Polyhedron3 constructor\n");
 
     mVertices = vertices;
     mIndices = indices;

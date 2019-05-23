@@ -8,6 +8,6 @@ set(TYRO_SRC_LOCAL
 "apps/TyroVJ/TyroShaderQuad.cpp"
 )
 
-set(TYROVJ_SRC
+set(TYROAPP_SRC
 ${TYRO_SRC_LOCAL}
 )

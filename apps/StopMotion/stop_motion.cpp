@@ -1,4 +1,4 @@
-#include "TyroApp.h"
+#include "stop_motion.h"
 #include <igl/facet_components.h>
 #include "RAEnginePrerequisites.h"
 #include "RAES2TextOverlay.h"

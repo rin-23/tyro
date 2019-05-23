@@ -1,11 +1,11 @@
 set(TYRO_INC_LOCAL 
-"apps/face_warp/TyroApp.h"
+"apps/face_warp/face_warp.h"
 )
 
 set(TYRO_SRC_LOCAL 
-"apps/face_warp/TyroApp.cpp"
+"apps/face_warp/face_warp.cpp"
 )
 
-set(TYROFACEWARP_SRC
+set(TYROAPP_SRC
 ${TYRO_SRC_LOCAL}
 )

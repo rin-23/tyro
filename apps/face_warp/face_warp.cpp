@@ -1,4 +1,4 @@
-#include "TyroApp.h"
+#include "face_warp.h"
 #include "RAEnginePrerequisites.h"
 #include "RAES2TextOverlay.h"
 #include "RAFont.h"
@@ -15,6 +15,11 @@
 #include <random>
 #include "load_mesh_sequence.h"
 #include "TyroIGLMesh.h"
+#include <igl/readOBJ.h>
+#include <igl/per_vertex_normals.h>
+#include <igl/unique_edge_map.h>
+#include <igl/unproject_onto_mesh.h>
+#include "RAES2StandardMesh.h"
 
 using namespace std;
 
@@ -39,13 +44,22 @@ namespace tyro
     //m_sel_method(App::SelectionMethod::OneClick),
     m_computed_stop_motion(false),
     m_update_camera(false),
-    m_frame_overlay(nullptr),
+    //m_frame_overlay(nullptr),
     m_computed_parts(false),
     m_show_wire(true)
     //add_seg_faces(false),
     //m_video_texture(nullptr),
     //m_frame_offset(0)
     {}
+
+    void color_matrix(int rows, const Eigen::Vector3d& cv, Eigen::MatrixXd& uC)
+    {
+        uC.resize(rows, 3);
+        for (int e = 0; e<uC.rows(); ++e) 
+        {
+            uC.row(e) = cv;
+        }
+    }
 
     App::~App() 
     {
@@ -127,101 +141,7 @@ namespace tyro
             this->mouse_scroll(window, ydelta);
         };
         
-      /*
-        register_console_function("load_jali", console_load_jali, "");
-        register_console_function("save_avg", console_save_deform_average, "");
-        register_console_function("write_labels", console_write_labels, "");
-        register_console_function("compute_stop_frames", console_compute_stop_frames, "");
-        register_console_function("uniform", console_uniform, "");
-        register_console_function("save_few_deform_frames", console_save_few_deform_frames, "");
-        register_console_function("save_first_frame", console_save_first_frame, "");
-        register_console_function("compute_alec", console_compute_alec,"");
 
-        register_console_function("compute_random_swith", console_figure_random, "");
-        register_console_function("compute_data_vel_error", console_compute_data_vel_error,"");
-        register_console_function("compute_errors", console_compute_errors,"");
-        register_console_function("plot_error_deform", console_plot_error_deform, "");
-        register_console_function("clear_weights", console_clear_weights, "");
-        register_console_function("segmentation_full", console_segmentation_full, "");
-        register_console_function("print_stats", console_print_stats, "");
-        register_console_function("set_selection_type", console_set_selection_type, "");
-        register_console_function("mesh_split_final", console_mesh_split_final, "");
-        register_console_function("compute_deformation2", console_compute_deformation2, "");
-        register_console_function("seam_from_selection", console_seam_from_selection, "");
-        register_console_function("add_adjaent_boundary", console_add_adjaent_boundary, "");
-        register_console_function("fix_boundary_edges", console_fix_boundary_edges, "");
-        register_console_function("remove_duplicate_vertices", console_remove_duplicate_vertices, "");
-        register_console_function("show_boundary_faces", console_show_boundary_faces, "");
-        register_console_function("find_boundary", console_find_boundary, "");
-        register_console_function("mesh_split_bndr", console_mesh_split_bndr, "");
-        register_console_function("compute_vertex_bndr", console_compute_vertex_bndr, "");
-        register_console_function("load_agent", console_load_agent, "");
-        register_console_function("load_bartender", console_load_bartender, "");
-        register_console_function("load_blobby", console_load_blobby, "");
-        register_console_function("load_oldman", console_load_oldman, "");
-        register_console_function("load_bunny", console_load_bunny, "");
-        register_console_function("compute_average", console_compute_average, "");
-        register_console_function("compute_deformation", console_compute_deformation, "");
-        register_console_function("save_selected_faces", console_save_selected_faces, "");
-        register_console_function("load_selected_faces", console_load_selected_faces, "");
-        register_console_function("save_selected_verticies", console_save_selected_verticies, "");
-        register_console_function("load_selected_verticies", console_load_selected_verticies, "");
-        register_console_function("invert_face_selection", console_invert_face_selection, "");
-        register_console_function("set_sel_primitive", console_set_sel_primitive, "");
-        register_console_function("set_sel_method", console_set_sel_method, "");
-        register_console_function("save_mesh_sequence_with_selected_faces", console_save_mesh_sequence_with_selected_faces, "");
-        register_console_function("align_all_models", console_align_all_models, "");
-        register_console_function("stop_motion", console_stop_motion, "");
-        register_console_function("frame", console_frame, "");
-        //register_console_function("split_mesh", console_split_mesh, "");
-        register_console_function("show_edge_selection", console_show_edge_selection, "");
-        register_console_function("deselect_faces", console_deselect_faces, "");
-        register_console_function("deselect_verticies", console_deselect_verticies, "");
-        register_console_function("show_wireframe", console_show_wireframe, "");
-        register_console_function("segmentation", console_segmentation, "");
-        register_console_function("clear_selection", console_clear_selection, "");
-        register_console_function("clear_vertex_selection", console_clear_vertex_selection, "");
-        register_console_function("clear_face_selection", console_clear_face_selection, "");
-
-        register_console_function("save_serialised_data", console_save_serialised_data, "");
-        register_console_function("load_serialised_data", console_load_serialised_data, "");
-        register_console_function("load_monka", console_load_monka, "");
-        register_console_function("load_monka_print", console_load_monka_print, "");
-        
-        register_console_function("set_vertex_weight", console_set_vertex_weight, "");
-        register_console_function("set_face_weight", console_set_face_weight, "");
-        
-        register_console_function("draw_vertex_weight_map", console_draw_vertex_weight_map, "");
-        register_console_function("draw_face_weight_map", console_draw_face_weight_map, "");
-        register_console_function("upsample", console_upsample, "");
-        register_console_function("taubin_smooth_along_edges", console_taubin_smooth_along_edges, "");
-        register_console_function("laplacian_smooth_vert", console_laplacian_smoothing_vert, "");
-
-        register_console_function("laplacian_smooth_along_edges", console_laplacian_smooth_along_edges, "");
-        register_console_function("console_offset_frame", console_offset_frame, "");
-        register_console_function("plot_error", console_plot_error, "");
-        register_console_function("plot_error_vel", console_plot_error_vel, "");
-
-        register_console_function("show_seam", console_show_seam, ""); 
-        register_console_function("render_to_image", console_render_to_image, ""); 
-        register_console_function("render_to_video", console_render_to_video, ""); 
-
-        register_console_function("save_sub_split", console_save_sub_split, "");
-        register_console_function("save_sub_animation", console_save_sub_animation, "");
-        register_console_function("save_sub_deformation", console_save_sub_deformation, "");
-
-        register_console_function("save_for_printing", console_save_for_printing, "");
-        register_console_function("save_sub_video", console_save_sub_video, "");
-        register_console_function("load_bunny_stop", console_load_bunny_stop, "");
-        register_console_function("load_bunny_stop2", console_load_bunny_stop2, "");
-
-        register_console_function("show_iso", console_show_iso, "");
-        register_console_function("show_iso_2", console_show_iso_2, "");
-
-        register_console_function("show_label", console_show_labels, "");
-        register_console_function("scale", console_scale, "");
-        register_console_function("collapse_small_triangles", console_collapse_small_triangles, "");
-        */
 
         m_state = App::State::Launched;
         // Loop until the user closes the window
@@ -235,32 +155,49 @@ namespace tyro
             //RA_LOG_INFO("Looping GLFW");
         //    m_tyro_window->Wait();
         //}
-        FontManager* fManager = FontManager::GetSingleton();
-        float scale = 1;
-        float ppi = 144;
-        fManager->Setup(ppi, scale);
+        // FontManager* fManager = FontManager::GetSingleton();
+        // float scale = 1;
+        // float ppi = 144;
+        // fManager->Setup(ppi, scale);
 
-        ES2FontSPtr font = FontManager::GetSingleton()->GetSystemFontOfSize12();
-        std::string strrr("Framasdasdasdsaddasde 0/9000");
-        m_frame_overlay = ES2TextOverlay::Create(strrr, 
-                                                 Wm5::Vector2f(0, 0), 
-                                                 font, 
-                                                 Wm5::Vector4f(0,0,1,1), 
-                                                 viewport);
+        // ES2FontSPtr font = FontManager::GetSingleton()->GetSystemFontOfSize12();
+        // std::string strrr("Framasdasdasdsaddasde 0/9000");
+        // m_frame_overlay = ES2TextOverlay::Create(strrr, 
+        //                                          Wm5::Vector2f(0, 0), 
+        //                                          font, 
+        //                                          Wm5::Vector4f(0,0,1,1), 
+        //                                          viewport);
                                                  
-        m_frame_overlay->SetTranslate(Wm5::Vector2i(-viewport[2]/2 ,-viewport[3]/2 ));
-        m_frame_overlay->SetText(strrr);
+        // m_frame_overlay->SetTranslate(Wm5::Vector2i(-viewport[2]/2 ,-viewport[3]/2 ));
+        // m_frame_overlay->SetText(strrr);
         
         //m_shaderbox = ShaderBox::Create();
 
         // load obj file
-        Eigen::MatrixXd V,N; // Vertex data. 3*num_vert by num_frames. 
-        Eigen::MatrixXi F,E,UE; // Face data. 
+        //Eigen::MatrixXd V,N; // Vertex data. 3*num_vert by num_frames. 
+        Eigen::MatrixXd UEC;
+        Eigen::MatrixXi E,UE; // Face data. 
         Eigen::VectorXi EMAP; // Map directed edges to unique edges. 
-        std::string obj_list = "/home/rinat/Workspace/tyro/resources/WrapHead.obj";
-        tyro::load_mesh(obj_list, V, N, F, E, UE, EMAP);
+        std::vector<std::vector<int> > uE2E;
+
+        std::string obj_list = "/Users/rinat/Workspace/TemplateDeform/data/scan.obj";
+        //tyro::load_mesh(obj_list, V, N, F, E, UE, EMAP);
+        igl::readOBJ(obj_list, GEOMETRY.V,GEOMETRY.F);
+        igl::per_vertex_normals(GEOMETRY.V,GEOMETRY.F,GEOMETRY.N);
+        igl::unique_edge_map(GEOMETRY.F,E,UE,EMAP,uE2E);
+
         Eigen::Vector3d clr(1,0,0);
-        RENDER.mesh = IGLMesh::Create(V, F, N, clr);
+        RENDER.mesh = IGLMesh::Create(GEOMETRY.V, GEOMETRY.F, GEOMETRY.N, clr);
+
+        color_matrix(UE.rows(), Eigen::Vector3d(0.5,0.5,0.5), UEC);
+        RENDER.mesh_wire = IGLMeshWireframe::Create(GEOMETRY.V, UE, UEC);
+        
+        // addSphere(100, GEOMETRY.V, Wm5::Vector4f(0,1,0,1), RENDER.mesh->WorldTransform);
+        // addSphere(200, GEOMETRY.V, Wm5::Vector4f(0,1,0,1), RENDER.mesh->WorldTransform);
+        // addSphere(300, GEOMETRY.V, Wm5::Vector4f(0,1,0,1), RENDER.mesh->WorldTransform);
+        // addSphere(400, GEOMETRY.V, Wm5::Vector4f(0,1,0,1), RENDER.mesh->WorldTransform);
+
+        
         m_update_camera = true;
         m_state = App::State::LoadedModel;
 
@@ -274,7 +211,7 @@ namespace tyro
                 }
                 else if (m_state == App::State::LoadedModel) 
                 {   
-                    DrawMeshes();
+                   DrawMeshes();
                 }
                 
                 // Draw console
@@ -296,6 +233,7 @@ namespace tyro
 	    return 0;
     }
 
+    
     void App::DrawMeshes() 
     {
         //RA_LOG_INFO("RENDER BEGIN");
@@ -310,6 +248,13 @@ namespace tyro
         RENDER.mesh->Update(true);
         vis_set.Insert(RENDER.mesh.get());
 
+        RENDER.mesh_wire->Update(true);
+        vis_set.Insert(RENDER.mesh_wire.get());
+
+        for (auto object_sptr : ball_list) 
+        {   
+            vis_set.Insert(object_sptr.get());
+        }
         //vis_set.Insert(m_frame_overlay.get());
         //vis_set.Insert(m_shaderbox.get());
         if (m_update_camera) 
@@ -332,9 +277,7 @@ namespace tyro
         //setup camera
         AxisAlignedBBox WorldBoundBox = RENDER.mesh->WorldBoundBox;
         Wm5::APoint world_center = WorldBoundBox.GetCenter();
-        float radius = std::abs(WorldBoundBox.GetRadius()*1.5);
-        //Wm5::APoint world_center = Wm5::APoint::ORIGIN;
-        //float radius = 1;
+        float radius = std::abs(WorldBoundBox.GetRadius()*5);
         int v_width, v_height;
         m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
         Wm5::Vector4i viewport(0, 0, v_width, v_height);
@@ -382,6 +325,16 @@ namespace tyro
             m_camera->HandleOneFingerPanGesture(gesture_state, Wm5::Vector2i(current_mouse_x, current_mouse_y));
             render();
         }
+        else if (mouse_is_down && m_modifier == TYRO_MOD_SHIFT ) 
+        {
+            // Cast a ray in the view direction starting from the mouse position
+            // double x = current_mouse_x;
+            // double y = ;
+            Eigen::Vector2f mouse_pos(current_mouse_x, m_camera->GetViewport()[3] - current_mouse_y);
+            RA_LOG_INFO("mouse up  %f, %f %f", m_camera->GetViewport()[3], mouse_pos[0],mouse_pos[1]);
+
+            selectVertex(mouse_pos, m_mouse_btn_clicked, m_modifier);
+        }
         else if (mouse_is_down && m_mouse_btn_clicked == 2) 
         {
             gesture_state = 2;
@@ -395,24 +348,26 @@ namespace tyro
 
     void App::mouse_move(Window& window, int mouse_x, int mouse_y) 
     {   
-        //RA_LOG_INFO("mouse move state %i", m_state);
-        if (m_state != App::State::LoadedModel) return;
         
+        if (m_state != App::State::LoadedModel) return;
         current_mouse_x = mouse_x;
         current_mouse_y = mouse_y;
-
+        //RA_LOG_INFO("mouse move state %i %i %i", m_state,current_mouse_x, current_mouse_y);
+        
         if (mouse_is_down && m_modifier == TYRO_MOD_CONTROL) 
         {   
             m_camera->HandleOneFingerPanGesture(gesture_state, Wm5::Vector2i(mouse_x, mouse_y));
             gesture_state = 1;
             render();
         } 
+       
         else if (mouse_is_down && m_mouse_btn_clicked == 2) 
         {
             m_camera->HandleTwoFingerPanGesture(gesture_state, Wm5::Vector2i(mouse_x, -mouse_y));
             gesture_state = 1;
             render();
         }        
+        
     }
 
     void App::mouse_scroll(Window& window, float ydelta) 
@@ -492,4 +447,150 @@ namespace tyro
         std::function<void (const std::vector<std::string>&)> f = bind(con_fun, this, std::placeholders::_1);
         m_console.reg_cmdN(name, f, help_txt);
     }
+
+    void App::selectVertex(Eigen::Vector2f& mouse_pos, int mouse_button, int modifier) 
+    {   
+        RA_LOG_INFO("here1");
+
+        int fid;
+        Eigen::Vector3f bc;
+        Wm5::HMatrix modelViewMatrix = m_camera->GetViewMatrix() * RENDER.mesh->WorldTransform.Matrix();
+        Wm5::HMatrix projectMatrix = m_camera->GetProjectionMatrix();
+        Eigen::Matrix4f e1 = Eigen::Map<Eigen::Matrix4f>(modelViewMatrix.mEntry);
+        Eigen::Matrix4f e2 = Eigen::Map<Eigen::Matrix4f>(projectMatrix.mEntry);
+        Eigen::Vector4f e3 = Eigen::Vector4f(m_camera->GetViewport()[0],
+                                             m_camera->GetViewport()[1],
+                                             m_camera->GetViewport()[2],
+                                             m_camera->GetViewport()[3]);
+
+        RA_LOG_INFO("here2");
+        RA_LOG_INFO("%f %f ",mouse_pos[0],mouse_pos[1]);
+        Eigen::Vector2f mouse_pos2(current_mouse_x, current_mouse_y);
+        //RA_LOG_INFO("%f %f ",mouse_pos2[0],mouse_pos2[1]);
+        if (igl::unproject_onto_mesh(mouse_pos, 
+                                     e1.transpose(),
+                                     e2.transpose(),
+                                     e3,
+                                     GEOMETRY.V,
+                                     GEOMETRY.F,
+                                     fid,
+                                     bc)) 
+        {   
+            RA_LOG_INFO("here3");
+
+            if (true) 
+            {   
+                RA_LOG_INFO("here4");
+                long c;
+                bc.maxCoeff(&c);
+                int vid = GEOMETRY.F(fid, c);
+                auto it = std::find(vid_list.begin(), vid_list.end(), vid);
+                if (it == vid_list.end()) 
+                {       
+                    Eigen::Vector3d vec = GEOMETRY.V.row(vid);
+                    RA_LOG_INFO("Picked face_id %i vertex_id %i coord %f %f %f", fid, vid, vec(0), vec(1), vec(2));
+                    //addSphere(vid,  GEOMETRY.V);
+                    addSphere(vid, GEOMETRY.V, Wm5::Vector4f(0,1,0,1), RENDER.mesh->WorldTransform);
+
+                    add_vertex(vid);
+                }  
+                else
+                {   
+                    RA_LOG_INFO("remove vertex %i %i", fid, vid);
+                    auto index = std::distance(vid_list.begin(), it);
+                    ball_list.erase(ball_list.begin() + index);
+                    vid_list.erase(vid_list.begin() + index);
+                }
+                render(); 
+            } 
+            /*
+            else if (m_sel_primitive == App::SelectionPrimitive::Faces) 
+            {   
+                if (mouse_button == 0) 
+                {
+                    auto it = std::find(fid_list.begin(), fid_list.end(), fid);
+                    if (m_selection_type == Select) 
+                    {
+                        if (it == fid_list.end()) 
+                        {
+                            add_face(fid);
+                            setFaceColor(fid, true); 
+                        }  
+                        else
+                        {   
+                            auto index = std::distance(fid_list.begin(), it);
+                            fid_list.erase(fid_list.begin() + index);
+                            setFaceColor(fid, false);
+                        }
+                    }
+                    else 
+                    {
+                        if (it != fid_list.end()) 
+                        {
+                            auto index = std::distance(fid_list.begin(), it);
+                            fid_list.erase(fid_list.begin() + index);
+                            setFaceColor(fid, false);
+                        }
+                    }
+                } 
+                else if (mouse_button == 1 && modifier == TYRO_MOD_NONE) 
+                {
+                    auto it = std::find(fid_list2.begin(), fid_list2.end(), fid);
+                    if (it == fid_list2.end()) 
+                    {
+                        fid_list2.push_back(fid);
+                        setFaceColor(fid, Eigen::Vector3d(0.5,0,0)); 
+                    }  
+                    else
+                    {   
+                        auto index = std::distance(fid_list2.begin(), it);
+                        fid_list2.erase(fid_list2.begin() + index);
+                        setFaceColor(fid, false);
+                    }
+                }
+                else if (mouse_button == 1 && modifier == TYRO_MOD_SHIFT) 
+                {
+                    auto it = std::find(fid_list3.begin(), fid_list3.end(), fid);
+                    if (it == fid_list3.end()) 
+                    {
+                        fid_list3.push_back(fid);
+                        setFaceColor(fid, Eigen::Vector3d(0, 1.0, 0)); 
+                    }  
+                    else
+                    {   
+                        auto index = std::distance(fid_list3.begin(), it);
+                        fid_list3.erase(fid_list3.begin() + index);
+                        setFaceColor(fid, false);
+                    }
+                }
+                render();
+            } 
+            */                 
+        }   
+    }
+
+    void App::add_vertex(int vid)
+    {   
+        auto it = std::find(vid_list.begin(), vid_list.end(), vid);
+        if (it == vid_list.end())
+        {
+            vid_list.push_back(vid);
+        }        
+    }
+
+    void App::addSphere(int vid, const Eigen::MatrixXd& V, Wm5::Vector4f color, Wm5::Transform world) 
+    {   
+        Eigen::RowVector3d new_c = V.row(vid);
+        //float s =  (V.size() > 3000) ? 0.0005 : 0.007;
+        //float s = 0.001;
+        float m_ball_size = 0.005;
+        ES2SphereSPtr object = ES2Sphere::Create(10, 10, m_ball_size);
+        Wm5::Transform tr;
+        tr.SetTranslate(Wm5::APoint(new_c(0), new_c(1), new_c(2)));
+        object->LocalTransform = world * tr * object->LocalTransform;
+        object->Update(true);
+        object->SetColor(color);
+        ball_list.push_back(object);
+    }     
+
 }
