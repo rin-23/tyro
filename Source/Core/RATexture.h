@@ -25,6 +25,7 @@ namespace tyro
             TF_A4R4G4B4,
             
             // 8-bit integer formats.
+            TF_R8,
             TF_A8,
             TF_L8,
             TF_A8L8,

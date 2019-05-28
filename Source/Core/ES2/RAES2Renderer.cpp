@@ -37,15 +37,23 @@ namespace tyro
 		mContext = glContext;
 		mClearColor = Wm5::Vector4f(200 / 255.0f, 200 / 255.0f, 200 / 255.0f, 1.0f);
 		glContext->getFramebufferSize(&mViewWidth, &mViewHeight);
+		GL_CHECK_ERROR;
+
 		glViewport(0, 0, mViewWidth, mViewHeight);
+		GL_CHECK_ERROR;
+
 		glClearColor(mClearColor[0], mClearColor[1], mClearColor[2], mClearColor[3]);
+		GL_CHECK_ERROR;
 
 		glEnable(GL_LINE_SMOOTH);
+		GL_CHECK_ERROR;
 
-		glLineWidth(2.0);
-		 GLfloat lineWidthRange[2] = {0.0f, 0.0f};
-    	glGetFloatv(GL_SMOOTH_LINE_WIDTH_RANGE, lineWidthRange);
-    	
+		//glLineWidth(2.0);		//TODO: this causes crash on mac mojave
+		//GL_CHECK_ERROR;
+
+		GLfloat lineWidthRange[2] = {0.0f, 0.0f};
+    	glGetFloatv(GL_SMOOTH_LINE_WIDTH_RANGE, lineWidthRange);		
+		GL_CHECK_ERROR;
 		GLfloat a1= lineWidthRange[0];
 		GLfloat a2= lineWidthRange[1];
 		

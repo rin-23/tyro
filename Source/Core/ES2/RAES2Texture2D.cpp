@@ -68,7 +68,7 @@ void ES2Texture2D::LoadData(const void* data)
 
     GLenum glFormat = GetGLFormat(mFormat);
     GLenum glType = GetGLDataType(mFormat);
-    glTexImage2D(GL_TEXTURE_2D, 0, glFormat, mWidth, mHeight, 0, glFormat, glType, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, glFormat, mWidth, mHeight, 0, glFormat, glType, 0); 
     GL_CHECK_ERROR;
 
     // Set the filtering mode
@@ -110,6 +110,8 @@ GLenum ES2Texture2D::GetGLFormat(TextureFormat format)
 {
     switch (format)
     {
+        case Texture::TF_R8:
+            return GL_RED;
         case Texture::TF_A8:
             return GL_ALPHA;
         case Texture::TF_L8:
@@ -130,6 +132,8 @@ GLenum ES2Texture2D::GetGLDataType(TextureFormat format)
 {
     switch (format)
     {
+        case Texture::TF_R8:
+            return GL_UNSIGNED_BYTE;
         case Texture::TF_A8:
             return GL_UNSIGNED_BYTE;
         case Texture::TF_L8:

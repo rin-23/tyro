@@ -8,6 +8,7 @@
 //#include <Eigen/Core>
 #include <atomic>
 #include "Wm5Transform.h"
+#include "RAEnginePrerequisites.h"
 
 namespace tyro
 {   
@@ -28,7 +29,7 @@ namespace tyro
         Window* m_tyro_window;
         ES2Renderer* m_gl_rend;
         iOSCamera* m_camera;
-        //ES2TextOverlaySPtr m_frame_overlay;
+        ES2TextOverlaySPtr m_frame_overlay;
         std::atomic<bool> m_need_rendering;
         //ShaderBoxSPtr m_shaderbox;
         void mouse_down(Window& window, int button, int modifier);
@@ -57,21 +58,29 @@ namespace tyro
           
         struct MGeometry 
         {
-            Eigen::MatrixXd V;;
-            Eigen::MatrixXi F;
-            Eigen::MatrixXd N;
+            Eigen::MatrixXd VS; 
+            Eigen::MatrixXd VT;
+            Eigen::MatrixXi FS;
+            Eigen::MatrixXi FT;
+            Eigen::MatrixXd NS;
+            Eigen::MatrixXd NT;
         };
-        MGeometry GEOMETRY;
+        MGeometry GEOMETRY;        
 
         struct MRenderData 
         {
-            IGLMeshSPtr mesh;
-            IGLMeshWireframeSPtr mesh_wire;
+            IGLMeshSPtr scan;
+            IGLMeshSPtr template_mesh;
+            IGLMeshWireframeSPtr scan_wire;
+            IGLMeshWireframeSPtr template_mesh_wire;
         };
         MRenderData RENDER;
 
-        std::vector<SpatialSPtr> ball_list;
-        std::vector<int> vid_list;
+            
+        std::vector<SpatialSPtr> ball_list_scan;
+        std::vector<int> vid_list_scan;
+        std::vector<SpatialSPtr> ball_list_template;
+        std::vector<int> vid_list_template;
 
 
         void register_console_function(const std::string& name,
@@ -80,8 +89,10 @@ namespace tyro
         void update_camera();
         void render();
         void DrawMeshes();
-        void add_vertex(int vid);
-        void addSphere(int vid, const Eigen::MatrixXd& V, Wm5::Vector4f color = Wm5::Vector4f(1,0,0,1), Wm5::Transform worldT = Wm5::Transform::IDENTITY);        
+        void add_vertex(int vid, bool isScan);
+        void addSphere(int vid, const Eigen::MatrixXd& V, Wm5::Vector4f color = Wm5::Vector4f(1,0,0,1), Wm5::Transform worldT = Wm5::Transform::IDENTITY, bool isScan=true);        
+        bool testScanClicked(Eigen::Vector2f& mouse_pos, int mouse_button, int modifier, int& fid, Eigen::Vector3f& bc);
+        bool testTemplateClicked(Eigen::Vector2f& mouse_pos, int mouse_button, int modifier, int& fid, Eigen::Vector3f& bc);
 
 
     };

@@ -172,7 +172,7 @@ namespace tyro
         
         double TimeNow();
         
-
+        
         int JoystickConnected();
         int JoystickAxes(std::map<std::string, double>& axes_map);
         int JoystickButtons(std::map<std::string, bool>& buttons_map);

@@ -73,7 +73,7 @@ int ES2Font::Init(const std::string& tffFontPath, float sizePnts, int ppi)
     }
     
     //Generate empty texture atlas
-    mAtlas = std::make_shared<ES2Texture2D>(Texture::TF_A8, atlas_width, atlas_height);
+    mAtlas = std::make_shared<ES2Texture2D>(Texture::TF_R8, atlas_width, atlas_height);
     mAtlas->LoadData(nullptr);
     mGlyphs = new GlyphInfo[128];
     

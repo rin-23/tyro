@@ -8,5 +8,5 @@ out vec4 fFragColor;
 
 void main()
 {
-    fFragColor = vec4(0, 0, 1, texture2D(uSampler, vTexcoord).a) * uColor;
+    fFragColor = vec4(0, 0, 1, texture(uSampler, vTexcoord).r) * uColor;
 }
