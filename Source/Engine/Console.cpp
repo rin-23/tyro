@@ -109,7 +109,9 @@ void Console::display(int scaling)
     if (m_font == 0)
     {
         glGenTextures(1, &m_font);
+        GL_CHECK_ERROR
         glBindTexture(GL_TEXTURE_2D, m_font);
+        GL_CHECK_ERROR
         int width, height, components=1;
         unsigned char* data = stbi_load_from_memory(g_png_data,
             int(g_png_size), &width, &height, &components, 1);
@@ -121,36 +123,55 @@ void Console::display(int scaling)
                 std::swap(*p++, *q++);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA8, width, height, 0,
             GL_ALPHA, GL_UNSIGNED_BYTE, data);
+            GL_CHECK_ERROR
         stbi_image_free(data);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        GL_CHECK_ERROR
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        GL_CHECK_ERROR
         glBindTexture(GL_TEXTURE_2D, 0);
+        GL_CHECK_ERROR
     }
     
     //setup matrices
     int vp[4];
     glGetIntegerv(GL_VIEWPORT, vp);
+    GL_CHECK_ERROR
     int width = vp[2];
     int height = vp[3];
 
     glMatrixMode(GL_PROJECTION);
+    GL_CHECK_ERROR
     glPushMatrix();
+    GL_CHECK_ERROR
     glLoadIdentity();
+    GL_CHECK_ERROR
     gluOrtho2D(0, width, 0, height);
+    GL_CHECK_ERROR
     glMatrixMode(GL_MODELVIEW);
+    GL_CHECK_ERROR
     glPushMatrix();
+    GL_CHECK_ERROR
     glLoadIdentity();
+    GL_CHECK_ERROR
 
     //gray background + separator
     glPushAttrib(GL_COLOR_BUFFER_BIT);
+    GL_CHECK_ERROR
     glPushAttrib(GL_ENABLE_BIT);
+    GL_CHECK_ERROR
     glEnable(GL_BLEND);
+    GL_CHECK_ERROR
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    GL_CHECK_ERROR
     glDisable(GL_LIGHTING);
+    GL_CHECK_ERROR
     glDisable(GL_DEPTH_TEST);
+    GL_CHECK_ERROR
     
     glColor4f(0.15f, 0.15f, 0.15f, 0.75f);
     glRecti(0, 0, width, height);
+    GL_CHECK_ERROR
 
     int current = 3;
 
@@ -158,17 +179,25 @@ void Console::display(int scaling)
     if (!m_is_executing)
     {
         glColor4f(1,1,0, 0.75f);
+        GL_CHECK_ERROR
         const int cx = int(m_caret*char_spacing*scaling) + char_spacing*scaling + 1;
         glRecti(cx, current, cx+char_spacing*scaling, current+2);
+        GL_CHECK_ERROR
     }
     glPopAttrib();
+    GL_CHECK_ERROR
     glPopAttrib();
+    GL_CHECK_ERROR
 
     //restore matrices
     glMatrixMode(GL_PROJECTION);
+    GL_CHECK_ERROR
     glPopMatrix();
+    GL_CHECK_ERROR
     glMatrixMode(GL_MODELVIEW);
+    GL_CHECK_ERROR
     glPopMatrix();
+    GL_CHECK_ERROR
 
     //draw command line
     if (!m_is_executing)
@@ -201,36 +230,45 @@ void Console::draw_text(int scaling, int cx, int cy,
 {
     //save OpenGL state
     glPushAttrib(GL_ENABLE_BIT);
+    GL_CHECK_ERROR
     glPushAttrib(GL_COLOR_BUFFER_BIT);
+    GL_CHECK_ERROR
     glPushAttrib(GL_DEPTH_BUFFER_BIT);
+    GL_CHECK_ERROR
 
     //setup texture mapping + blending
     glDisable(GL_DEPTH_TEST);
+    GL_CHECK_ERROR
     glDisable(GL_LIGHTING);
+    GL_CHECK_ERROR
     glEnable(GL_TEXTURE_2D);
+    GL_CHECK_ERROR
     glEnable(GL_BLEND);
+    GL_CHECK_ERROR
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    GL_CHECK_ERROR
 
     //setup matrices
     int vp[4];
     glGetIntegerv(GL_VIEWPORT, vp);
+    GL_CHECK_ERROR
     int width = vp[2];
     int height = vp[3];
 
     assert(width>0 && height>0);
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    gluOrtho2D(0, width, 0, height);
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
+    glMatrixMode(GL_PROJECTION);GL_CHECK_ERROR
+    glPushMatrix();GL_CHECK_ERROR
+    glLoadIdentity();GL_CHECK_ERROR
+    gluOrtho2D(0, width, 0, height);GL_CHECK_ERROR
+    glMatrixMode(GL_MODELVIEW);GL_CHECK_ERROR
+    glPushMatrix();GL_CHECK_ERROR
+    glLoadIdentity();GL_CHECK_ERROR
 
     //color + texture
-    glColor3f(r,g,b);
-    glBindTexture(GL_TEXTURE_2D, m_font);
+    glColor3f(r,g,b);GL_CHECK_ERROR
+    glBindTexture(GL_TEXTURE_2D, m_font);GL_CHECK_ERROR
 
-    glBegin(GL_QUADS);
+    glBegin(GL_QUADS);GL_CHECK_ERROR
     while (*buffer)
     {
         char c = *buffer++;
@@ -246,31 +284,31 @@ void Console::draw_text(int scaling, int cx, int cy,
         float tyl = (fy +  0.f) / 256.f;
         float tyu = (fy + 15.f) / 256.f;
 
-        glTexCoord2f(txl, tyl);
-        glVertex2i(cx +  0, cy +  1);
-        glTexCoord2f(txr, tyl);
-        glVertex2i(cx + 7 * scaling, cy +  1);
-        glTexCoord2f(txr, tyu);
-        glVertex2i(cx + 7 * scaling, cy +  16 * scaling);
-        glTexCoord2f(txl, tyu);
-        glVertex2i(cx +  0, cy +  16 * scaling);
+        glTexCoord2f(txl, tyl);GL_CHECK_ERROR
+        glVertex2i(cx +  0, cy +  1);GL_CHECK_ERROR
+        glTexCoord2f(txr, tyl);GL_CHECK_ERROR
+        glVertex2i(cx + 7 * scaling, cy +  1);GL_CHECK_ERROR
+        glTexCoord2f(txr, tyu);GL_CHECK_ERROR
+        glVertex2i(cx + 7 * scaling, cy +  16 * scaling);GL_CHECK_ERROR
+        glTexCoord2f(txl, tyu);GL_CHECK_ERROR
+        glVertex2i(cx +  0, cy +  16 * scaling);GL_CHECK_ERROR
 
         cx += char_spacing * scaling;
     }
-    glEnd();
+    glEnd();GL_CHECK_ERROR
 
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);GL_CHECK_ERROR
 
     //restore matrices
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);GL_CHECK_ERROR
+    glPopMatrix();GL_CHECK_ERROR
+    glMatrixMode(GL_MODELVIEW);GL_CHECK_ERROR
+    glPopMatrix();GL_CHECK_ERROR
 
     //and attributes
-    glPopAttrib();
-    glPopAttrib();
-    glPopAttrib();
+    glPopAttrib();GL_CHECK_ERROR
+    glPopAttrib();GL_CHECK_ERROR
+    glPopAttrib();GL_CHECK_ERROR
 }
 
 void Console::draw_textf(int scaling, int x, int y,

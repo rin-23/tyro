@@ -21,6 +21,7 @@
 #include <igl/unique_edge_map.h>
 #include <igl/unproject_onto_mesh.h>
 #include "RAES2StandardMesh.h"
+#include <igl/project.h>
 
 using namespace std;
 
@@ -141,8 +142,6 @@ namespace tyro
         {
             this->mouse_scroll(window, ydelta);
         };
-        
-
 
         m_state = App::State::Launched;
         // Loop until the user closes the window
@@ -157,21 +156,32 @@ namespace tyro
         //    m_tyro_window->Wait();
         //}
         FontManager* fManager = FontManager::GetSingleton();
-        float scale = 1;
-        float ppi = 144;
+        float scale = 2;
+        float ppi = 288;
         fManager->Setup(ppi, scale);
 
         ES2FontSPtr font = FontManager::GetSingleton()->GetSystemFontOfSize12();
-        std::string strrr("Framasdasdasdsaddasde 0/9000");
-        m_frame_overlay = ES2TextOverlay::Create(strrr, 
-                                                  Wm5::Vector2f(0, 0), 
-                                                  font, 
-                                                  Wm5::Vector4f(1,0,0,1), 
-                                                  viewport);
+        //std::string strrr("F");
+        // m_frame_overlay = ES2TextOverlay::Create(strrr, 
+        //                                          Wm5::Vector2f(0, 0), 
+        //                                          font, 
+        //                                          Wm5::Vector4f(1,0,0,1), 
+        //                                          viewport);
                                                  
         //m_frame_overlay->SetTranslate(Wm5::Vector2i(-viewport[2]/2 ,-viewport[3]/2 ));
+        //m_frame_overlay->SetText(strrr);
+        
+
+        std::string strrr("LOLL");// = std::to_string(cur_idx);//("Framasdasdasdsaddasde 0/9000");
+        m_frame_overlay = ES2TextOverlay::Create(strrr, 
+                                                Wm5::Vector2f(0, 0), 
+                                                font, 
+                                                Wm5::Vector4f(1,0,0,1), 
+                                                m_camera->GetViewport());
         m_frame_overlay->SetText(strrr);
         
+
+
         //m_shaderbox = ShaderBox::Create();
 
         // load obj file
@@ -182,25 +192,28 @@ namespace tyro
         std::vector<std::vector<int> > uE2E_S, uE2E_T;
 
         //std::string template_obj = "/Users/rinat/Workspace/TemplateDeform/data/sphere_temp.obj";
-        std::string template_obj = "/Users/rinat/Workspace/R3DS_Wrap_3.3.17_Linux/Models/Blendshapes/Basemesh_igl.obj";
-        igl::readOBJ(template_obj, GEOMETRY.VT,GEOMETRY.FT);
-        //tyro::load_mesh(template_obj, GEOMETRY.VT, GEOMETRY.NT, GEOMETRY.FT);
-        //igl::writeOBJ("/Users/rinat/Workspace/R3DS_Wrap_3.3.17_Linux/Models/Blendshapes/Basemesh_igl.obj", GEOMETRY.VT,GEOMETRY.FT);
+        //std::string template_obj = "/Users/rinat/Workspace/R3DS_Wrap_3.3.17_Linux/Models/HeadScans/Alex.obj";
+        //std::string template_obj = "/Users/rinat/Workspace/R3DS_Wrap_3.3.17_Linux/Models/Blendshapes/Basemesh_igl.obj";
+        std::string template_obj = "/Users/rinat/Workspace/R3DS_Wrap_3.3.17_Linux/Models/HandScans/Relaxed.obj"; //Basemeshes/WrapHand.obj";
+        //igl::readOBJ(template_obj, GEOMETRY.VT,GEOMETRY.FT);
+        tyro::load_mesh(template_obj, GEOMETRY.VT, GEOMETRY.NT, GEOMETRY.FT);
+        //igl::writeOBJ("/Users/rinat/Workspace/R3DS_Wrap_3.3.17_Linux/Models/Basemeshes/WrapHand_igl.obj", GEOMETRY.VT,GEOMETRY.FT);
         igl::per_vertex_normals(GEOMETRY.VT,GEOMETRY.FT,GEOMETRY.NT);
         igl::unique_edge_map(GEOMETRY.FT,E_T,UE_T,EMAP_T,uE2E_T);
         
+        std::string scan_obj = "/Users/rinat/Workspace/R3DS_Wrap_3.3.17_Linux/Models/HandScans/Relaxed.obj";
         //std::string scan_obj = "/Users/rinat/Workspace/R3DS_Wrap_3.3.17_Linux/Models/HeadScans/Alex.obj";
-        std::string scan_obj = "/Users/rinat/Workspace/R3DS_Wrap_3.3.17_Linux/Models/Blendshapes/LipsDisgust_igl.obj";
+        //std::string scan_obj = "/Users/rinat/Workspace/R3DS_Wrap_3.3.17_Linux/Models/Blendshapes/LipsDisgust_igl.obj";
         //std::string scan_obj = "/Users/rinat/Workspace/TemplateDeform/data/sphere_scan.obj";
         //tyro::load_mesh(obj_list, V, N, F, E, UE, EMAP);
         igl::readOBJ(scan_obj, GEOMETRY.VS,GEOMETRY.FS);
         //tyro::load_mesh(scan_obj, GEOMETRY.VS, GEOMETRY.NS, GEOMETRY.FS);
-        //igl::writeOBJ("/Users/rinat/Workspace/R3DS_Wrap_3.3.17_Linux/Models/Blendshapes/SmileClosed_igl.obj", GEOMETRY.VS,GEOMETRY.FS);
+        //igl::writeOBJ("/Users/rinat/Workspace/R3DS_Wrap_3.3.17_Linux/Models/HandScans/Relaxed_igl.obj", GEOMETRY.VS,GEOMETRY.FS);
         igl::per_vertex_normals(GEOMETRY.VS,GEOMETRY.FS,GEOMETRY.NS);
         igl::unique_edge_map(GEOMETRY.FS,E_S,UE_S,EMAP_S,uE2E_S);
 
         RENDER.scan = IGLMesh::Create(GEOMETRY.VS, GEOMETRY.FS, GEOMETRY.NS, Eigen::Vector3d(0,0,1));
-        RENDER.template_mesh = IGLMesh::Create(GEOMETRY.VT, GEOMETRY.FT, GEOMETRY.NT, Eigen::Vector3d(0,1,0));
+        RENDER.template_mesh = IGLMesh::Create(GEOMETRY.VT, GEOMETRY.FT, GEOMETRY.NT, Eigen::Vector3d(0,0,0.7));
 
         color_matrix(UE_T.rows(), Eigen::Vector3d(0.5,0.5,0.5), UEC_T);
         color_matrix(UE_S.rows(), Eigen::Vector3d(0.5,0.5,0.5), UEC_S);
@@ -227,12 +240,11 @@ namespace tyro
                 }
                 
                 // Draw console
-                // if (show_console) 
-                // {   
-                //     RA_LOG_INFO("lol");
-                //     glUseProgram(0);
-                //     m_console.display(1);
-                // }
+                if (show_console) 
+                {   
+                    glUseProgram(0);
+                    m_console.display(1);
+                }
                 // Poll for and process events
                 m_tyro_window->GetGLContext()->swapBuffers();
                 m_need_rendering = false;             
@@ -283,8 +295,14 @@ namespace tyro
         {   
             vis_set.Insert(object_sptr.get());
         }
+
+        for (auto object_sptr : vid_numbers_template) 
+        {      
+           // object_sptr->UpdateUniformsWithCamera(m_camera);
+            vis_set.Insert(object_sptr.get());
+        }
         
-        vis_set.Insert(m_frame_overlay.get());
+        //vis_set.Insert(m_frame_overlay.get());
         //vis_set.Insert(m_shaderbox.get());
         if (m_update_camera) 
         {
@@ -460,6 +478,17 @@ namespace tyro
                 outFile << vid << "\n";
             }
         }
+        if (key == TYRO_KEY_ENTER)
+        {
+            RA_LOG_INFO("save selected verticies");
+            auto path = std::string("/Users/rinat/Workspace/TemplateDeform/data/scan_points_facemesh.txt");
+
+            std::ofstream outFile(path);
+            for (const auto &vid : vid_list_template)
+            { 
+                outFile << vid << "\n";
+            }
+        }
         else if (key == TYRO_KEY_LEFT){ 
             m_console.key_left();
             render();}
@@ -569,7 +598,7 @@ namespace tyro
                 {       
                     Eigen::Vector3d vec = GEOMETRY.VS.row(vid);
                     RA_LOG_INFO("Picked face_id %i vertex_id %i coord %f %f %f", fid, vid, vec(0), vec(1), vec(2));
-                    addSphere(vid, GEOMETRY.VS, Wm5::Vector4f(0,1,0,1), RENDER.scan->WorldTransform);
+                    addSphere(vid, GEOMETRY.VS, Wm5::Vector4f(0,1,0,1), RENDER.scan->WorldTransform, true);
                     add_vertex(vid,true);
                 }  
                 else
@@ -604,7 +633,7 @@ namespace tyro
                     {       
                         Eigen::Vector3d vec = GEOMETRY.VT.row(vid);
                         RA_LOG_INFO("Picked face_id %i vertex_id %i coord %f %f %f", fid, vid, vec(0), vec(1), vec(2));
-                        addSphere(vid, GEOMETRY.VT, Wm5::Vector4f(0,1,0,1), RENDER.template_mesh->WorldTransform);
+                        addSphere(vid, GEOMETRY.VT, Wm5::Vector4f(0,1,0,1), RENDER.template_mesh->WorldTransform, false);
                         add_vertex(vid,false);
                     }  
                     else
@@ -644,7 +673,7 @@ namespace tyro
     void App::addSphere(int vid, const Eigen::MatrixXd& V, Wm5::Vector4f color, Wm5::Transform world, bool isScan) 
     {   
         Eigen::RowVector3d new_c = V.row(vid);
-        float m_ball_size = 0.5;
+        float m_ball_size = 0.12;
         ES2SphereSPtr object = ES2Sphere::Create(10, 10, m_ball_size);
         Wm5::Transform tr;
         tr.SetTranslate(Wm5::APoint(new_c(0), new_c(1), new_c(2)));
@@ -654,7 +683,47 @@ namespace tyro
         
         if (isScan)
             ball_list_scan.push_back(object);
-        else
-            ball_list_template.push_back(object);
+        else 
+        {
+            ball_list_template.push_back(object); 
+            addPointText(vid, V, color, isScan);
+        }
     }     
+
+    void App::addPointText(int vid, const Eigen::MatrixXd& V, Wm5::Vector4f color, bool isScan) 
+    {   
+        ES2FontSPtr font = FontManager::GetSingleton()->GetSystemFontOfSize12();
+        int cur_idx = vid_list_template.size();
+        std::string strrr = std::to_string(cur_idx);//("Framasdasdasdsaddasde 0/9000");
+        ES2TextOverlaySPtr text_num = ES2TextOverlay::Create(strrr, 
+                                                            Wm5::Vector2f(0, 0), 
+                                                            font, 
+                                                            Wm5::Vector4f(1,0,0,1), 
+                                                            m_camera->GetViewport());
+
+
+        // Wm5::HMatrix modelViewMatrix = m_camera->GetViewMatrix() * RENDER.template_mesh->WorldTransform.Matrix(); //TODO need on for scan
+        // Wm5::HMatrix projectMatrix = m_camera->GetProjectionMatrix();
+        // Eigen::Matrix4f e1 = Eigen::Map<Eigen::Matrix4f>(modelViewMatrix.mEntry);
+        // Eigen::Matrix4f e2 = Eigen::Map<Eigen::Matrix4f>(projectMatrix.mEntry);
+        // Eigen::Vector4f e3 = Eigen::Vector4f(m_camera->GetViewport()[0],
+        //                                      m_camera->GetViewport()[1],
+        //                                      m_camera->GetViewport()[2],
+        //                                      m_camera->GetViewport()[3]);
+        
+        //Eigen::Vector3f objj(V(vid,0),V(vid,1),V(vid,2));
+        Wm5::Vector3f wm5objj(V(vid,0),V(vid,1),V(vid,2));
+        // Eigen::Vector3f projectedPoint = igl::project(objj, e1, e2, e3);
+        // Wm5::Vector3f vv = m_camera->WorldToScreen(Wm5::Vector3f(V(vid,0),V(vid,1),V(vid,2)));
+        // RA_LOG_INFO("Add point %i text %f %f %f",vid, projectedPoint[0],projectedPoint[1], projectedPoint[2]);
+        // RA_LOG_INFO("Add point %i text %f %f %f",vid, vv[0],vv[1], vv[2]);
+        // // vv[0] = (vv[0] - e3[2]/2)/(e3[2]/2);
+        // vv[1] = (vv[1] - e3[3]/2)/(e3[3]/2);
+        //text_num->SetTranslate(Wm5::Vector2f(vv[0], vv[1]));
+        text_num->SetWorldPos(wm5objj);
+        text_num->SetText(strrr);
+        vid_numbers_template.push_back(text_num);
+    }
+    //todo: update rotation of points
+    //void App::updatePointText()
 }

@@ -1,33 +1,44 @@
 [submodule "Source/External/Choreograph"]
 	path = Source/External/Choreograph
 	url = git@github.com:sansumbrella/Choreograph.git
+	ignore=dirty
 [submodule "Source/External/tweeny"]
 	path = Source/External/tweeny
 	url = git@github.com:mobius3/tweeny.git
+	ignore=dirty
 [submodule "Source/External/tinyobjloader"]
 	path = Source/External/tinyobjloader
 	url = git@github.com:syoyo/tinyobjloader.git
+	ignore=dirty
 [submodule "Source/External/fast-cpp-csv-parser"]
 	path = Source/External/fast-cpp-csv-parser
 	url = git@github.com:ben-strasser/fast-cpp-csv-parser.git
+	ignore=dirty
 [submodule "Source/External/csv-parser"]
 	path = Source/External/csv-parser
 	url = git@github.com:AriaFallah/csv-parser.git
+	ignore=dirty
 [submodule "Source/External/imgui"]
 	path = Source/External/imgui
 	url = git@github.com:ocornut/imgui.git
+	ignore=dirty
 [submodule "Source/External/easyppm"]
 	path = Source/External/easyppm
 	url = git@github.com:fmenozzi/easyppm.git
+	ignore=dirty
 [submodule "Source/External/nanoflann"]
 	path = Source/External/nanoflann
 	url = git@github.com:jlblancoc/nanoflann.git
+	ignore=dirty
 [submodule "Source/External/cxxopts"]
 	path = Source/External/cxxopts
 	url = git@github.com:jarro2783/cxxopts.git
+	ignore=dirty
 [submodule "Source/External/stb"]
 	path = Source/External/stb
 	url = git@github.com:nothings/stb.git
+	ignore=dirty
 [submodule "Source/External/libigl"]
 	path = Source/External/libigl
 	url = https://github.com/libigl/libigl.git
+	ignore=dirty

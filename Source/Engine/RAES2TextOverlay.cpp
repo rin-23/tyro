@@ -91,47 +91,69 @@ void ES2TextOverlay::SetViewport (const Wm5::Vector4i& viewport)
     _UpdateGeometry();
 }
 
-void ES2TextOverlay::UpdateUniformsWithCamera(const Camera* camera)
+
+void ES2TextOverlay::UpdateUniformsWithCamera(const Camera* camera) 
 {
     GetVisualEffect()->GetUniforms()->UpdateFloatUniform(0, mColor);
     int uSampler = 0;
     GetVisualEffect()->GetUniforms()->UpdateIntUniform(1, &uSampler);
 
-//    Transform viewProjTransform;
-//    viewProjTransform.SetMatrix(camera->GetViewProjectionMatrix());
-//
-//    Vector3f wCorners[8];
-//    Vector2f sCorners[8];
-//    mSpatial->WorldBoundBox.ComputeVertices(wCorners);
-//    HMatrix VPMatrix = camera->GetViewProjectionMatrix();
-//    for (int i = 0; i < 8; i++)
-//    {
-//        APoint p = VPMatrix * APoint(wCorners[i]);
-//        sCorners[i] = Vector2f(p[0], p[1]);
-//    }
-//
-//    Wm5::AxisAlignedBox2f bbox;
-//    bbox.ComputeExtremes(8, sizeof(Vector2f), sCorners);
-//
-//    Vector2f center;
-//    float extent[2];
-//    bbox.GetCenterExtents(center, extent);
-//    Vector2f textPoint = center + Vector2f(extent[0], extent[1]);
-//    Transform tr;
-//    tr.SetTranslate(Vector3f(textPoint.X(), textPoint.Y(), 0));
-    
-//    Vector3f center = mSpatial->WorldBoundBox.GetCenter() + mSpatial->WorldBoundBox.GetHalfSize();
-//    center = (camera->GetViewProjectionMatrix() * APoint(center)).operator Wm5::Vector3<float> &();
-    
-    Wm5::Vector3f center = mWorldPos;
-    Wm5::APoint pCenter = (camera->GetViewProjectionMatrix() * Wm5::APoint(center));
-    pCenter.X() = pCenter.X()/pCenter.W();
-    pCenter.Y() = pCenter.Y()/pCenter.W();
+    Wm5::Vector3f vv = camera->WorldToScreen(mWorldPos);
+    //RA_LOG_INFO("Add point %i text %f %f %f",vid, projectedPoint[0],projectedPoint[1], projectedPoint[2]);
+    //RA_LOG_INFO("Add point %i text %f %f %f",vid, vv[0],vv[1], vv[2]);
+    Wm5::Vector4i e3 = camera->GetViewport();
+    vv[0] = (vv[0] - e3[2]/2.0)/(e3[2]/2.0);
+    vv[1] = (vv[1] - e3[3]/2.0)/(e3[3]/2.0);
+    this->SetTranslate(Wm5::Vector2f(vv[0], vv[1]));
     Wm5::Transform tr;
-    tr.SetTranslate(Wm5::Vector3f(pCenter.X(), pCenter.Y(), 0));
     tr = ScreenTransform;
-    GetVisualEffect()->GetUniforms()->UpdateFloatUniform(2, tr.Matrix().Transpose());
+
+     GetVisualEffect()->GetUniforms()->UpdateFloatUniform(2, tr.Matrix().Transpose());
+    //text_num->SetWorldPos(wm5objj);
+    //text_num->SetText(strrr);
+    //vid_numbers_template.push_back(text_num);
 }
+// void ES2TextOverlay::UpdateUniformsWithCamera(const Camera* camera)
+// {
+//     GetVisualEffect()->GetUniforms()->UpdateFloatUniform(0, mColor);
+//     int uSampler = 0;
+//     GetVisualEffect()->GetUniforms()->UpdateIntUniform(1, &uSampler);
+
+// //    Transform viewProjTransform;
+// //    viewProjTransform.SetMatrix(camera->GetViewProjectionMatrix());
+// //
+// //    Vector3f wCorners[8];
+// //    Vector2f sCorners[8];
+// //    mSpatial->WorldBoundBox.ComputeVertices(wCorners);
+// //    HMatrix VPMatrix = camera->GetViewProjectionMatrix();
+// //    for (int i = 0; i < 8; i++)
+// //    {
+// //        APoint p = VPMatrix * APoint(wCorners[i]);
+// //        sCorners[i] = Vector2f(p[0], p[1]);
+// //    }
+// //
+// //    Wm5::AxisAlignedBox2f bbox;
+// //    bbox.ComputeExtremes(8, sizeof(Vector2f), sCorners);
+// //
+// //    Vector2f center;
+// //    float extent[2];
+// //    bbox.GetCenterExtents(center, extent);
+// //    Vector2f textPoint = center + Vector2f(extent[0], extent[1]);
+// //    Transform tr;
+// //    tr.SetTranslate(Vector3f(textPoint.X(), textPoint.Y(), 0));
+    
+// //    Vector3f center = mSpatial->WorldBoundBox.GetCenter() + mSpatial->WorldBoundBox.GetHalfSize();
+// //    center = (camera->GetViewProjectionMatrix() * APoint(center)).operator Wm5::Vector3<float> &();
+    
+//     Wm5::Vector3f center = mWorldPos;
+//     Wm5::APoint pCenter = (camera->GetViewProjectionMatrix() * Wm5::APoint(center));
+//     pCenter.X() = pCenter.X()/pCenter.W();
+//     pCenter.Y() = pCenter.Y()/pCenter.W();
+//     Wm5::Transform tr;
+//     tr.SetTranslate(Wm5::Vector3f(pCenter.X(), pCenter.Y(), 0));
+//     tr = ScreenTransform;
+//     GetVisualEffect()->GetUniforms()->UpdateFloatUniform(2, tr.Matrix().Transpose());
+// }
 
 void ES2TextOverlay::_UpdateGeometry()
 {

@@ -11,6 +11,7 @@
             "program": "${workspaceFolder}/build/tyro",
             "args": [],
             "stopAtEntry": false,
+            "preLaunchTask": "tyro_build",
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,

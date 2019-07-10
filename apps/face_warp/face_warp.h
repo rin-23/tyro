@@ -81,6 +81,7 @@ namespace tyro
         std::vector<int> vid_list_scan;
         std::vector<SpatialSPtr> ball_list_template;
         std::vector<int> vid_list_template;
+        std::vector<ES2TextOverlaySPtr> vid_numbers_template;
 
 
         void register_console_function(const std::string& name,
@@ -90,11 +91,11 @@ namespace tyro
         void render();
         void DrawMeshes();
         void add_vertex(int vid, bool isScan);
-        void addSphere(int vid, const Eigen::MatrixXd& V, Wm5::Vector4f color = Wm5::Vector4f(1,0,0,1), Wm5::Transform worldT = Wm5::Transform::IDENTITY, bool isScan=true);        
+        void addSphere(int vid, const Eigen::MatrixXd& V, Wm5::Vector4f color, Wm5::Transform worldT, bool isScan);        
         bool testScanClicked(Eigen::Vector2f& mouse_pos, int mouse_button, int modifier, int& fid, Eigen::Vector3f& bc);
         bool testTemplateClicked(Eigen::Vector2f& mouse_pos, int mouse_button, int modifier, int& fid, Eigen::Vector3f& bc);
 
-
+        void addPointText(int vid, const Eigen::MatrixXd& V, Wm5::Vector4f color, bool isScan);
     };
 
     
