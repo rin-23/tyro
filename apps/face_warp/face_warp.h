@@ -40,6 +40,7 @@ namespace tyro
         void key_pressed(Window& window, unsigned int key, int modifiers); 
         void key_down(Window& window, unsigned int key, int modifiers); 
         void selectVertex(Eigen::Vector2f& mouse_pos, int mouse_button, int modifier);
+        void calculateEigs();
 
         bool mouse_is_down;
         int gesture_state; 
@@ -62,6 +63,7 @@ namespace tyro
             Eigen::MatrixXd VT;
             Eigen::MatrixXi FS;
             Eigen::MatrixXi FT;
+            Eigen::MatrixXi TT;
             Eigen::MatrixXd NS;
             Eigen::MatrixXd NT;
         };
@@ -69,9 +71,9 @@ namespace tyro
 
         struct MRenderData 
         {
-            IGLMeshSPtr scan;
-            IGLMeshSPtr template_mesh;
-            IGLMeshWireframeSPtr scan_wire;
+            // IGLMeshSPtr scan;
+            MuscleMeshSPtr template_mesh;
+            // IGLMeshWireframeSPtr scan_wire;
             IGLMeshWireframeSPtr template_mesh_wire;
         };
         MRenderData RENDER;

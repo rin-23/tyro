@@ -22,10 +22,23 @@
 #include <igl/unproject_onto_mesh.h>
 #include "RAES2StandardMesh.h"
 #include <igl/project.h>
+#include <igl/eigs.h>
+#include <igl/cotmatrix.h>
+#include <igl/massmatrix.h>
+#include <igl/read_triangle_mesh.h>
+#include <igl/adjacency_matrix.h>
+#include <igl/matlab_format.h>
+#include <igl/bfs.h>
+#include <igl/serialize.h>
+
+#include <ctime>
+#include "muslemesh.h"
+#include <igl/readMESH.h>
 
 using namespace std;
 
 using Wm5::APoint;
+using namespace Eigen;
 
 namespace tyro
 {   
@@ -78,6 +91,177 @@ namespace tyro
             delete m_camera;
     }
     
+    // split tets in TT into triangles so you can visualize them
+    // output triangular mesh with colors per vertex or per face
+    void 
+    triangulate_tets(const Eigen::MatrixXi& TT,  // tets #T by 4
+                     const Eigen::MatrixXd& TV,  // tet verticies #TV by 3
+                     const Eigen::MatrixXd& TC,  // (optional) per vertex or per-tet colors #T|#TV by 3
+                     const Eigen::MatrixXi& TI,  // (optional) only use subset of TT. If 1 te
+                     const Eigen::VectorXd& TD,  // #TV by 3 diffusion values per vertex
+                     Eigen::MatrixXd& V,         // resulting verticies #V by 3
+                     Eigen::MatrixXi& F,         // resulting triangular faces #F by 3
+                     Eigen::MatrixXd& C,         // (optional if TC is not empty) resulting per-vertex or per face colors #F|#V by 3
+                     Eigen::VectorXd& D,         // #V by 3 diffusion values per vertex
+                     bool perfacecolor)          // (ignored if TC is empty) if true then TC and C will contain per face colors, otherwise per-vertex
+    {
+        using namespace std;
+        using namespace Eigen;
+    
+        if (TI.size()==0) 
+        {
+            int numtets = TT.rows();
+            V.resize(numtets*4,3);
+            D.resize(V.rows());
+            // if (perfacecolor)
+            if (TC.size() > 0)
+                C.resize(numtets*4,3);
+            // else
+                // C.resize(numtets*4,3);
+            
+            F.resize(numtets*4,3);
+                
+            for (unsigned i=0; i<numtets;++i)
+            {
+                V.row(i*4+0) = TV.row(TT(i,0));
+                V.row(i*4+1) = TV.row(TT(i,1));
+                V.row(i*4+2) = TV.row(TT(i,2));
+                V.row(i*4+3) = TV.row(TT(i,3));
+
+                D.row(i*4+0) = TD.row(TT(i,0));
+                D.row(i*4+1) = TD.row(TT(i,1));
+                D.row(i*4+2) = TD.row(TT(i,2));
+                D.row(i*4+3) = TD.row(TT(i,3));
+
+                if (TC.size() > 0 && i < TC.rows()) 
+                {
+                    if (perfacecolor) 
+                    {
+                        C.row(i*4+0) = TC.row(i);
+                        C.row(i*4+1) = TC.row(i);
+                        C.row(i*4+2) = TC.row(i);
+                        C.row(i*4+3) = TC.row(i);        
+                    }
+                    else 
+                    {
+                        C.row(i*4+0) = TC.row(TT(i,0));
+                        C.row(i*4+1) = TC.row(TT(i,1));
+                        C.row(i*4+2) = TC.row(TT(i,2));
+                        C.row(i*4+3) = TC.row(TT(i,3));
+                    }
+                }
+
+                F.row(i*4+0) << (i*4)+0, (i*4)+1, (i*4)+3;
+                F.row(i*4+1) << (i*4)+0, (i*4)+2, (i*4)+1;
+                F.row(i*4+2) << (i*4)+3, (i*4)+2, (i*4)+0;
+                F.row(i*4+3) << (i*4)+1, (i*4)+2, (i*4)+3;
+            }  
+        }
+        else 
+        {
+            int numtets = TI.rows();
+            V.resize(numtets*4,3);
+            // if (perfacecolor)
+            if (TC.size() > 0)
+                C.resize(numtets*4,3);
+            // else
+                // C.resize(numtets*4,3);
+            
+            F.resize(numtets*4,3);
+                
+            for (unsigned i=0; i<numtets;++i)
+            {   
+                auto rowidx = TI(i);
+                auto v = TT.row(rowidx);
+                V.row(i*4+0) = TV.row(v(0));
+                V.row(i*4+1) = TV.row(v(1));
+                V.row(i*4+2) = TV.row(v(2));
+                V.row(i*4+3) = TV.row(v(3));
+
+                D.row(i*4+0) = TD.row(TT(i,0));
+                D.row(i*4+1) = TD.row(TT(i,1));
+                D.row(i*4+2) = TD.row(TT(i,2));
+                D.row(i*4+3) = TD.row(TT(i,3));
+
+
+                if (TC.size() > 0 && rowidx < TC.rows()) 
+                {
+                    if (perfacecolor) 
+                    {
+                        C.row(i*4+0) = TC.row(rowidx);
+                        C.row(i*4+1) = TC.row(rowidx);
+                        C.row(i*4+2) = TC.row(rowidx);
+                        C.row(i*4+3) = TC.row(rowidx);        
+                    }
+                    else 
+                    {
+                        C.row(i*4+0) = TC.row(v(0));
+                        C.row(i*4+1) = TC.row(v(1));
+                        C.row(i*4+2) = TC.row(v(2));
+                        C.row(i*4+3) = TC.row(v(3));
+                    }
+                }
+
+                F.row(i*4+0) << (i*4)+0, (i*4)+1, (i*4)+3;
+                F.row(i*4+1) << (i*4)+0, (i*4)+2, (i*4)+1;
+                F.row(i*4+2) << (i*4)+3, (i*4)+2, (i*4)+0;
+                F.row(i*4+3) << (i*4)+1, (i*4)+2, (i*4)+3;
+            }  
+        }
+    }
+
+
+    void
+    max_curve_values(const Eigen::MatrixXi& TT, // tets
+                     const Eigen::MatrixXd& BC, // diffused vector values for each vertex
+                     Eigen::VectorXd& MV,       // the diffusion value of the muscle a vertex belongs to
+                     Eigen::VectorXi& MC,       // index of the curve that the vertex belongs to
+                     Eigen::VectorXi& MT)       // index of the curve that the tet belongs to
+    { 
+        #define DEBUG_max_curve_values 0
+        
+        MT.resize(TT.rows());
+        MC.resize(BC.rows());              
+        MV.resize(BC.rows());              
+
+        for (int i=0;i<TT.rows();++i)
+        {   
+            int maxidx = -1;
+            double maxval = -1;
+            for (int j=0; j < TT.cols(); j++) 
+            {
+                int vidx = TT(i,j);
+                VectorXd::Index cmaxcol;
+                double cmaxval = BC.row(vidx).maxCoeff(&cmaxcol);
+                if (cmaxval > maxval) 
+                {
+                    maxval=cmaxval;
+                    maxidx=cmaxcol;
+                }
+            }
+
+            assert(maxidx>=0);
+            MT(i) = maxidx;
+            
+            
+            // MatrixXd::Index maxcol;
+            // BC.row(i).maxCoeff(&maxcol);
+            // MC(i) = maxcol;
+        }
+
+        for (int i=0;i<BC.rows();++i)
+        {
+            MatrixXd::Index maxcol;
+            double maxval = BC.row(i).maxCoeff(&maxcol);
+            MC(i) = maxcol;
+            MV(i) = maxval;
+        }
+
+        #if DEBUG_max_curve_values
+        std::cerr<<igl::matlab_format(MC,"MC")<<std::endl;
+        #endif          
+    }
+
     int App::Launch()
     {   
         RA_LOG_INFO("Launching the app");
@@ -95,17 +279,6 @@ namespace tyro
         Wm5::Vector4i viewport(0, 0, v_width, v_height);
         m_camera = new iOSCamera(Wm5::APoint(0,0,0), 1.0, 1.0, 2, viewport, true);
         
-        /* m_timeline = new Timeline(40, 300);
-        m_timeline->frameChanged = [&](Timeline& timeline, int frame)->void 
-        {   
-            //RA_LOG_INFO("Frame Change BEGIN");
-            m_frame = frame;
-            m_need_rendering = true;
-            glfwPostEmptyEvent();
-            //RA_LOG_INFO("Frame Change END");
-        };
-        */
-       
         //set up window callbacks
         //@TODO use std::bind instead
         m_tyro_window->callback_mouse_down = [&](Window& window, int button, int modifier)->bool 
@@ -145,44 +318,21 @@ namespace tyro
 
         m_state = App::State::Launched;
         // Loop until the user closes the window
-       // m_tyro_window->GetGLContext()->swapBuffers();
+        // m_tyro_window->GetGLContext()->swapBuffers();
         
         m_need_rendering = true;
         //render(); //do initial render
 
-        //while (!m_tyro_window->ShouldClose()) 
-       // {
-            //RA_LOG_INFO("Looping GLFW");
-        //    m_tyro_window->Wait();
-        //}
-        FontManager* fManager = FontManager::GetSingleton();
-        float scale = 2;
-        float ppi = 288;
-        fManager->Setup(ppi, scale);
 
-        ES2FontSPtr font = FontManager::GetSingleton()->GetSystemFontOfSize12();
-        //std::string strrr("F");
+        // std::string strrr("LOLL");// = std::to_string(cur_idx);//("Framasdasdasdsaddasde 0/9000");
         // m_frame_overlay = ES2TextOverlay::Create(strrr, 
-        //                                          Wm5::Vector2f(0, 0), 
-        //                                          font, 
-        //                                          Wm5::Vector4f(1,0,0,1), 
-        //                                          viewport);
-                                                 
-        //m_frame_overlay->SetTranslate(Wm5::Vector2i(-viewport[2]/2 ,-viewport[3]/2 ));
-        //m_frame_overlay->SetText(strrr);
+        //                                         Wm5::Vector2f(0, 0), 
+        //                                         font, 
+        //                                         Wm5::Vector4f(1,0,0,1), 
+        //                                         m_camera->GetViewport());
+        // m_frame_overlay->SetText(strrr);
         
 
-        std::string strrr("LOLL");// = std::to_string(cur_idx);//("Framasdasdasdsaddasde 0/9000");
-        m_frame_overlay = ES2TextOverlay::Create(strrr, 
-                                                Wm5::Vector2f(0, 0), 
-                                                font, 
-                                                Wm5::Vector4f(1,0,0,1), 
-                                                m_camera->GetViewport());
-        m_frame_overlay->SetText(strrr);
-        
-
-
-        //m_shaderbox = ShaderBox::Create();
 
         // load obj file
         //Eigen::MatrixXd V,N; // Vertex data. 3*num_vert by num_frames. 
@@ -194,37 +344,84 @@ namespace tyro
         //std::string template_obj = "/Users/rinat/Workspace/TemplateDeform/data/sphere_temp.obj";
         //std::string template_obj = "/Users/rinat/Workspace/R3DS_Wrap_3.3.17_Linux/Models/HeadScans/Alex.obj";
         //std::string template_obj = "/Users/rinat/Workspace/R3DS_Wrap_3.3.17_Linux/Models/Blendshapes/Basemesh_igl.obj";
-        std::string template_obj = "/Users/rinat/Workspace/R3DS_Wrap_3.3.17_Linux/Models/HandScans/Relaxed.obj"; //Basemeshes/WrapHand.obj";
+
+        // GEOMETRY.VT, GEOMETRY.NT, GEOMETRY.FT
+        Eigen::MatrixXd V_temp;
+        Eigen::MatrixXd C_temp;
+        Eigen::MatrixXi F_temp;
+        Eigen::MatrixXi T_temp;
+        Eigen::MatrixXd TC, CC; 
+        Eigen::MatrixXi TI; 
+        Eigen::MatrixXi TBF;
+
+        /*
+         * LOAD TET MESH
+         */
+        std::string tetmeshpath= "/Users/rinat/Workspace/MuscleGeometrySrc/src/muscle_meshes/dino/boneskin_coarse3.mesh";
+        igl::readMESH(tetmeshpath, V_temp, T_temp, F_temp);
+
+        /*
+         *  COMPUTE BOUNDARY OF THE FACE
+         */
+        // igl::boundary_facets(T_temp, TBF); // boundary faces
+
+        /*
+         * LOAD DIFFUSED VALUES
+         */
+        int max3dsize;
+        glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE, &max3dsize);
+        Eigen::MatrixXd Z;
+        igl::deserialize(Z, "Z", "/Users/rinat/Workspace/MuscleGeometrySrc/src/muscle_meshes/dino/Z");
+        assert(Z.rows()>0);
+        Eigen::VectorXd MV, MV2;
+        Eigen::VectorXi MC;
+        Eigen::VectorXi MT;
+
+        MV = Z.col(1);        
+        triangulate_tets(T_temp, V_temp, TC, TI, MV, GEOMETRY.VT, GEOMETRY.FT, CC, MV2, true);
+        // igl::per_vertex_normals(GEOMETRY.VT,GEOMETRY.FT,GEOMETRY.NT);
+        igl::per_face_normals(GEOMETRY.VT, GEOMETRY.FT, GEOMETRY.NT);
+
+        
+        #if 0
+        std::cerr<<igl::matlab_format(Z,"Z")<<std::endl;
+        #endif   
+
+        // std::string template_obj = "/Users/rinat/Workspace/MuscleGeometrySrc/src/muscle_meshes/cylinder.obj"; //Basemeshes/WrapHand.obj";
         //igl::readOBJ(template_obj, GEOMETRY.VT,GEOMETRY.FT);
-        tyro::load_mesh(template_obj, GEOMETRY.VT, GEOMETRY.NT, GEOMETRY.FT);
+        // tyro::load_mesh(template_obj, GEOMETRY.VT, GEOMETRY.NT, GEOMETRY.FT);
         //igl::writeOBJ("/Users/rinat/Workspace/R3DS_Wrap_3.3.17_Linux/Models/Basemeshes/WrapHand_igl.obj", GEOMETRY.VT,GEOMETRY.FT);
-        igl::per_vertex_normals(GEOMETRY.VT,GEOMETRY.FT,GEOMETRY.NT);
+        // igl::per_vertex_normals(GEOMETRY.VT,GEOMETRY.FT,GEOMETRY.NT);
         igl::unique_edge_map(GEOMETRY.FT,E_T,UE_T,EMAP_T,uE2E_T);
         
-        std::string scan_obj = "/Users/rinat/Workspace/R3DS_Wrap_3.3.17_Linux/Models/HandScans/Relaxed.obj";
+        std::string scan_obj = "/Users/rinat/Workspace/MuscleGeometrySrc/src/muscle_meshes/cylinder.obj";
         //std::string scan_obj = "/Users/rinat/Workspace/R3DS_Wrap_3.3.17_Linux/Models/HeadScans/Alex.obj";
         //std::string scan_obj = "/Users/rinat/Workspace/R3DS_Wrap_3.3.17_Linux/Models/Blendshapes/LipsDisgust_igl.obj";
         //std::string scan_obj = "/Users/rinat/Workspace/TemplateDeform/data/sphere_scan.obj";
         //tyro::load_mesh(obj_list, V, N, F, E, UE, EMAP);
-        igl::readOBJ(scan_obj, GEOMETRY.VS,GEOMETRY.FS);
+        // igl::readOBJ(scan_obj, GEOMETRY.VS,GEOMETRY.FS);
         //tyro::load_mesh(scan_obj, GEOMETRY.VS, GEOMETRY.NS, GEOMETRY.FS);
         //igl::writeOBJ("/Users/rinat/Workspace/R3DS_Wrap_3.3.17_Linux/Models/HandScans/Relaxed_igl.obj", GEOMETRY.VS,GEOMETRY.FS);
-        igl::per_vertex_normals(GEOMETRY.VS,GEOMETRY.FS,GEOMETRY.NS);
-        igl::unique_edge_map(GEOMETRY.FS,E_S,UE_S,EMAP_S,uE2E_S);
+        // igl::per_vertex_normals(GEOMETRY.VS,GEOMETRY.FS,GEOMETRY.NS);
+        // igl::unique_edge_map(GEOMETRY.FS,E_S,UE_S,EMAP_S,uE2E_S);
 
-        RENDER.scan = IGLMesh::Create(GEOMETRY.VS, GEOMETRY.FS, GEOMETRY.NS, Eigen::Vector3d(0,0,1));
-        RENDER.template_mesh = IGLMesh::Create(GEOMETRY.VT, GEOMETRY.FT, GEOMETRY.NT, Eigen::Vector3d(0,0,0.7));
+        // RENDER.scan = IGLMesh::Create(GEOMETRY.VS, GEOMETRY.FS, GEOMETRY.NS, Eigen::Vector3d(0,0,1));
+        // RENDER.template_mesh = IGLMesh::Create(GEOMETRY.VT, GEOMETRY.FT, GEOMETRY.NT, Eigen::Vector3d(0,0,0.7));
+        assert(GEOMETRY.VT.rows() == MV2.rows());
+        RENDER.template_mesh = MuscleMesh::Create(GEOMETRY.VT, GEOMETRY.FT, GEOMETRY.NT, MV2);
 
         color_matrix(UE_T.rows(), Eigen::Vector3d(0.5,0.5,0.5), UEC_T);
         color_matrix(UE_S.rows(), Eigen::Vector3d(0.5,0.5,0.5), UEC_S);
 
-        RENDER.scan_wire = IGLMeshWireframe::Create(GEOMETRY.VS, UE_S, UEC_S);
+        // RENDER.scan_wire = IGLMeshWireframe::Create(GEOMETRY.VS, UE_S, UEC_S);
         RENDER.template_mesh_wire = IGLMeshWireframe::Create(GEOMETRY.VT, UE_T, UEC_T);
+        RENDER.template_mesh_wire->Visible = true;
         
-        RENDER.scan->Visible = false;
-        RENDER.scan_wire->Visible = false;
+        // RENDER.scan->Visible = false;
+        // RENDER.scan_wire->Visible = false;
         m_update_camera = true;
         m_state = App::State::LoadedModel;
+
 
         while (!m_tyro_window->ShouldClose())
         {   
@@ -258,6 +455,56 @@ namespace tyro
 	    return 0;
     }
 
+    void App::calculateEigs() 
+    {
+        Eigen::MatrixXd V,U;
+        Eigen::MatrixXi F;
+        using namespace Eigen;
+        using namespace std;
+        using namespace igl;
+        
+        VectorXd D;
+        if(!read_triangle_mesh("/Users/rinat/Workspace/TemplateDeform/data/WrapHand_igl2.obj",V,F))
+        {
+            cout<<"failed to load mesh"<<endl;
+            return;
+        }
+
+        Eigen::SparseMatrix<double> A;
+        igl::adjacency_matrix(F,A);
+        std::vector<int> a1,a2;
+        
+        // clock_t begin = clock();
+
+        // for (int i=0; i < V.rows(); ++i) 
+        // {
+        //     igl::bfs(A,i,a1,a2);    
+        // }
+
+        // clock_t end = clock();
+        // double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+        // cout<<"Time "<< elapsed_secs << endl;
+        
+        clock_t begin2 = clock();
+        SparseMatrix<double> L,M;
+        cotmatrix(V,F,L);   
+        L = (-L).eval();
+        massmatrix(V,F,MASSMATRIX_TYPE_DEFAULT,M);
+        const size_t k = 20;
+        cout<<"Eigs started."<<endl;
+        if(!eigs(L,M,k+1,EIGS_TYPE_SM,U,D))
+        {
+            cout<<"Eigs failed."<<endl;
+        }
+        else 
+        {
+            cout<<D<<endl;
+            cout<<"Eigs done"<<endl;
+        }
+        clock_t end2 = clock();
+        double elapsed_secs2 = double(end2 - begin2) / CLOCKS_PER_SEC;
+        cout<<"Time "<< elapsed_secs2 << endl;
+    }
     
     void App::DrawMeshes() 
     {
@@ -270,17 +517,17 @@ namespace tyro
         //fstr =fstr+ std::string(" Scene ") + std::to_string(scene_id);
         //m_frame_overlay->SetText(fstr);
         
-        RENDER.scan->Update(true);
-        if (RENDER.scan->Visible)
-            vis_set.Insert(RENDER.scan.get());
+        // RENDER.scan->Update(true);
+        // if (RENDER.scan->Visible)
+        //     vis_set.Insert(RENDER.scan.get());
 
         RENDER.template_mesh->Update(true);
         if (RENDER.template_mesh->Visible) 
             vis_set.Insert(RENDER.template_mesh.get());
         
-        RENDER.scan_wire->Update(true);
-        if (RENDER.scan_wire->Visible)
-            vis_set.Insert(RENDER.scan_wire.get());
+        // RENDER.scan_wire->Update(true);
+        // if (RENDER.scan_wire->Visible)
+        //     vis_set.Insert(RENDER.scan_wire.get());
 
         RENDER.template_mesh_wire->Update(true);
         if (RENDER.template_mesh_wire->Visible)
@@ -322,7 +569,7 @@ namespace tyro
     void App::update_camera() 
     {
         //setup camera
-        AxisAlignedBBox WorldBoundBox = RENDER.scan->WorldBoundBox;
+        AxisAlignedBBox WorldBoundBox = RENDER.template_mesh->WorldBoundBox;
         Wm5::APoint world_center = WorldBoundBox.GetCenter();
         float radius = std::abs(WorldBoundBox.GetRadius()*5);
         int v_width, v_height;
@@ -434,7 +681,7 @@ namespace tyro
         //m_camera->SetAspect(aspect);
         //m_camera->SetViewport(viewport);
         
-        render();
+        render();   
     }
 
 
@@ -445,7 +692,8 @@ namespace tyro
         if (key == '`') 
         {   
             //RA_LOG_INFO("Pressed %c", key);
-            show_console = !show_console;
+            RENDER.template_mesh_wire->Visible = !RENDER.template_mesh_wire->Visible;
+            // show_console = !show_console;
             render();
             return;
         }
@@ -519,7 +767,7 @@ namespace tyro
 
     bool App::testScanClicked(Eigen::Vector2f& mouse_pos, int mouse_button, int modifier, int& fid, Eigen::Vector3f& bc) 
     {
-        Wm5::HMatrix modelViewMatrix = m_camera->GetViewMatrix() * RENDER.scan->WorldTransform.Matrix();
+        Wm5::HMatrix modelViewMatrix = m_camera->GetViewMatrix(); // * RENDER.scan->WorldTransform.Matrix();
         Wm5::HMatrix projectMatrix = m_camera->GetProjectionMatrix();
         Eigen::Matrix4f e1 = Eigen::Map<Eigen::Matrix4f>(modelViewMatrix.mEntry);
         Eigen::Matrix4f e2 = Eigen::Map<Eigen::Matrix4f>(projectMatrix.mEntry);
@@ -580,8 +828,8 @@ namespace tyro
         int fid;
         Eigen::Vector3f bc;
         bool hitScan = false;
-        if (RENDER.scan->Visible == true) 
-            hitScan = testScanClicked(mouse_pos, mouse_button, modifier, fid, bc);
+        // if (RENDER.scan->Visible == true) 
+        //     hitScan = testScanClicked(mouse_pos, mouse_button, modifier, fid, bc);
         
         if (hitScan) 
         {
@@ -598,7 +846,7 @@ namespace tyro
                 {       
                     Eigen::Vector3d vec = GEOMETRY.VS.row(vid);
                     RA_LOG_INFO("Picked face_id %i vertex_id %i coord %f %f %f", fid, vid, vec(0), vec(1), vec(2));
-                    addSphere(vid, GEOMETRY.VS, Wm5::Vector4f(0,1,0,1), RENDER.scan->WorldTransform, true);
+                    // addSphere(vid, GEOMETRY.VS, Wm5::Vector4f(0,1,0,1), RENDER.scan->WorldTransform, true);
                     add_vertex(vid,true);
                 }  
                 else

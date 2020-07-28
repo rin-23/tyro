@@ -76,6 +76,7 @@ namespace tyro
     class ShaderBox;
     class OpenFaceTexture;
     class IGLMeshTwo;
+    class MuscleMesh;
     
     using DepthProxySPtr = std::shared_ptr<DepthProxy>;
     using DepthProxyWPtr = std::weak_ptr<DepthProxy>;
@@ -189,6 +190,12 @@ namespace tyro
     using IGLMeshSPtr = std::shared_ptr<IGLMesh>;
     using IGLMeshUPtr = std::unique_ptr<IGLMesh>;
     using IGLMeshWPtr = std::weak_ptr<IGLMesh>;
+
+
+    using MuscleMeshSPtr = std::shared_ptr<MuscleMesh>;
+    using MuscleMeshUPtr = std::unique_ptr<MuscleMesh>;
+    using MuscleMeshWPtr = std::weak_ptr<MuscleMesh>;
+
 
     using IGLMeshWireframeSPtr = std::shared_ptr<IGLMeshWireframe>;
     using IGLMeshWireframeUPtr = std::unique_ptr<IGLMeshWireframe>;
