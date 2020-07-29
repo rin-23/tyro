@@ -39,17 +39,18 @@ namespace tyro
         ES2VisualEffectSPtr VisualEffect()
         {
             ES2ShaderProgram* shader = new ES2ShaderProgram();
-            shader->LoadProgram(GetFilePath("Muscle", "vsh"), GetFilePath("Muscle", "fsh"));
+            shader->LoadProgram(GetFilePath("Muscle", "vs"), GetFilePath("Muscle", "fs"));
             
             ES2VertexFormat* vertexFormat = new ES2VertexFormat(3);
             vertexFormat->SetAttribute(0, shader->GetAttributeLocation("aPosition"), 0, ES2VertexFormat::AT_FLOAT3, ES2VertexFormat::AU_POSITION);
             vertexFormat->SetAttribute(1, shader->GetAttributeLocation("aNormal"), vertexFormat->GetOffsetForNextAttrib(0), ES2VertexFormat::AT_FLOAT3, ES2VertexFormat::AU_NORMAL);
             vertexFormat->SetAttribute(2, shader->GetAttributeLocation("aDiffusion"), vertexFormat->GetOffsetForNextAttrib(1), ES2VertexFormat::AT_FLOAT1, ES2VertexFormat::AU_BLENDWEIGHT_1);
             
-            ES2ShaderUniforms* uniforms = new ES2ShaderUniforms(3);
+            ES2ShaderUniforms* uniforms = new ES2ShaderUniforms(4);
             uniforms->SetUniform(0, shader->GetUniformLocation("uMVPMatrix"), 1, "uMVPMatrix", ES2ShaderUniforms::UniformMatrix4fv);
             uniforms->SetUniform(1, shader->GetUniformLocation("uNMatrix"), 1, "uNMatrix", ES2ShaderUniforms::UniformMatrix3fv);
             uniforms->SetUniform(2, shader->GetUniformLocation("uColor"), 1, "uColor", ES2ShaderUniforms::Uniform4fv);
+            uniforms->SetUniform(3, shader->GetUniformLocation("uMVMatrix"), 1, "uMVMatrix", ES2ShaderUniforms::UniformMatrix4fv);
             
             ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms));
 
@@ -150,6 +151,7 @@ namespace tyro
         GetVisualEffect()->GetUniforms()->UpdateFloatUniform(0, modelViewProjectionMatrix.Transpose());
         GetVisualEffect()->GetUniforms()->UpdateFloatUniform(1, normalMatrix.Transpose());
         GetVisualEffect()->GetUniforms()->UpdateFloatUniform(2, mColor);
+        GetVisualEffect()->GetUniforms()->UpdateFloatUniform(3, modelViewMatrix.Transpose());
     }
 
 }

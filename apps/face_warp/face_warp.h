@@ -39,7 +39,7 @@ namespace tyro
         void window_resize(Window& window, unsigned int w, unsigned int h);    
         void key_pressed(Window& window, unsigned int key, int modifiers); 
         void key_down(Window& window, unsigned int key, int modifiers); 
-        void selectVertex(Eigen::Vector2f& mouse_pos, int mouse_button, int modifier);
+        
         void calculateEigs();
 
         bool mouse_is_down;
@@ -73,6 +73,7 @@ namespace tyro
         {
             // IGLMeshSPtr scan;
             MuscleMeshSPtr template_mesh;
+            // IGLMeshSPtr template_mesh;
             // IGLMeshWireframeSPtr scan_wire;
             IGLMeshWireframeSPtr template_mesh_wire;
         };
@@ -92,12 +93,6 @@ namespace tyro
         void update_camera();
         void render();
         void DrawMeshes();
-        void add_vertex(int vid, bool isScan);
-        void addSphere(int vid, const Eigen::MatrixXd& V, Wm5::Vector4f color, Wm5::Transform worldT, bool isScan);        
-        bool testScanClicked(Eigen::Vector2f& mouse_pos, int mouse_button, int modifier, int& fid, Eigen::Vector3f& bc);
-        bool testTemplateClicked(Eigen::Vector2f& mouse_pos, int mouse_button, int modifier, int& fid, Eigen::Vector3f& bc);
-
-        void addPointText(int vid, const Eigen::MatrixXd& V, Wm5::Vector4f color, bool isScan);
     };
 
     
