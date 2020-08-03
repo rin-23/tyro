@@ -64,6 +64,7 @@ namespace tyro
     class ES2Polypoint;
     class ES2DefaultPolyline;
     class ES2DefaultTriMesh;
+    class ES2BufferTexture;
     class ES2BBox;
     class RectHitProxy;
     class TriHitProxy;
@@ -77,6 +78,7 @@ namespace tyro
     class OpenFaceTexture;
     class IGLMeshTwo;
     class MuscleMesh;
+    
     
     using DepthProxySPtr = std::shared_ptr<DepthProxy>;
     using DepthProxyWPtr = std::weak_ptr<DepthProxy>;
@@ -208,6 +210,10 @@ namespace tyro
     using ES2VideoTextureSPtr = std::shared_ptr<ES2VideoTexture>;
     using ES2VideoTextureUPtr = std::unique_ptr<ES2VideoTexture>;
     using ES2VideoTextureWPtr = std::weak_ptr<ES2VideoTexture>;
+
+    using ES2BufferTextureSPtr = std::shared_ptr<ES2BufferTexture>;
+    using ES2BufferTextureUPtr = std::unique_ptr<ES2BufferTexture>;
+    using ES2BufferTextureWPtr = std::weak_ptr<ES2BufferTexture>;
 
     using ES2CameraTextureSPtr = std::shared_ptr<ES2CameraTexture>;
     using ES2CameraTextureUPtr = std::unique_ptr<ES2CameraTexture>;

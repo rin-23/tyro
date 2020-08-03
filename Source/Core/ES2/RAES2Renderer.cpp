@@ -197,6 +197,7 @@ namespace tyro
 		}
 		
 		SetTexture(effect->GetTexture2D());
+		SetBufferTextures(effect);
 		SetAlphaState(effect);
 		SetCullState(effect);
 		SetDepthState(effect);
@@ -222,6 +223,16 @@ namespace tyro
 		{
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, texture->GetTextureID());
+			GL_CHECK_ERROR;
+		}
+	}
+
+	void ES2Renderer::SetBufferTextures(const ES2VisualEffectSPtr ve) const
+	{
+		for (int i =0; i < ve->NumBufferTextures(); ++i)
+		{
+			glActiveTexture(GL_TEXTURE1+i); 
+			glBindTexture(GL_TEXTURE_BUFFER, ve->GetBufferTexture(i)->GetTextureID());
 			GL_CHECK_ERROR;
 		}
 	}

@@ -16,6 +16,7 @@ set(TYRO_INC_ES2
 "Source/Core/ES2/RAES2VertexHardwareBuffer.h" 
 "Source/Core/ES2/RAES2VisualEffect.h" 
 "Source/Core/ES2/RAES2VisualStates.h" 
+"Source/Core/ES2/RAES2BufferTexture.h" 
 )
 
 set(TYRO_SRC_ES2 
@@ -36,6 +37,7 @@ set(TYRO_SRC_ES2
 "Source/Core/ES2/RAES2VertexHardwareBuffer.cpp" 
 "Source/Core/ES2/RAES2VisualEffect.cpp" 
 "Source/Core/ES2/RAES2VisualStates.cpp" 
+"Source/Core/ES2/RAES2BufferTexture.cpp" 
 )
 
 set(TYRO_INC_RENDERABLES 

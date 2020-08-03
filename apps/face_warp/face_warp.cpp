@@ -103,6 +103,7 @@ namespace tyro
                      Eigen::MatrixXi& F,         // resulting triangular faces #F by 3
                      Eigen::MatrixXd& C,         // (optional if TC is not empty) resulting per-vertex or per face colors #F|#V by 3
                      Eigen::VectorXd& D,         // #V by 3 diffusion values per vertex
+                     Eigen::VectorXi& FtoT,      // Face to tet ID match
                      bool perfacecolor)          // (ignored if TC is empty) if true then TC and C will contain per face colors, otherwise per-vertex
     {
         using namespace std;
@@ -113,6 +114,7 @@ namespace tyro
             int numtets = TT.rows();
             V.resize(numtets*4,3);
             D.resize(V.rows());
+            
             // if (perfacecolor)
             if (TC.size() > 0)
                 C.resize(numtets*4,3);
@@ -120,6 +122,7 @@ namespace tyro
                 // C.resize(numtets*4,3);
             
             F.resize(numtets*4,3);
+            FtoT.resize(F.rows());
                 
             for (unsigned i=0; i<numtets;++i)
             {
@@ -128,6 +131,16 @@ namespace tyro
                 V.row(i*4+2) = TV.row(TT(i,2));
                 V.row(i*4+3) = TV.row(TT(i,3));
 
+                F.row(i*4+0) << (i*4)+1, (i*4)+2, (i*4)+3; 
+                F.row(i*4+1) << (i*4)+3, (i*4)+2, (i*4)+0;
+                F.row(i*4+2) << (i*4)+0, (i*4)+1, (i*4)+3;
+                F.row(i*4+3) << (i*4)+0, (i*4)+2, (i*4)+1;
+
+                FtoT(i*4+0) = i;
+                FtoT(i*4+1) = i;
+                FtoT(i*4+2) = i;
+                FtoT(i*4+3) = i;
+                
                 D.row(i*4+0) = TD.row(TT(i,0));
                 D.row(i*4+1) = TD.row(TT(i,1));
                 D.row(i*4+2) = TD.row(TT(i,2));
@@ -156,10 +169,7 @@ namespace tyro
                 // F.row(i*4+2) << (i*4)+3, (i*4)+2, (i*4)+0;
                 // F.row(i*4+3) << (i*4)+1, (i*4)+2, (i*4)+3;
 
-                F.row(i*4+0) << (i*4)+1, (i*4)+2, (i*4)+3; 
-                F.row(i*4+1) << (i*4)+3, (i*4)+2, (i*4)+0;
-                F.row(i*4+2) << (i*4)+0, (i*4)+1, (i*4)+3;
-                F.row(i*4+3) << (i*4)+0, (i*4)+2, (i*4)+1;
+                
 
             }  
         }
@@ -290,37 +300,37 @@ namespace tyro
         //@TODO use std::bind instead
         m_tyro_window->callback_mouse_down = [&](Window& window, int button, int modifier)->bool 
         {
-            this->mouse_down(window, button, modifier);
+            return this->mouse_down(window, button, modifier);
         };
 
         m_tyro_window->callback_mouse_up = [&](Window& window, int button, int modifier)->bool 
         {
-            this->mouse_up(window, button, modifier);
+            return this->mouse_up(window, button, modifier);
         };
 
         m_tyro_window->callback_mouse_move = [&](Window& window, int mouse_x, int mouse_y)->bool 
         {
-            this->mouse_move(window, mouse_x, mouse_y);
+            return this->mouse_move(window, mouse_x, mouse_y);
         };
 
         m_tyro_window->callback_window_resize = [&](Window& window, unsigned int w, unsigned int h)->bool 
         {
-            this->window_resize(window, w, h);
+            return this->window_resize(window, w, h);
         };
 
         m_tyro_window->callback_key_pressed = [&](Window& window, unsigned int key, int modifiers)->bool 
         {
-            this->key_pressed(window, key, modifiers);
+            return this->key_pressed(window, key, modifiers);
         };
 
         m_tyro_window->callback_key_down = [&](Window& window, unsigned int key, int modifiers)->bool 
         {
-            this->key_down(window, key, modifiers);
+            return this->key_down(window, key, modifiers);
         };
         
         m_tyro_window->callback_mouse_scroll = [&](Window& window, float ydelta)->bool 
         {
-            this->mouse_scroll(window, ydelta);
+            return this->mouse_scroll(window, ydelta);
         };
 
         m_state = App::State::Launched;
@@ -341,6 +351,10 @@ namespace tyro
         Eigen::MatrixXd TC, CC; 
         Eigen::MatrixXi TI; 
         Eigen::MatrixXi TBF;
+
+        // int maxbufsize;
+        // glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxbufsize);
+        // std::cout<< " GL_MAX_TEXTURE_BUFFER_SIZE " << maxbufsize <<std::endl;
 
         /*
          * LOAD TET MESH
@@ -371,13 +385,26 @@ namespace tyro
         T_temp.resize(1,4);
         V_temp.resize(4,3);
         Z.resize(4,1);
-        T_temp << 0, 1, 2, 3;
-        V_temp << 0, 0, 0, 1, 0, 0, 0.5, 1, 0, 0.5,0.5,1;
-        Z << 0.5, 0.6, 0.8, 0.9;
+        
+        T_temp <<  0, 1, 2, 3; // 4, 5, 6, 7;//,; //, 8, 9, 10, 11;
+        // V_temp << 0, 0, 0, 
+        //           1, 0, 0, 
+        //           0.5, 1, 0, 
+        //           0.5, 0.5, 1, 
+        V_temp << 1, 1, 1, 
+                  2, 1, 1, 
+                  1.5, 2, 1, 
+                  1.5, 1.5, 2;
+                //   4, 4, 4, 
+                //   5, 4, 4, 
+                //   4.5, 5, 4, 
+                //   4.5, 4.5, 5;
+                  
+        Z << 0.5, 0.6, 0.8, 0.9;//, 0.5, 0.6, 0.8, 0.9;//, 0.5, 0.6, 0.8, 0.9;
         MV = Z.col(0);  
 
-        
-        triangulate_tets(T_temp, V_temp, TC, TI, MV, GEOMETRY.VT, GEOMETRY.FT, CC, MV2, true);
+        Eigen::VectorXi FtoT;
+        triangulate_tets(T_temp, V_temp, TC, TI, MV, GEOMETRY.VT, GEOMETRY.FT, CC, MV2, FtoT, true);
         // igl::per_vertex_normals(GEOMETRY.VT,GEOMETRY.FT,GEOMETRY.NT);
         igl::per_face_normals(GEOMETRY.VT, GEOMETRY.FT, GEOMETRY.NT);
         
@@ -395,7 +422,7 @@ namespace tyro
         // Eigen::MatrixXd N_temp;
         // igl::per_vertex_normals(V_temp,GEOMETRY.FT,N_temp);
         // RENDER.template_mesh = IGLMesh::Create(GEOMETRY.VT, GEOMETRY.FT, N_temp, Eigen::Vector3d(1,0,0));
-        RENDER.template_mesh = MuscleMesh::Create(GEOMETRY.VT, GEOMETRY.FT, GEOMETRY.NT, MV2);
+        RENDER.template_mesh = MuscleMesh::Create(GEOMETRY.VT, GEOMETRY.FT, GEOMETRY.NT, MV2, V_temp, T_temp, FtoT);
 
         igl::unique_edge_map(GEOMETRY.FT,E_T,UE_T,EMAP_T,uE2E_T);
 
@@ -532,35 +559,36 @@ namespace tyro
         m_camera = new iOSCamera(world_center, radius, aspect, 1, viewport, true);
     }
 
-    void App::mouse_down(Window& window, int button, int modifier) 
+    bool App::mouse_down(Window& window, int button, int modifier) 
     {   
         //RA_LOG_INFO("mouse down %i", button);
 
-        if (m_state != App::State::LoadedModel) return;
+        if (m_state != App::State::LoadedModel) return false;
 
         mouse_is_down = true;
         m_modifier = modifier;
         m_mouse_btn_clicked = button;
 
-        if (m_modifier == TYRO_MOD_CONTROL) return; //rotating
+        if (m_modifier == TYRO_MOD_CONTROL) return false; //rotating
         if (button == 0 && m_modifier == TYRO_MOD_SHIFT) 
         {   
             //m_square_sel_start_x = current_mouse_x;
             //m_square_sel_start_y = current_mouse_y;
-            return; //selection
+            return false; //selection
         }
-        if (m_mouse_btn_clicked == 2) return; //translating
+        if (m_mouse_btn_clicked == 2) return false; //translating
         
         // Cast a ray in the view direction starting from the mouse position
         double x = current_mouse_x;
         double y = m_camera->GetViewport()[3] - current_mouse_y;
         //Eigen::Vector2f mouse_pos(x,y);
         //selectVertex(mouse_pos, button, modifier);     
+        return true;
     }
 
-    void App::mouse_up(Window& window, int button, int modifier) 
+    bool App::mouse_up(Window& window, int button, int modifier) 
     {   
-        if (m_state != App::State::LoadedModel) return;
+        if (m_state != App::State::LoadedModel) return false;
         //RA_LOG_INFO("MOUSE_UP");
         if (mouse_is_down && m_modifier == TYRO_MOD_CONTROL) 
         {   
@@ -577,12 +605,14 @@ namespace tyro
         
         mouse_is_down = false;
         gesture_state = 0;
+
+        return true;
     }
 
-    void App::mouse_move(Window& window, int mouse_x, int mouse_y) 
+    bool App::mouse_move(Window& window, int mouse_x, int mouse_y) 
     {   
         
-        if (m_state != App::State::LoadedModel) return;
+        if (m_state != App::State::LoadedModel) return false; 
         current_mouse_x = mouse_x;
         current_mouse_y = mouse_y;
         //RA_LOG_INFO("mouse move state %i %i %i", m_state,current_mouse_x, current_mouse_y);
@@ -600,19 +630,22 @@ namespace tyro
             gesture_state = 1;
             render();
         }        
+
+        return true;
         
     }
 
-    void App::mouse_scroll(Window& window, float ydelta) 
+    bool App::mouse_scroll(Window& window, float ydelta) 
     {
         //RA_LOG_INFO("mouse scroll delta %f", ydelta);
-        if (m_state != App::State::LoadedModel) return;
+        if (m_state != App::State::LoadedModel) return false;
         
         m_camera->HandlePinchGesture(gesture_state, Wm5::Vector2i(current_mouse_x, current_mouse_y), ydelta);
         render();
+        return true;
     } 
 
-    void App::window_resize(Window& window, unsigned int w, unsigned int h)
+    bool App::window_resize(Window& window, unsigned int w, unsigned int h)
     {
         //RA_LOG_INFO("window resized")
         //float  aspect = m_gl_rend->GetViewWidth()/ (float) m_gl_rend->GetViewHeight();
@@ -621,10 +654,11 @@ namespace tyro
         //m_camera->SetViewport(viewport);
         
         render();   
+        return true;
     }
 
 
-    void App::key_pressed(Window& window, unsigned int key, int modifiers) 
+    bool App::key_pressed(Window& window, unsigned int key, int modifiers) 
     {   
         RA_LOG_INFO("Key pressed %c", key);
         
@@ -634,23 +668,25 @@ namespace tyro
             RENDER.template_mesh_wire->Visible = !RENDER.template_mesh_wire->Visible;
             // show_console = !show_console;
             render();
-            return;
+            return false;
         }
 
         if (show_console) 
         {  
            m_console.keyboard(key);
            render();
-           return;
+           return false;
         }
         else 
         {
             
         }
+
+        return true;
     }
     
-    void App::key_down(Window& window, unsigned int key, int modifiers) 
-   {   
+    bool App::key_down(Window& window, unsigned int key, int modifiers) 
+    {   
         RA_LOG_INFO("Key down %i", key)
         // handle not text keys   
 
@@ -694,6 +730,8 @@ namespace tyro
             m_console.key_down();render();}
         else if (key == TYRO_KEY_TAB){
             m_console.key_tab();render();}
+
+        return true;
     }
 
     void App::register_console_function(const std::string& name,

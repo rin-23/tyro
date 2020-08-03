@@ -29,7 +29,8 @@ int ES2VertexFormat::msComponentSize[AT_QUANTITY] =
     1,  // AT_UBYTE4
     2,  // AT_SHORT1
     2,  // AT_SHORT2
-    2   // AT_SHORT4
+    2,  // AT_SHORT4
+    4   // AT_INT1
 };
 
 int ES2VertexFormat::msNumComponents[AT_QUANTITY] =
@@ -45,7 +46,8 @@ int ES2VertexFormat::msNumComponents[AT_QUANTITY] =
     4,  // AT_UBYTE4
     1,  // AT_SHORT1
     2,  // AT_SHORT2
-    4   // AT_SHORT4
+    4,   // AT_SHORT4
+    1   // AT_INT4
 };
 
 int ES2VertexFormat::msTypeSize[AT_QUANTITY] =
@@ -61,7 +63,8 @@ int ES2VertexFormat::msTypeSize[AT_QUANTITY] =
     4,  // AT_UBYTE4
     2,  // AT_SHORT1
     4,  // AT_SHORT2
-    8   // AT_SHORT4
+    8,   // AT_SHORT4
+    4   // AT_INT1
 };
 
 GLenum ES2VertexFormat::msGLType[AT_QUANTITY] =
@@ -77,7 +80,8 @@ GLenum ES2VertexFormat::msGLType[AT_QUANTITY] =
     GL_UNSIGNED_BYTE,  // AT_UBYTE4
     GL_SHORT,  // AT_SHORT1
     GL_SHORT,  // AT_SHORT2
-    GL_SHORT   // AT_SHORT4
+    GL_SHORT,   // AT_SHORT4
+    GL_INT   // AT_INT1
 };
 
 ES2VertexFormat::ES2VertexFormat(int numAttributes)

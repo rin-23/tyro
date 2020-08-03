@@ -2,16 +2,23 @@
 
 #define FLT_MAX 3.402823466e+30 // changed +38 to 30 to avoid overflow?
 
-
+uniform mat4 uMVPMatrix;
+uniform mat4 uPMatrix;
 uniform mat4 uMVMatrix;
 uniform mat3 uNMatrix;
 uniform vec4 uColor;
+uniform vec4 uViewport;
+
+ 
+uniform samplerBuffer uVerSampler;
+uniform samplerBuffer uNormSampler;
+uniform samplerBuffer uGradSampler;
 
 in vec4 vColor;
 in float vDiffusion;
 in vec3 vPosition;
 in vec3 vNormal;
-
+flat in int vTetId;
 
 out vec4 fFragColor;
 
@@ -19,17 +26,23 @@ const float c_zero = 0.0;
 const float c_one = 1.0;
 const vec3 cLightDir = vec3(c_zero, c_zero, c_one);
 
-layout(pixel_center_integer) in vec4 gl_FragCoord;
+// layout(pixel_center_integer) in vec4 gl_FragCoord;
+// layout(pixel_center_integer) in vec4 gl_FragCoord;
 
-const mat4 V =  mat4( 0.,   0.,  0., -1., // 0. column
-                      1.,   0.,  0., -1., // 1. column
-                     0.5,   1.,  0., -1.,
-                     0.5,  0.5,  1., -1.);
+vec3 glslproject(in vec3  obj, in mat4 mvp, in vec4  viewport)
+{
+    vec4 tmp = vec4(obj,1.0);
+    tmp = mvp * tmp;
+    // tmp = proj * tmp;
 
-const mat4 N =  mat4(  0.872,    0.436,   0.218,  -1.0, //0 1 3
-                      -0.872,    0.436,   0.218,  -1.0,
-                         0.0,   -0.894,   0.447,  -1.0,
-                         0.0,      0.0,    -1.0,  -1.0);
+    tmp = tmp / tmp[3];
+    tmp = 0.5 * tmp  + vec4(0.5);
+    tmp[0] = tmp[0] * viewport[2] + viewport[0];
+    tmp[1] = tmp[1] * viewport[3] + viewport[1];
+
+    return vec3(tmp);
+}
+
 
 float func(in vec3 v0, in vec3 p, in float maxlength) 
 {
@@ -45,9 +58,46 @@ vec3 calcNormal( in vec3 v0, in vec3 p, in float maxlength ) // for function f(p
                            func(v0,p+h.yyx,maxlength) - func(v0, p-h.yyx,maxlength)));
 }
 
+float volume(in mat4 V)
+{
+    // VOLUME Compute volumes of the tet defined over vertices V
+    vec3 a = V[0].xyz;
+    vec3 b = V[1].xyz;
+    vec3 c = V[2].xyz;
+    vec3 d = V[3].xyz;
+    
+    float v = dot((a-d),cross(b-d,c-d))/6;
+    return v;
+}
+
+vec4 barycoord(in vec3 p3, in mat4 V) 
+{
+    vec4 a = V[0];
+    vec4 b = V[1];
+    vec4 c = V[2];
+    vec4 d = V[3];
+    vec4 p = vec4(p3,0.0); 
+
+    mat4 T = mat4(p,b,c,d);
+    float A1 = volume(T);
+
+    T = mat4(p,c,a,d);
+    float A2 = volume(T);
+
+    T = mat4(p,b,d,a);
+    float A3 = volume(T);
+
+    T = mat4(p,b,c,a);
+    float A4 = volume(T);
+    
+    float A = volume(V);
+
+    vec4 B = vec4(A1/A, A2/A, A3/A, A4/A);
+    return B;
+}
+
 // returns 1 if we hit an isovalue, in which case isopoint will contatin the coordinate
 // return zero otherwise
-
 int raymarch(in  vec3  entrypoint, 
              in  vec3  exitpoint, 
              in  vec3  v0, 
@@ -71,97 +121,133 @@ int raymarch(in  vec3  entrypoint,
 
 void main()
 {   
-    if (vDiffusion < 0.2) 
+ 
+    //    if (!gl_FrontFacing) 
+
+    mat4 V;
+    mat4 N;
+    
+    V[0] = texelFetch(uVerSampler, 4*vTetId+0);
+    V[1] = texelFetch(uVerSampler, 4*vTetId+1);
+    V[2] = texelFetch(uVerSampler, 4*vTetId+2);
+    V[3] = texelFetch(uVerSampler, 4*vTetId+3);
+
+    N[0] = texelFetch(uNormSampler, 4*vTetId+0);
+    N[1] = texelFetch(uNormSampler, 4*vTetId+1);
+    N[2] = texelFetch(uNormSampler, 4*vTetId+2);
+    N[3] = texelFetch(uNormSampler, 4*vTetId+3);
+
+    vec3 e = vec3(0.,0.,0.); // eye origin in eye space
+    vec3 entrypoint = vec3(uMVMatrix * vec4(vPosition,1.0)); // entry point into tet in eye space
+    
+    vec3 r = normalize(entrypoint - e); // ray  vector from the camera to  the entry point
+    vec4 lambdavec = vec4(FLT_MAX);     // the interstion of the ray with the face i is e+lambda[i]*r 
+
+    //compute max depth of the tet
+    vec3 center = vec3(0.25*(V[0] + V[1] + V[2] + V[3]));
+    center = vec3(uMVMatrix  * vec4(center, 1));
+    vec3 v0 = vec3(uMVMatrix  * vec4(V[0].xyz, 1));
+    float tl = length(center - v0);
+    
+    for (int i=0; i < 4; i++) 
     {
-        fFragColor = vec4(0.0, 0.0, 0.0, 1.0);
-        discard;
+        vec3 v = vec3(uMVMatrix*vec4(V[3-i].xyz,1.0));
+        vec3 n =  normalize(uNMatrix*N[i].xyz);
+
+        float denom = dot(v - e, n);
+        float numerator = dot(r, n);
+        
+        if (numerator > 0.) // face is not visible to a potential exit point
+            lambdavec[i] = denom/numerator;
+    }
+
+    // find closest exit point
+    float lambda = min(min(min(lambdavec[0], lambdavec[1]), lambdavec[2]), lambdavec[3]);
+    vec3 exitpoint = e + lambda*r;
+    
+    // float l = length(entrypoint-exitpoint);
+    // float diff = l/tl;
+    // fFragColor = vColor; 
+    // // fFragColor = vec4(l, 0.0, 0.0, 1.0); 
+    // // diff = length(exitpoint-center) / tl;
+    // if (diff < 100000)  
+    //     discard; 
+
+    vec3 u = exitpoint-entrypoint;
+    // // vec3 nn = vec3(0.0,  0.0, -1.0);
+    float l = length(u);
+    float diff = l/(2*tl);
+    // fFragColor = vColor; //vec4(diff, 0.0, 0.0, 1.0); 
+    // fFragColor = vec4(diff, 0.0, 0.0, 1.0); 
+    // if (diff > 1.1)  
+    //     discard; 
+
+#if 1
+    vec3 isopoint;
+    int rm = raymarch(entrypoint, 
+                        exitpoint, 
+                        v0, 
+                        tl,
+                        1.0,
+                        isopoint);
+
+    
+
+    // fFragColor = vColor;
+    if (rm == 0) 
+    {
+        discard; 
     }
     else 
     {
-    //    if (!gl_FrontFacing) 
-
-        vec3 e = vec3(0.,0.,0.); // eye origin in eye space
-        vec3 entrypoint = vec3(uMVMatrix * vec4(vPosition,1.0)); // entry point into tet in eye space
-        vec3 r = normalize(entrypoint - e); // ray  vector from the camera to  the entry point
-        vec4 lambdavec = vec4(FLT_MAX);     // the interstion of the ray with the face i is e+lambda[i]*r 
-
-        //compute max depth of the tet
-        vec3 center = vec3(0.25*(V[0] + V[1] + V[2] + V[3]));
-        center = vec3(uMVMatrix  * vec4(center, 1));
-        vec3 v0 = vec3(uMVMatrix  * vec4(V[0].xyz, 1));
-        float tl = length(center - v0);
         
-        for (int i=0; i < 4; i++) 
+        vec3 eyeNormal;
+        if (length(isopoint-entrypoint) < 0.01) 
         {
-            vec3 v = vec3(uMVMatrix*vec4(V[3-i].xyz,1.0));
-            vec3 n =  normalize(uNMatrix*N[i].xyz);
-
-            float denom = dot(v - e, n);
-            float numerator = dot(r, n);
-            
-            if (numerator > 0.) // face is not visible to a potential exit point
-                lambdavec[i] = denom/numerator;
-        }
-
-        // find closest exit point
-        float lambda = min(min(min(lambdavec[0], lambdavec[1]), lambdavec[2]), lambdavec[3]);
-        vec3 exitpoint = e + lambda*r;
-        
-        // float l = length(entrypoint-exitpoint);
-        // float diff = l/tl;
-        // fFragColor = vColor; 
-        // // fFragColor = vec4(l, 0.0, 0.0, 1.0); 
-        // // diff = length(exitpoint-center) / tl;
-        // if (diff < 100000)  
-        //     discard; 
-
-        // vec3 u = exitpoint-entrypoint;
-        // // vec3 nn = vec3(0.0,  0.0, -1.0);
-        // float l = length(u);
-        // float diff = l/tl;
-        // // fFragColor = vColor; //vec4(diff, 0.0, 0.0, 1.0); 
-        // fFragColor = vec4(diff, 0.0, 0.0, 1.0); 
-        // // if (l  < 0.5)  
-            // discard; 
-
-
-        vec3 isopoint;
-        int rm = raymarch(entrypoint, 
-                          exitpoint, 
-                          v0, 
-                          tl,
-                          1.0,
-                          isopoint);
-
-        
-        
-        // fFragColor = vColor;
-        if (rm == 0) 
-        {
-            discard; 
+            eyeNormal = normalize(uNMatrix * normalize(vNormal));
         }
         else 
         {
-            
-            vec3 eyeNormal;
-            if (length(isopoint-entrypoint) < 0.01) 
-            {
-                eyeNormal = normalize(uNMatrix * normalize(vNormal));
-            }
-            else 
-            {
-                eyeNormal =  calcNormal(v0, isopoint, tl );
-            }
-            
-            float intensity = max(c_zero, dot(eyeNormal, cLightDir));
-            fFragColor.rgb = max(0.3 * uColor.rgb, intensity * uColor.rgb);
-            fFragColor.a = uColor.a;
-            // vDiffusion = aDiffusion;
-            // vPosition = aPosition.xyz;
+            eyeNormal =  calcNormal(v0, isopoint, tl );
         }
         
-            // fFragColor = vec4(0.0, 1.0, 0.0, 1.0);
-    
+        float intensity = max(c_zero, dot(eyeNormal, cLightDir));
+        fFragColor.rgb = max(0.3 * uColor.rgb, intensity * uColor.rgb);
+        fFragColor.a = uColor.a;
+
+        // overwrite depth
+        vec3 isopointscreen = glslproject(isopoint, uPMatrix, uViewport);
+        gl_FragDepth = isopointscreen.z;
+
+        // vDiffusion = aDiffusion;
+        // vPosition = aPosition.xyz;
     }
+
+    // vec4(vPosition,1.0)
+    // vec3 entrypointscreen = glslproject(vPosition, uMVPMatrix, uViewport);
+
+    
+    // if (abs(gl_FragCoord.x - entrypointscreen.x) > 0.01)
+    //     discard;
+    
+    // if (abs(gl_FragCoord.y - entrypointscreen.y) > 0.01)
+    //     discard;
+    
+    // if (abs(gl_FragDepth - entrypointscreen.z) > 0.02)
+    //     discard;
+
+        // fFragColor = vec4(0.0, 1.0, 0.0, 1.0);
+#else
+    if (vTetId == 0)
+        fFragColor = diff*vec4(1.0,0.0,0.0,1.0);
+    else if (vTetId == 1)
+        fFragColor = diff*vec4(0.0,1.0,0.0,1.0);
+    else if (vTetId == 2)
+        fFragColor = diff*vec4(0.0,1.0,1.0,1.0);
+    else 
+        fFragColor = diff*vec4(1.0,1.0,1.0,1.0);
+
+#endif
+    
 }
 

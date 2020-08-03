@@ -32,13 +32,13 @@ namespace tyro
         ES2TextOverlaySPtr m_frame_overlay;
         std::atomic<bool> m_need_rendering;
         //ShaderBoxSPtr m_shaderbox;
-        void mouse_down(Window& window, int button, int modifier);
-        void mouse_up(Window& window, int button, int modifier);
-        void mouse_move(Window& window, int mouse_x, int mouse_y);
-        void mouse_scroll(Window& window, float ydelta); 
-        void window_resize(Window& window, unsigned int w, unsigned int h);    
-        void key_pressed(Window& window, unsigned int key, int modifiers); 
-        void key_down(Window& window, unsigned int key, int modifiers); 
+        bool mouse_down(Window& window, int button, int modifier);
+        bool mouse_up(Window& window, int button, int modifier);
+        bool mouse_move(Window& window, int mouse_x, int mouse_y);
+        bool mouse_scroll(Window& window, float ydelta); 
+        bool window_resize(Window& window, unsigned int w, unsigned int h);    
+        bool key_pressed(Window& window, unsigned int key, int modifiers); 
+        bool key_down(Window& window, unsigned int key, int modifiers); 
         
         void calculateEigs();
 

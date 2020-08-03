@@ -1,4 +1,4 @@
-//
+    //
 //  RAES2VisualEffect.h
 //  Ossa
 //
@@ -13,6 +13,8 @@
 #include "RAES2ShaderUniforms.h"
 #include "RAES2VisualStates.h"
 #include "RAES2Texture2D.h"
+#include "RAES2BufferTexture.h"
+#include <vector>
 
 namespace tyro
 {
@@ -42,8 +44,12 @@ namespace tyro
         inline ES2ShaderUniforms* GetUniforms();
         
         inline void SetTexture2D(ES2Texture2DSPtr texture);
-        inline ES2Texture2DSPtr GetTexture2D();
-       
+        inline ES2Texture2DSPtr GetTexture2D(); 
+
+        inline void AddBufferTexture(ES2BufferTextureSPtr texture);
+        inline int NumBufferTextures() const;
+        inline ES2BufferTextureSPtr GetBufferTexture(int i) const;
+
         bool AlphaStateEnabled = false;
         bool CullStateEnabled = true;
         bool DepthStateEnabled = true;
@@ -60,6 +66,7 @@ namespace tyro
         ES2VertexFormat* mVertexFormat;
         ES2ShaderUniforms* mUniforms;
         ES2Texture2DSPtr mTexture;
+        std::vector<ES2BufferTextureSPtr> mBufferTextures;
     };
     
     /****INLINE FUNCTIONS****/
@@ -129,6 +136,24 @@ namespace tyro
     inline ES2Texture2DSPtr ES2VisualEffect::GetTexture2D()
     {
         return mTexture;
+    }
+
+    inline void ES2VisualEffect::AddBufferTexture(ES2BufferTextureSPtr texture) 
+    {
+        mBufferTextures.push_back(texture);
+    }
+
+    inline int ES2VisualEffect::NumBufferTextures() const 
+    {
+        return mBufferTextures.size();
+    } 
+
+    inline ES2BufferTextureSPtr ES2VisualEffect::GetBufferTexture(int i)  const
+    {
+        if (i < NumBufferTextures())
+            return mBufferTextures[i];
+        
+        return nullptr;
     }
     
     using ES2VisualEffectSPtr = std::shared_ptr<ES2VisualEffect>;

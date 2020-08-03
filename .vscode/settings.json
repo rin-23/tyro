@@ -109,7 +109,11 @@
         "random": "cpp",
         "regex": "cpp",
         "stack": "cpp",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "*.mm": "cpp",
+        "shared_mutex": "cpp",
+        "bit": "cpp",
+        "memory_resource": "cpp"
     },
     "python.linting.enabled": false
 }

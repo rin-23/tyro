@@ -47,6 +47,8 @@ namespace tyro
 
 		void SetTexture(const ES2Texture2DSPtr texture) const;
 
+		void SetBufferTextures(const ES2VisualEffectSPtr ve) const;
+
 		void SetAlphaState(const ES2VisualEffectSPtr ve) const;
 
 		void SetCullState(const ES2VisualEffectSPtr ve) const;

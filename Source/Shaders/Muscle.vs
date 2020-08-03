@@ -2,6 +2,7 @@
 in vec4 aPosition; //local space
 in vec3 aNormal; //local space
 in float aDiffusion;
+in int aTetId;
 
 uniform mat4 uMVPMatrix;
 uniform mat4 uMVMatrix;
@@ -16,12 +17,13 @@ out vec4 vColor;
 out vec3 vPosition;
 out vec3 vNormal;
 out float vDiffusion;
+flat out int vTetId;
 
 
 void main()
 {
     gl_Position = uMVPMatrix * aPosition;
-    
+    vTetId = aTetId;    
     vec3 eyeNormal = normalize(uNMatrix * aNormal);
     float intensity = max(c_zero, dot(eyeNormal, cLightDir));
     vColor.rgb = max(0.3 * uColor.rgb, intensity * uColor.rgb);

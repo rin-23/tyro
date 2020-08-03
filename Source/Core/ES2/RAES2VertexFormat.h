@@ -44,6 +44,7 @@ namespace tyro
             AT_SHORT1,
             AT_SHORT2,
             AT_SHORT4,
+            AT_INT1,
             AT_QUANTITY
         };
         
