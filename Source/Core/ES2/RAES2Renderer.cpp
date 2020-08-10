@@ -197,7 +197,7 @@ namespace tyro
 		}
 		
 		SetTexture(effect->GetTexture2D());
-		SetBufferTextures(effect);
+		SetBufferTextures(effect.get());
 		SetAlphaState(effect);
 		SetCullState(effect);
 		SetDepthState(effect);
@@ -227,13 +227,24 @@ namespace tyro
 		}
 	}
 
-	void ES2Renderer::SetBufferTextures(const ES2VisualEffectSPtr ve) const
+	void ES2Renderer::SetBufferTextures(const ES2VisualEffect* ve) const
 	{
 		for (int i =0; i < ve->NumBufferTextures(); ++i)
-		{
-			glActiveTexture(GL_TEXTURE1+i); 
-			glBindTexture(GL_TEXTURE_BUFFER, ve->GetBufferTexture(i)->GetTextureID());
+		// int i = 0;
+		// if (ve->NumBufferTextures()>0)
+		{	
+			
+			int texid = ve->GetBufferTexture(i)->GetTextureID();
+			assert(i+1 == texid);
+			glActiveTexture(GL_TEXTURE1+i);  //If rendering is supper slow make sure that GL_TEXTUREi has i == GetTextureID()
+			// glBindBuffer(GL_TEXTURE_BUFFER, ve->GetBufferTexture(i)->GetBufferID());
+			glBindTexture(GL_TEXTURE_BUFFER, texid);
 			GL_CHECK_ERROR;
+
+			// glActiveTexture(GL_TEXTURE2); 
+			// glBindTexture(GL_TEXTURE_BUFFER, ve->GetBufferTexture(1)->GetTextureID());
+			// GL_CHECK_ERROR;
+
 		}
 	}
 

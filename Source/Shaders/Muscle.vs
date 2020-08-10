@@ -1,4 +1,5 @@
 #version 400
+
 in vec4 aPosition; //local space
 in vec3 aNormal; //local space
 in float aDiffusion;
@@ -19,16 +20,16 @@ out vec3 vNormal;
 out float vDiffusion;
 flat out int vTetId;
 
-
 void main()
 {
-    gl_Position = uMVPMatrix * aPosition;
+    vPosition = aPosition.xyz;
+    gl_Position = uMVPMatrix * vec4(vPosition, 1.0);
     vTetId = aTetId;    
     vec3 eyeNormal = normalize(uNMatrix * aNormal);
     float intensity = max(c_zero, dot(eyeNormal, cLightDir));
     vColor.rgb = max(0.3 * uColor.rgb, intensity * uColor.rgb);
     vColor.a = uColor.a;
     vDiffusion = aDiffusion;
-    vPosition = aPosition.xyz;
+    
     vNormal = aNormal;
 }

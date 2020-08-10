@@ -29,7 +29,7 @@ namespace tyro
         Window* m_tyro_window;
         ES2Renderer* m_gl_rend;
         iOSCamera* m_camera;
-        ES2TextOverlaySPtr m_frame_overlay;
+        // ES2TextOverlaySPtr m_frame_overlay;
         std::atomic<bool> m_need_rendering;
         //ShaderBoxSPtr m_shaderbox;
         bool mouse_down(Window& window, int button, int modifier);
@@ -84,7 +84,7 @@ namespace tyro
         std::vector<int> vid_list_scan;
         std::vector<SpatialSPtr> ball_list_template;
         std::vector<int> vid_list_template;
-        std::vector<ES2TextOverlaySPtr> vid_numbers_template;
+        // std::vector<ES2TextOverlaySPtr> vid_numbers_template;
 
 
         void register_console_function(const std::string& name,

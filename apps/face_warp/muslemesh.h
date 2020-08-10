@@ -54,7 +54,7 @@ namespace tyro
             vertexFormat->SetAttribute(2, shader->GetAttributeLocation("aDiffusion"), vertexFormat->GetOffsetForNextAttrib(1), ES2VertexFormat::AT_FLOAT1, ES2VertexFormat::AU_BLENDWEIGHT_1);
             vertexFormat->SetAttribute(3, shader->GetAttributeLocation("aTetId"), vertexFormat->GetOffsetForNextAttrib(2), ES2VertexFormat::AT_INT1, ES2VertexFormat::AU_JOINT_INDEX_1);
             
-            ES2ShaderUniforms* uniforms = new ES2ShaderUniforms(8);
+            ES2ShaderUniforms* uniforms = new ES2ShaderUniforms(9);
             uniforms->SetUniform(0, shader->GetUniformLocation("uMVPMatrix"), 1, "uMVPMatrix", ES2ShaderUniforms::UniformMatrix4fv);
             uniforms->SetUniform(1, shader->GetUniformLocation("uNMatrix"), 1, "uNMatrix", ES2ShaderUniforms::UniformMatrix3fv);
             uniforms->SetUniform(2, shader->GetUniformLocation("uColor"), 1, "uColor", ES2ShaderUniforms::Uniform4fv);
@@ -63,6 +63,9 @@ namespace tyro
             uniforms->SetUniform(5, shader->GetUniformLocation("uNormSampler"), 1, "uNormSampler", ES2ShaderUniforms::Uniform1iv);
             uniforms->SetUniform(6, shader->GetUniformLocation("uViewport"), 1, "uViewport", ES2ShaderUniforms::Uniform4fv);
             uniforms->SetUniform(7, shader->GetUniformLocation("uPMatrix"), 1, "uPMatrix", ES2ShaderUniforms::UniformMatrix4fv);
+            uniforms->SetUniform(8, shader->GetUniformLocation("uDiffusedValuesSampler"), 1, "uDiffusedValuesSampler", ES2ShaderUniforms::Uniform1iv);
+
+            
             
 
             ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms));
@@ -128,7 +131,7 @@ namespace tyro
                 int vid = F(fid,j);
                 vba.Position<Wm5::Float3>(vIndex) = Wm5::Float3(V(vid,0), V(vid,1), V(vid,2));
                 vba.Normal<Wm5::Float3>(vIndex) = Wm5::Float3(N(fid, 0), N(fid, 1), N(fid, 2));
-                vba.BlendWeight1<float>(vIndex) = float(MV(vid));
+                vba.BlendWeight1<float>(vIndex) = 0.0; //float(MV(vid));
                 int tid = FtoT(fid);
                 vba.JointIndex1<int>(vIndex) = tid;
 
@@ -144,7 +147,7 @@ namespace tyro
 
 	    ES2VertexArraySPtr varray = std::make_shared<ES2VertexArray>(this->GetVisualEffect(), vbuffer);
 	    SetVertexArray(varray);        
-        // GetVisualEffect()->CullStateEnabled = false;
+        // GetVisualEffect()->CullStateEnabled = false; 
 
 
         // generate vertex texture buffer
@@ -162,7 +165,6 @@ namespace tyro
         }
 
         // generate normal texture buffer
-
         Wm5::Float3* normalDataPtr = new Wm5::Float3[numEntries]; 
         assert(N.rows() ==  4*TT.rows());
 
@@ -176,13 +178,29 @@ namespace tyro
             }                
         }
 
-        ES2BufferTextureSPtr vertexBufTex = std::make_shared<ES2BufferTexture>(ES2BufferTexture::TY_RGB32F, numEntries, vertexDataPtr, HardwareBuffer::Usage::BU_STATIC);  
-        ES2BufferTextureSPtr normalBufTex = std::make_shared<ES2BufferTexture>(ES2BufferTexture::TY_RGB32F, numEntries, normalDataPtr, HardwareBuffer::Usage::BU_STATIC);  
+        // generate diffused texture buffer
+        Wm5::Float4* diffusedDataPtr = new Wm5::Float4[TT.rows()]; 
+        
+        for (int tid = 0; tid < TT.rows(); ++tid) 
+        {   
+            // for (int j = 0; j < TT.cols(); ++j) 
+            // {   
+            Wm5::Float4 tidval = Wm5::Float4(MV(TT(tid,0)), MV(TT(tid,1)), MV(TT(tid,2)), MV(TT(tid,3)));
+            diffusedDataPtr[tid] = tidval;
+            // }                
+        }
+
+        ES2BufferTextureSPtr vertexBufTex =   std::make_shared<ES2BufferTexture>(ES2BufferTexture::TY_RGB32F, numEntries, vertexDataPtr,   HardwareBuffer::Usage::BU_STATIC);  
+        ES2BufferTextureSPtr normalBufTex =   std::make_shared<ES2BufferTexture>(ES2BufferTexture::TY_RGB32F, numEntries, normalDataPtr,   HardwareBuffer::Usage::BU_STATIC);  
+        ES2BufferTextureSPtr diffusedBufTex = std::make_shared<ES2BufferTexture>(ES2BufferTexture::TY_RGBA32F, TT.rows(), diffusedDataPtr, HardwareBuffer::Usage::BU_STATIC);  
+        
         GetVisualEffect()->AddBufferTexture(vertexBufTex);
         GetVisualEffect()->AddBufferTexture(normalBufTex);
+        GetVisualEffect()->AddBufferTexture(diffusedBufTex);
 
         delete[] vertexDataPtr;
         delete[] normalDataPtr;
+        delete[] diffusedDataPtr;
     }
         
     MuscleMeshSPtr MuscleMesh::Create(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,   
@@ -224,5 +242,9 @@ namespace tyro
 
         GetVisualEffect()->GetUniforms()->UpdateFloatUniform(6, vport_f);
         GetVisualEffect()->GetUniforms()->UpdateFloatUniform(7, projectionMatrix.Transpose());
+
+        int diffusedtexbuf = GetVisualEffect()->GetBufferTexture(2)->GetTextureID();
+        GetVisualEffect()->GetUniforms()->UpdateIntUniform(8, &diffusedtexbuf);
+
     }
 }

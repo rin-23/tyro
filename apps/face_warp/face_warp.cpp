@@ -1,7 +1,7 @@
 #include "face_warp.h"
 #include "RAEnginePrerequisites.h"
-#include "RAES2TextOverlay.h"
-#include "RAFont.h"
+// #include "RAES2TextOverlay.h"
+// #include "RAFont.h"
 #include "RAVisibleSet.h"
 //#include "RAES2StandardMesh.h"
 //#include "RAAxisAlignedBBox.h"
@@ -30,6 +30,7 @@
 #include <igl/matlab_format.h>
 #include <igl/bfs.h>
 #include <igl/serialize.h>
+#include <igl/readDMAT.h>
 
 #include <ctime>
 #include "muslemesh.h"
@@ -59,7 +60,7 @@ namespace tyro
     //m_sel_method(App::SelectionMethod::OneClick),
     m_computed_stop_motion(false),
     m_update_camera(false),
-    m_frame_overlay(nullptr),
+    // m_frame_overlay(nullptr),
     m_computed_parts(false),
     m_show_wire(true)
     //add_seg_faces(false),
@@ -136,6 +137,14 @@ namespace tyro
                 F.row(i*4+2) << (i*4)+0, (i*4)+1, (i*4)+3;
                 F.row(i*4+3) << (i*4)+0, (i*4)+2, (i*4)+1;
 
+                // bottom trianlge with 3 on the top
+                //       2
+                //      / \  
+                //     /   \
+                //    /     \
+                //   /       \
+                //  0---------1
+
                 FtoT(i*4+0) = i;
                 FtoT(i*4+1) = i;
                 FtoT(i*4+2) = i;
@@ -199,7 +208,6 @@ namespace tyro
                 D.row(i*4+1) = TD.row(TT(i,1));
                 D.row(i*4+2) = TD.row(TT(i,2));
                 D.row(i*4+3) = TD.row(TT(i,3));
-
 
                 if (TC.size() > 0 && rowidx < TC.rows()) 
                 {
@@ -289,7 +297,7 @@ namespace tyro
                 
         //setup renderer
         m_gl_rend = new ES2Renderer(m_tyro_window->GetGLContext());
-        m_gl_rend->SetClearColor(Wm5::Vector4f(0, 0, 1, 1));
+        m_gl_rend->SetClearColor(   Wm5::Vector4f(173.0/255, 216/255.0, 230/255.0, 1));
 
         int v_width, v_height;
         m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
@@ -347,7 +355,7 @@ namespace tyro
         Eigen::MatrixXd V_temp;
         Eigen::MatrixXd C_temp;
         Eigen::MatrixXi F_temp;
-        Eigen::MatrixXi T_temp;
+        Eigen::MatrixXi T_temp, T_temp2;
         Eigen::MatrixXd TC, CC; 
         Eigen::MatrixXi TI; 
         Eigen::MatrixXi TBF;
@@ -359,58 +367,121 @@ namespace tyro
         /*
          * LOAD TET MESH
          */
-        std::string tetmeshpath= "/Users/rinat/Workspace/MuscleGeometrySrc/src/muscle_meshes/dino/boneskin_coarse3.mesh";
+
+
+        // std::string tetmeshpath= "/Users/rinat/Workspace/MuscleGeometrySrc/src/muscle_meshes/dino/boneskin_coarse3.mesh";
+        // std::string tetmeshpath= "/Users/rinat/Workspace/MuscleGeometrySrc/src/muscle_meshes/cube.mesh";
+        std::string tetmeshpath="/Users/rinat/Workspace/MuscleGeometrySrc/src/muscle_meshes/cylinder3Dmusle.mesh";
         igl::readMESH(tetmeshpath, V_temp, T_temp, F_temp);
- 
+        // T_temp.resize(1,4);
+        // T_temp.row(0) = T_temp2.row(4);
+
         /*
          *  COMPUTE BOUNDARY OF THE FACE
-         */
+         */ 
         // igl::boundary_facets(T_one_tet, TBF); // boundary faces
+
+        int texture_units;
+        glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &texture_units);
+        std::cout  << "texture_units  " << texture_units << std::endl;
 
         /*
          * LOAD DIFFUSED VALUES
          */
 
+        // Eigen::MatrixXd Z;
+        // igl::deserialize(Z, "Z", "/Users/rinat/Workspace/MuscleGeometrySrc/src/muscle_meshes/dino/Z");
+        // assert(Z.rows()>0);
+        // Eigen::VectorXd MV, MV2;
+        // Eigen::VectorXi MC;
+        // Eigen::VectorXi MT;
+        // MV = Z.col(1);  
+        // MV.resize(V_temp.rows());
+        // MV.setZero();
+
         Eigen::MatrixXd Z;
-        igl::deserialize(Z, "Z", "/Users/rinat/Workspace/MuscleGeometrySrc/src/muscle_meshes/dino/Z");
+        // std::string readDMATpath="/Users/rinat/Workspace/MuscleGeometrySrc/src/muscle_meshes/cube.dmat";
+        std::string readDMATpath="/Users/rinat/Workspace/MuscleGeometrySrc/src/muscle_meshes/cylinder3D.dmat";
+        igl::readDMAT(readDMATpath, Z);
+        // igl::deserialize(Z, "Z", "/Users/rinat/Workspace/MuscleGeometrySrc/src/muscle_meshes/dino/Z");
         assert(Z.rows()>0);
         Eigen::VectorXd MV, MV2;
         Eigen::VectorXi MC;
         Eigen::VectorXi MT;
-        MV = Z.col(1);  
+        MV = Z.col(0);      
+
+        
+        
 
         /*
          * OVERWRITE Generate one tet 
          */ 
+        #if 1
         T_temp.resize(1,4);
         V_temp.resize(4,3);
         Z.resize(4,1);
         
-        T_temp <<  0, 1, 2, 3; // 4, 5, 6, 7;//,; //, 8, 9, 10, 11;
-        // V_temp << 0, 0, 0, 
-        //           1, 0, 0, 
-        //           0.5, 1, 0, 
-        //           0.5, 0.5, 1, 
-        V_temp << 1, 1, 1, 
-                  2, 1, 1, 
-                  1.5, 2, 1, 
-                  1.5, 1.5, 2;
-                //   4, 4, 4, 
-                //   5, 4, 4, 
-                //   4.5, 5, 4, 
-                //   4.5, 4.5, 5;
-                  
-        Z << 0.5, 0.6, 0.8, 0.9;//, 0.5, 0.6, 0.8, 0.9;//, 0.5, 0.6, 0.8, 0.9;
+        T_temp <<  0, 1, 2, 3;// 0,7, 5, 4; //, 4, 5, 6, 7; //, 8, 9, 10, 11;
+        // V_temp << -0.17114,  0.3437, -5.2931,
+        //         -0.0024069, 0.33338, -5.3974,
+        //           0.027116, 0.51782, -5.2421,
+        //            0.13845, 0.33106, -5.2695;
+        
+        Z << 1, 0.8, 0.5, 0; //, 1, 0, 0, 0;//, 0.5, 0.6, 0.8, 0.9;
         MV = Z.col(0);  
+
+
+        // T_temp << 0 ,1, 5,7;
+                //   0 ,7, 5,4,
+                //   0 ,1, 7,3,
+                //   0 ,3, 7,2,
+                //   0 ,6, 7,4,
+                //   0 ,2, 7,6;
+
+        // V_temp << 0, 0, 0,
+        //         0, 1, 0,        
+        //         1, 0, 0,
+        //         1, 1, 0,
+        //         0, 0, 1,
+        //         0, 1, 1,
+        //         1, 0, 1,
+        //         1, 1, 1;
+        // 0,     0,     0,
+        //            0,     1,     0,
+        //            0,     1,     1,
+        //            1,     1,     1; 
+
+        V_temp << 0, 0, 0, 
+                  1, 0, 0, 
+                  0.5, 1, 0, 
+                  0.5, 0.5, 1;
+
+        V_temp = 100*V_temp;
+               
+                  
+                //   1, 1, 1, 
+                //   2, 1, 1, 
+                //   1.5, 2, 1, 
+                //   1.5, 1.5, 2;
+        // // V_temp << 1, 1, 1, 
+        // //           2, 1, 1, 
+        // //           1.5, 2, 1, 
+        // //           1.5, 1.5, 2,
+        // //           4, 4, 4, 
+        // //           5, 4, 4, 
+        // //           4.5, 5, 4, 
+        // //           4.5, 4.5, 5;
+                  
+        #endif
 
         Eigen::VectorXi FtoT;
         triangulate_tets(T_temp, V_temp, TC, TI, MV, GEOMETRY.VT, GEOMETRY.FT, CC, MV2, FtoT, true);
         // igl::per_vertex_normals(GEOMETRY.VT,GEOMETRY.FT,GEOMETRY.NT);
         igl::per_face_normals(GEOMETRY.VT, GEOMETRY.FT, GEOMETRY.NT);
         
-        std::cerr<<igl::matlab_format(GEOMETRY.VT,"GEOMETRY.VT")<<std::endl;
-        std::cerr<<igl::matlab_format(GEOMETRY.FT,"GEOMETRY.FT")<<std::endl;
-        std::cerr<<igl::matlab_format(GEOMETRY.NT,"GEOMETRY.NT")<<std::endl;
+        // std::cerr<<igl::matlab_format(GEOMETRY.VT,"GEOMETRY.VT")<<std::endl;
+        // std::cerr<<igl::matlab_format(GEOMETRY.FT,"GEOMETRY.FT")<<std::endl;
+        // std::cerr<<igl::matlab_format(GEOMETRY.NT,"GEOMETRY.NT")<<std::endl;
 
         #if 0
         std::cerr<<igl::matlab_format(Z,"Z")<<std::endl;
@@ -422,11 +493,11 @@ namespace tyro
         // Eigen::MatrixXd N_temp;
         // igl::per_vertex_normals(V_temp,GEOMETRY.FT,N_temp);
         // RENDER.template_mesh = IGLMesh::Create(GEOMETRY.VT, GEOMETRY.FT, N_temp, Eigen::Vector3d(1,0,0));
-        RENDER.template_mesh = MuscleMesh::Create(GEOMETRY.VT, GEOMETRY.FT, GEOMETRY.NT, MV2, V_temp, T_temp, FtoT);
+        RENDER.template_mesh = MuscleMesh::Create(GEOMETRY.VT, GEOMETRY.FT, GEOMETRY.NT, MV, V_temp, T_temp, FtoT);
 
         igl::unique_edge_map(GEOMETRY.FT,E_T,UE_T,EMAP_T,uE2E_T);
 
-        color_matrix(UE_T.rows(), Eigen::Vector3d(0.5,0.5,0.5), UEC_T);
+        color_matrix(UE_T.rows(), Eigen::Vector3d(0.2,0.2,0.2), UEC_T);
         RENDER.template_mesh_wire = IGLMeshWireframe::Create(GEOMETRY.VT, UE_T, UEC_T);
         RENDER.template_mesh_wire->Visible = true;
         

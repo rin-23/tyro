@@ -153,6 +153,7 @@ namespace tyro
         if (i < NumBufferTextures())
             return mBufferTextures[i];
         
+        RA_LOG_ERROR_ASSERT("not enough buffer textures");
         return nullptr;
     }
     
