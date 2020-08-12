@@ -170,9 +170,10 @@ int Window::Init(int w, int h)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     #ifdef __APPLE__
-      //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+    //   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
       glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
       glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+      glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1);
       //glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
       //glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
     #endif
@@ -198,8 +199,12 @@ int Window::Init(int w, int h)
     if (GLEW_OK != err)
         RA_LOG_ERROR_ASSERT("Failed to initialize GLEW %s\n", glewGetErrorString(err));
     
+    
     if (GLEW_VERSION_4_1) 
         RA_LOG_INFO("Yay! OpenGL 4.1 is supported!");
+
+    if (GLEW_VERSION_4_3) 
+        RA_LOG_INFO("Yay! OpenGL 4.3 is supported!");
     
     // create opengl context
     // @TODO: make genetal opengl context

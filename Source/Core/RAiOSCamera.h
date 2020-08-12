@@ -67,6 +67,7 @@ namespace tyro
         //Scale
         float mCurScale;
         float mScale;
+        float mFov;
         Wm5::APoint mCentroid;
         Wm5::Vector2f mInitialTouch;
         

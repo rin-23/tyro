@@ -93,26 +93,26 @@ namespace tyro
         float A = (right + left)/(right - left);
         float B = (top + bottom)/(top - bottom);
         float C = -1*(far + near)/(far - near);
-        float D = -1*(far * near)/(far - near);
+        float D = -2*(far * near)/(far - near);
         mProjectionMatrix = HMatrix(d1, 0, A, 0,
                                     0, d2, B, 0,
                                     0,  0, C, D,
                                     0, 0, -1, 0);
     }
     
-    void Camera::SetPerpProjection(float fovyRadians, float aspect, float near, float far)
+    void Camera::SetPerpProjection(float fovyDegrees, float aspect, float near, float far)
     {
-        float cotan = 1.0f / tanf(fovyRadians / 2.0f);
+        // float cotan = 1.0f / tanf(fovyRadians / 2.0f);
         
-        mProjectionMatrix = HMatrix(cotan / aspect, 0.0f, 0.0f, 0.0f,
-                                    0.0f, cotan, 0.0f, 0.0f,
-                                    0.0f, 0.0f, (far + near) / (near - far), -1.0f,
-                                    0.0f, 0.0f, (2.0f * far * near) / (near - far), 0.0f);
-        mProjectionMatrix = mProjectionMatrix.Transpose();
+        // mProjectionMatrix = HMatrix(cotan / aspect, 0.0f, 0.0f, 0.0f,
+        //                             0.0f, cotan, 0.0f, 0.0f,
+        //                             0.0f, 0.0f, (far + near) / (near - far), -1.0f,
+        //                             0.0f, 0.0f, (2.0f * far * near) / (near - far), 0.0f);
+        // mProjectionMatrix = mProjectionMatrix.Transpose();
         
-//        float fH = tanf(fovy / 360 * M_PI) * near;
-//        float fW = fH * aspect;
-//        Camera::SetPerpProjection(-fW, fW, -fH, fH, near, far);
+       float fH = tanf(fovyDegrees / 360 * M_PI) * near;
+       float fW = fH * aspect;
+       Camera::SetPerpProjection(-fW, fW, -fH, fH, near, far);
     }
     
     void Camera::SetPosition(const Wm5::APoint& pos)
