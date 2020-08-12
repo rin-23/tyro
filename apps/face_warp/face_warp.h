@@ -56,6 +56,7 @@ namespace tyro
         Console m_console;
         bool m_update_camera;
         bool m_show_wire;
+        bool m_ortho;
           
         struct MGeometry 
         {

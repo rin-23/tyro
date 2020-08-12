@@ -21,6 +21,7 @@
 #include "RAFileManager.h"
 #include "RAES2VisualEffect.h"
 #include "RAES2BufferTexture.h"
+
 namespace tyro
 {
     class MuscleMesh : public ES2TriMesh
@@ -36,7 +37,8 @@ namespace tyro
                                      const Eigen::VectorXd& MV, 
                                      const Eigen::MatrixXd& TV, 
                                      const Eigen::MatrixXi& TT,
-                                     const Eigen::VectorXi& FtoT);
+                                     const Eigen::VectorXi& FtoT,
+                                     const Eigen::MatrixXd& G);
         
         virtual void SetColor(Wm5::Vector4f color);
         
@@ -47,14 +49,13 @@ namespace tyro
             ES2ShaderProgram* shader = new ES2ShaderProgram();
             shader->LoadProgram(GetFilePath("Muscle", "vs"), GetFilePath("Muscle", "fs"));
             
-            
             ES2VertexFormat* vertexFormat = new ES2VertexFormat(4);
             vertexFormat->SetAttribute(0, shader->GetAttributeLocation("aPosition"), 0, ES2VertexFormat::AT_FLOAT3, ES2VertexFormat::AU_POSITION);
             vertexFormat->SetAttribute(1, shader->GetAttributeLocation("aNormal"), vertexFormat->GetOffsetForNextAttrib(0), ES2VertexFormat::AT_FLOAT3, ES2VertexFormat::AU_NORMAL);
             vertexFormat->SetAttribute(2, shader->GetAttributeLocation("aDiffusion"), vertexFormat->GetOffsetForNextAttrib(1), ES2VertexFormat::AT_FLOAT1, ES2VertexFormat::AU_BLENDWEIGHT_1);
             vertexFormat->SetAttribute(3, shader->GetAttributeLocation("aTetId"), vertexFormat->GetOffsetForNextAttrib(2), ES2VertexFormat::AT_INT1, ES2VertexFormat::AU_JOINT_INDEX_1);
             
-            ES2ShaderUniforms* uniforms = new ES2ShaderUniforms(9);
+            ES2ShaderUniforms* uniforms = new ES2ShaderUniforms(10);
             uniforms->SetUniform(0, shader->GetUniformLocation("uMVPMatrix"), 1, "uMVPMatrix", ES2ShaderUniforms::UniformMatrix4fv);
             uniforms->SetUniform(1, shader->GetUniformLocation("uNMatrix"), 1, "uNMatrix", ES2ShaderUniforms::UniformMatrix3fv);
             uniforms->SetUniform(2, shader->GetUniformLocation("uColor"), 1, "uColor", ES2ShaderUniforms::Uniform4fv);
@@ -64,9 +65,7 @@ namespace tyro
             uniforms->SetUniform(6, shader->GetUniformLocation("uViewport"), 1, "uViewport", ES2ShaderUniforms::Uniform4fv);
             uniforms->SetUniform(7, shader->GetUniformLocation("uPMatrix"), 1, "uPMatrix", ES2ShaderUniforms::UniformMatrix4fv);
             uniforms->SetUniform(8, shader->GetUniformLocation("uDiffusedValuesSampler"), 1, "uDiffusedValuesSampler", ES2ShaderUniforms::Uniform1iv);
-
-            
-            
+            uniforms->SetUniform(9, shader->GetUniformLocation("uGradSampler"), 1, "uGradSampler", ES2ShaderUniforms::Uniform1iv);
 
             ES2VisualEffectSPtr effect(std::make_shared<ES2VisualEffect>(shader, vertexFormat, uniforms));
 
@@ -77,7 +76,7 @@ namespace tyro
         
         void Init(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, 
                   const Eigen::VectorXd& MV, const Eigen::MatrixXd& TV, const Eigen::MatrixXi& TT,
-                  const Eigen::VectorXi& FtoT);
+                  const Eigen::VectorXi& FtoT, const Eigen::MatrixXd& G);
     };
 }
 
@@ -86,7 +85,7 @@ namespace tyro
 {
     void MuscleMesh::Init(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, 
                           const Eigen::VectorXd& MV, const Eigen::MatrixXd& TV, const Eigen::MatrixXi& TT,
-                          const Eigen::VectorXi& FtoT) 
+                          const Eigen::VectorXi& FtoT, const Eigen::MatrixXd& G) 
     {
         // ES2TriMesh::Init();
         // SetVisualEffect(ES2CoreVisualEffects::GourandDirectional());
@@ -147,7 +146,7 @@ namespace tyro
 
 	    ES2VertexArraySPtr varray = std::make_shared<ES2VertexArray>(this->GetVisualEffect(), vbuffer);
 	    SetVertexArray(varray);        
-        // GetVisualEffect()->CullStateEnabled = false; 
+        GetVisualEffect()->CullStateEnabled = true; 
 
 
         // generate vertex texture buffer
@@ -180,7 +179,6 @@ namespace tyro
 
         // generate diffused texture buffer
         Wm5::Float4* diffusedDataPtr = new Wm5::Float4[TT.rows()]; 
-        
         for (int tid = 0; tid < TT.rows(); ++tid) 
         {   
             // for (int j = 0; j < TT.cols(); ++j) 
@@ -190,26 +188,40 @@ namespace tyro
             // }                
         }
 
+       
+        Wm5::Float3* gradDataPtr = new Wm5::Float3[TT.rows()]; 
+        for (int tid = 0; tid < TT.rows(); ++tid) 
+        {   
+            // for (int j = 0; j < TT.cols(); ++j) 
+            // {   
+            Wm5::Float3 tidval = Wm5::Float3(G(tid,0), G(tid,1), G(tid,2));
+            gradDataPtr[tid] = tidval;
+            // }                
+        }
+
         ES2BufferTextureSPtr vertexBufTex =   std::make_shared<ES2BufferTexture>(ES2BufferTexture::TY_RGB32F, numEntries, vertexDataPtr,   HardwareBuffer::Usage::BU_STATIC);  
         ES2BufferTextureSPtr normalBufTex =   std::make_shared<ES2BufferTexture>(ES2BufferTexture::TY_RGB32F, numEntries, normalDataPtr,   HardwareBuffer::Usage::BU_STATIC);  
         ES2BufferTextureSPtr diffusedBufTex = std::make_shared<ES2BufferTexture>(ES2BufferTexture::TY_RGBA32F, TT.rows(), diffusedDataPtr, HardwareBuffer::Usage::BU_STATIC);  
+        ES2BufferTextureSPtr gradBufTex     = std::make_shared<ES2BufferTexture>(ES2BufferTexture::TY_RGB32F, TT.rows(), gradDataPtr, HardwareBuffer::Usage::BU_STATIC);  
         
         GetVisualEffect()->AddBufferTexture(vertexBufTex);
         GetVisualEffect()->AddBufferTexture(normalBufTex);
         GetVisualEffect()->AddBufferTexture(diffusedBufTex);
+        GetVisualEffect()->AddBufferTexture(gradBufTex);
 
         delete[] vertexDataPtr;
         delete[] normalDataPtr;
         delete[] diffusedDataPtr;
+        delete[] gradDataPtr;
     }
         
     MuscleMeshSPtr MuscleMesh::Create(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,   
                                       const Eigen::MatrixXd& N, const Eigen::VectorXd& MV, 
                                       const Eigen::MatrixXd& TV, const Eigen::MatrixXi& TT,
-                                      const Eigen::VectorXi& FtoT) 
+                                      const Eigen::VectorXi& FtoT,  const Eigen::MatrixXd& G) 
     {
         MuscleMeshSPtr ptr = std::make_shared<MuscleMesh>();
-        ptr->Init(V,F,N,MV,TV,TT,FtoT);
+        ptr->Init(V,F,N,MV,TV,TT,FtoT,G);
         return ptr;
     }
 
@@ -245,6 +257,9 @@ namespace tyro
 
         int diffusedtexbuf = GetVisualEffect()->GetBufferTexture(2)->GetTextureID();
         GetVisualEffect()->GetUniforms()->UpdateIntUniform(8, &diffusedtexbuf);
+
+        int gradtexbuf = GetVisualEffect()->GetBufferTexture(3)->GetTextureID();
+        GetVisualEffect()->GetUniforms()->UpdateIntUniform(9, &gradtexbuf);
 
     }
 }

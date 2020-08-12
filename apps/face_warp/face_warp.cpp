@@ -31,6 +31,7 @@
 #include <igl/bfs.h>
 #include <igl/serialize.h>
 #include <igl/readDMAT.h>
+#include <igl/grad.h>
 
 #include <ctime>
 #include "muslemesh.h"
@@ -302,7 +303,8 @@ namespace tyro
         int v_width, v_height;
         m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
         Wm5::Vector4i viewport(0, 0, v_width, v_height);
-        m_camera = new iOSCamera(Wm5::APoint(0,0,0), 1.0, 1.0, 2, viewport, true);
+        m_ortho = true;
+        m_camera = new iOSCamera(Wm5::APoint(0,0,0), 1.0, 1.0, 2, viewport, m_ortho);
         
         //set up window callbacks
         //@TODO use std::bind instead
@@ -340,6 +342,7 @@ namespace tyro
         {
             return this->mouse_scroll(window, ydelta);
         };
+
 
         m_state = App::State::Launched;
         m_need_rendering = true;
@@ -416,18 +419,18 @@ namespace tyro
         /*
          * OVERWRITE Generate one tet 
          */ 
-        #if 1
-        T_temp.resize(1,4);
-        V_temp.resize(4,3);
-        Z.resize(4,1);
+        #if 0
+        T_temp.resize(2,4);
+        V_temp.resize(8,3);
+        Z.resize(8,1);
         
-        T_temp <<  0, 1, 2, 3;// 0,7, 5, 4; //, 4, 5, 6, 7; //, 8, 9, 10, 11;
+        T_temp <<  0, 1, 2, 3, 7, 4, 5, 6;// 0,7, 5, 4; //, 4, 5, 6, 7; //, 8, 9, 10, 11;
         // V_temp << -0.17114,  0.3437, -5.2931,
         //         -0.0024069, 0.33338, -5.3974,
         //           0.027116, 0.51782, -5.2421,
         //            0.13845, 0.33106, -5.2695;
         
-        Z << 1, 0.8, 0.5, 0; //, 1, 0, 0, 0;//, 0.5, 0.6, 0.8, 0.9;
+        Z << 0.7, 0.4, 0.6, 0.0, 0.8, 0.4, 0.0, 0.0;; //, 1, 0, 0, 0;//, 0.5, 0.6, 0.8, 0.9;
         MV = Z.col(0);  
 
 
@@ -454,9 +457,13 @@ namespace tyro
         V_temp << 0, 0, 0, 
                   1, 0, 0, 
                   0.5, 1, 0, 
-                  0.5, 0.5, 1;
+                  0.5, 0.5, 1,
+                  0, 0, 0, 
+                  1, 0, 0, 
+                  0.5, 1, 0, 
+                  0.5, 0.5, -1;
 
-        V_temp = 100*V_temp;
+        // V_temp = 10*V_temp;
                
                   
                 //   1, 1, 1, 
@@ -473,6 +480,8 @@ namespace tyro
         // //           4.5, 4.5, 5;
                   
         #endif
+
+        // V_temp = 10*V_temp;
 
         Eigen::VectorXi FtoT;
         triangulate_tets(T_temp, V_temp, TC, TI, MV, GEOMETRY.VT, GEOMETRY.FT, CC, MV2, FtoT, true);
@@ -493,8 +502,18 @@ namespace tyro
         // Eigen::MatrixXd N_temp;
         // igl::per_vertex_normals(V_temp,GEOMETRY.FT,N_temp);
         // RENDER.template_mesh = IGLMesh::Create(GEOMETRY.VT, GEOMETRY.FT, N_temp, Eigen::Vector3d(1,0,0));
-        RENDER.template_mesh = MuscleMesh::Create(GEOMETRY.VT, GEOMETRY.FT, GEOMETRY.NT, MV, V_temp, T_temp, FtoT);
 
+         // generate grad vector texture buffer
+        Eigen::SparseMatrix<double> Gop;
+        igl::grad(V_temp, T_temp, Gop);
+        assert(MV.rows() == Gop.cols());
+        Eigen::VectorXd G = Gop * MV;
+        assert(G.rows() == V_temp.cols()*T_temp.rows());
+        Eigen::Map<Eigen::MatrixXd> G2(G.data(), T_temp.rows(),V_temp.cols());
+        G2.rowwise().normalize();
+
+        RENDER.template_mesh = MuscleMesh::Create(GEOMETRY.VT, GEOMETRY.FT, GEOMETRY.NT, MV, V_temp, T_temp, FtoT, G2);
+        RENDER.template_mesh->Visible = true;
         igl::unique_edge_map(GEOMETRY.FT,E_T,UE_T,EMAP_T,uE2E_T);
 
         color_matrix(UE_T.rows(), Eigen::Vector3d(0.2,0.2,0.2), UEC_T);
@@ -618,7 +637,7 @@ namespace tyro
         //setup camera
         AxisAlignedBBox WorldBoundBox = RENDER.template_mesh->WorldBoundBox;
         Wm5::APoint world_center = WorldBoundBox.GetCenter();
-        float radius = std::abs(WorldBoundBox.GetRadius()*5);
+        float radius = std::abs(WorldBoundBox.GetRadius()*2);
         int v_width, v_height;
         m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
         Wm5::Vector4i viewport(0, 0, v_width, v_height);
@@ -627,7 +646,7 @@ namespace tyro
         if (m_camera)
             delete m_camera;
         
-        m_camera = new iOSCamera(world_center, radius, aspect, 1, viewport, true);
+        m_camera = new iOSCamera(world_center, radius, aspect, 1, viewport, m_ortho);
     }
 
     bool App::mouse_down(Window& window, int button, int modifier) 
@@ -728,7 +747,6 @@ namespace tyro
         return true;
     }
 
-
     bool App::key_pressed(Window& window, unsigned int key, int modifiers) 
     {   
         RA_LOG_INFO("Key pressed %c", key);
@@ -737,6 +755,16 @@ namespace tyro
         {   
             //RA_LOG_INFO("Pressed %c", key);
             RENDER.template_mesh_wire->Visible = !RENDER.template_mesh_wire->Visible;
+            // show_console = !show_console;
+            render();
+            return false;
+        }
+        else if (key == 'o') 
+        {   
+            //RA_LOG_INFO("Pressed %c", key);
+            // RENDER.template_mesh_wire->Visible = !RENDER.template_mesh_wire->Visible;
+            m_ortho = ~m_ortho;
+            m_update_camera = true;
             // show_console = !show_console;
             render();
             return false;

@@ -29,6 +29,7 @@ namespace tyro
         mInitialPosition.Z() += radius;
         SetPosition(mInitialPosition);
         LookAt(worldCenter);
+        mFov = 45.0f;
 
         mWorldCenter = worldCenter;
         mRadius = radius;
@@ -216,11 +217,25 @@ namespace tyro
         //}
         //else if (state == 1 || state == 2)
         //{
-            if (offset > 0)
-                mScale *= 1.07;  //mCurScale * ascale;
-            else 
-                mScale *= 0.93;
+       
+       
+            // if (offset > 0)
+            //     mScale *= 1.07;  //mCurScale * ascale;
+            // else 
+            //     mScale *= 0.93;
 
+                    // UpdateProjectionMatrix();
+            // mFov *= mScale;
+            // if (mFov < 1.0)
+            //     mFov = 1.0;
+            // else if (mFov > 50.0)
+            //     mFov = 50;
+
+            mFov -= (float)offset;
+            if (mFov < 1)
+                mFov = 1;
+            if (mFov > 200.0f)
+                mFov = 200.0f;
             UpdateProjectionMatrix();
             
             //Vector3f screen(mInitialTouch.X(), mInitialTouch.Y(), 0.0f);
@@ -229,8 +244,8 @@ namespace tyro
             
             //AVector translation = AVector(newCentroid - mCentroid);
             //HMatrix temp(translation);
-            //mTranslationMatrix = temp * mAccumulatedTranslation;
-            //UpdateViewMatrix();
+            // mTranslationMatrix = temp * mAccumulatedTranslation;
+            // UpdateViewMatrix();
             
             //if (state == 2)
             //{
@@ -264,8 +279,8 @@ namespace tyro
 
     void iOSCamera::UpdateProjectionMatrix()
     {
-        if (mIsOrtho)
-        {
+        // if (mIsOrtho)
+        // {
             float scale = 1/mScale;
             float left = 0 - mRadius * mAspect * scale;
             float right = 0 + mRadius * mAspect * scale;
@@ -273,9 +288,24 @@ namespace tyro
             float top = 0 + mRadius * scale;
             
             Camera::SetOrthoProjection(left, right, bottom, top, 1.0f, 1.0f + 100.0f * mRadius);
-        } else {
+        // } else {
             //perpcl
-        }
+            // float scale = 1/mScale;
+            // float left = 0 - mRadius * mAspect * scale;
+            // float right = 0 + mRadius * mAspect * scale;
+            // float bottom = 0 - mRadius * scale;
+            // float top = 0 + mRadius * scale;
+
+            // float left = -2;
+            // float right = 2;
+            // float bottom = -2;
+            // float top = 2;
+            
+            // Camera::SetPerpProjection(left, right, bottom, top, 0.0f, -2.0f );
+            
+            Camera::SetPerpProjection(mFov, mAspect, 1.0, 1.0f+100.0f*mRadius);
+
+        // }
     }
     
     void iOSCamera::UpdateViewMatrix()
@@ -284,6 +314,7 @@ namespace tyro
         AVector mUVector = GetUpVector();
         AVector mDVector = -1*GetDirectionVector();
         AVector::Orthonormalize(mDVector, mUVector, mRVector);
+        
         
         mViewMatrix[0][0] = mRVector[0];
         mViewMatrix[0][1] = mRVector[1];
@@ -302,6 +333,9 @@ namespace tyro
         mViewMatrix[3][2] = 0.0f;
         mViewMatrix[3][3] = 1.0f;
         
+        // HMatrix S;
+        // S.MakeDiagonal(mScale,mScale,mScale);
+
         mViewMatrix = mTranslationMatrix * mViewMatrix;
     }
     
