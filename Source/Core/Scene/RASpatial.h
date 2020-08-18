@@ -9,7 +9,7 @@
 #pragma once
 
 #include "Wm5Transform.h"
-#include "Wm5Vector3.h"
+// #include "Wm5Vector3.h"
 #include "RAEnginePrerequisites.h"
 #include "RAAxisAlignedBBox.h"
 #include <memory>
@@ -51,13 +51,13 @@ namespace tyro
 
         inline const std::string& GetName() const;
         
-        Wm5::Vector3f ConvertWorldToLocalPosition(const Wm5::Vector3f& pos) const;
+        // Wm5::Vector3f ConvertWorldToLocalPosition(const Wm5::Vector3f& pos) const;
         
-        Wm5::Vector3f ConvertWorldToLocalOrientation(const Wm5::Vector3f& vec) const;
+        // Wm5::Vector3f ConvertWorldToLocalOrientation(const Wm5::Vector3f& vec) const;
         
-        Wm5::Vector3f ConvertLocalToWorldPosition(const Wm5::Vector3f& pos) const;
+        // Wm5::Vector3f ConvertLocalToWorldPosition(const Wm5::Vector3f& pos) const;
         
-        Wm5::Vector3f ConvertLocalToWorldOrientation(const Wm5::Vector3f& vec) const;
+        // Wm5::Vector3f ConvertLocalToWorldOrientation(const Wm5::Vector3f& vec) const;
         
         inline void ShowBBox(bool show);
         

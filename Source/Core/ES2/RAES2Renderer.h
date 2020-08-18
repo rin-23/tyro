@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "Wm5Vector4.h"
+
 #include "RAEnginePrerequisites.h"
 
 
@@ -29,7 +29,7 @@ namespace tyro
         
         TextureBuffer* RenderVisibleSetToTexture(const VisibleSet* visualSet, const Camera* camera);
 
-		void SetClearColor(const Wm5::Vector4f& clearColor);
+		void SetClearColor(float r, float g, float b, float a);
 
 		void ClearScreen();
     
@@ -37,7 +37,7 @@ namespace tyro
  
         ES2Context* mContext;
 
-		Wm5::Vector4f mClearColor;
+		float mClearColor[4];
 		int mViewWidth;
 		int mViewHeight;
 	

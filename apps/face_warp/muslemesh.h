@@ -10,14 +10,12 @@
 
 #include "RAEnginePrerequisites.h"
 #include "RAES2TriMesh.h"
-#include "Wm5Vector4.h"
 #include "RAES2CoreVisualEffects.h"
 #include "RACamera.h"
 #include <Eigen/Core>
 #include "GLStructures.h"
 #include "RAVertexHardwareBuffer.h"
 #include "RAVertexBufferAccessor.h"
-#include "Wm5Float3.h"
 #include "RAFileManager.h"
 #include "RAES2VisualEffect.h"
 #include "RAES2BufferTexture.h"
@@ -40,7 +38,7 @@ namespace tyro
                                      const Eigen::VectorXi& FtoT,
                                      const Eigen::MatrixXd& G);
         
-        virtual void SetColor(Wm5::Vector4f color);
+        virtual void SetColor(const Eigen::Vector4f& color);
         
         virtual void UpdateUniformsWithCamera(const Camera* camera) override;
 
@@ -72,7 +70,7 @@ namespace tyro
             return effect;
         }
     protected:
-        Wm5::Vector4f mColor;
+        Eigen::Vector4f mColor;
         
         void Init(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, 
                   const Eigen::VectorXd& MV, const Eigen::MatrixXd& TV, const Eigen::MatrixXi& TT,
@@ -92,7 +90,7 @@ namespace tyro
         assert(N.rows() == F.rows());
         ES2TriMesh::Init();
         SetVisualEffect(MuscleMesh::VisualEffect());
-        SetColor(Wm5::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
+        SetColor(Eigen::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
         
         int numVertices = V.rows();
         int numTriangles = F.rows();
@@ -128,13 +126,12 @@ namespace tyro
             for (int j = 0; j < 3; ++j) 
             {   
                 int vid = F(fid,j);
-                vba.Position<Wm5::Float3>(vIndex) = Wm5::Float3(V(vid,0), V(vid,1), V(vid,2));
-                vba.Normal<Wm5::Float3>(vIndex) = Wm5::Float3(N(fid, 0), N(fid, 1), N(fid, 2));
+                vba.Position<Eigen::Vector3f>(vIndex) = Eigen::Vector3f(V(vid,0), V(vid,1), V(vid,2));
+                vba.Normal<Eigen::Vector3f>(vIndex) = Eigen::Vector3f(N(fid, 0), N(fid, 1), N(fid, 2));
                 vba.BlendWeight1<float>(vIndex) = 0.0; //float(MV(vid));
                 int tid = FtoT(fid);
                 vba.JointIndex1<int>(vIndex) = tid;
 
-                // vba.Color<Wm5::Float3>(vIndex) = Wm5::Float3(0.0f, 1.0f, 0.0f); ;//Wm5::Float3(r, 0, 0);
                 vIndex++;
             }                
         }
@@ -152,19 +149,19 @@ namespace tyro
         // generate vertex texture buffer
         assert(TT.cols()==4);
         int numEntries = 4*TT.rows();
-        Wm5::Float3* vertexDataPtr = new Wm5::Float3[numEntries]; 
+        Eigen::Vector3f* vertexDataPtr = new Eigen::Vector3f[numEntries]; 
         for (int tid = 0; tid < TT.rows(); ++tid) 
         {   
             int tid_offset = 4*tid;
             for (int j = 0; j < 4; ++j) 
             {   
                 int vid = TT(tid,j);
-                vertexDataPtr[tid_offset + j] = Wm5::Float3(TV(vid,0), TV(vid,1), TV(vid,2));
+                vertexDataPtr[tid_offset + j] = Eigen::Vector3f(TV(vid,0), TV(vid,1), TV(vid,2));
             }                
         }
 
         // generate normal texture buffer
-        Wm5::Float3* normalDataPtr = new Wm5::Float3[numEntries]; 
+        Eigen::Vector3f* normalDataPtr = new Eigen::Vector3f[numEntries]; 
         assert(N.rows() ==  4*TT.rows());
 
         for (int tid = 0; tid < TT.rows(); ++tid) 
@@ -173,28 +170,28 @@ namespace tyro
             for (int j = 0; j < TT.cols(); ++j) 
             {   
                 int nid = 4*tid + j;
-                normalDataPtr[tid_offset + j] = Wm5::Float3(N(nid,0), N(nid,1), N(nid,2));
+                normalDataPtr[tid_offset + j] = Eigen::Vector3f(N(nid,0), N(nid,1), N(nid,2));
             }                
         }
 
         // generate diffused texture buffer
-        Wm5::Float4* diffusedDataPtr = new Wm5::Float4[TT.rows()]; 
+        Eigen::Vector4f* diffusedDataPtr = new Eigen::Vector4f[TT.rows()]; 
         for (int tid = 0; tid < TT.rows(); ++tid) 
         {   
             // for (int j = 0; j < TT.cols(); ++j) 
             // {   
-            Wm5::Float4 tidval = Wm5::Float4(MV(TT(tid,0)), MV(TT(tid,1)), MV(TT(tid,2)), MV(TT(tid,3)));
+            Eigen::Vector4f tidval = Eigen::Vector4f(MV(TT(tid,0)), MV(TT(tid,1)), MV(TT(tid,2)), MV(TT(tid,3)));
             diffusedDataPtr[tid] = tidval;
             // }                
         }
 
        
-        Wm5::Float3* gradDataPtr = new Wm5::Float3[TT.rows()]; 
+        Eigen::Vector3f* gradDataPtr = new Eigen::Vector3f[TT.rows()]; 
         for (int tid = 0; tid < TT.rows(); ++tid) 
         {   
             // for (int j = 0; j < TT.cols(); ++j) 
             // {   
-            Wm5::Float3 tidval = Wm5::Float3(G(tid,0), G(tid,1), G(tid,2));
+            Eigen::Vector3f tidval = Eigen::Vector3f(G(tid,0), G(tid,1), G(tid,2));
             gradDataPtr[tid] = tidval;
             // }                
         }
@@ -225,7 +222,7 @@ namespace tyro
         return ptr;
     }
 
-    void MuscleMesh::SetColor(Wm5::Vector4f color)
+    void MuscleMesh::SetColor(const Eigen::Vector4f& color)
     {
         mColor = color;
     }
@@ -243,7 +240,7 @@ namespace tyro
 
         GetVisualEffect()->GetUniforms()->UpdateFloatUniform(0, modelViewProjectionMatrix.Transpose());
         GetVisualEffect()->GetUniforms()->UpdateFloatUniform(1, normalMatrix.Transpose());
-        GetVisualEffect()->GetUniforms()->UpdateFloatUniform(2, mColor);
+        GetVisualEffect()->GetUniforms()->UpdateFloatUniform(2, mColor.data());
         GetVisualEffect()->GetUniforms()->UpdateFloatUniform(3, modelViewMatrix.Transpose());
         
         int vertexbuf = GetVisualEffect()->GetBufferTexture(0)->GetTextureID();

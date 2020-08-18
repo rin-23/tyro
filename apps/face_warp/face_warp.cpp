@@ -298,7 +298,7 @@ namespace tyro
                 
         //setup renderer
         m_gl_rend = new ES2Renderer(m_tyro_window->GetGLContext());
-        m_gl_rend->SetClearColor(   Wm5::Vector4f(173.0/255, 216/255.0, 230/255.0, 1));
+        m_gl_rend->SetClearColor(173.0/255, 216/255.0, 230/255.0, 1.0f);
 
         int v_width, v_height;
         m_tyro_window->GetGLContext()->getFramebufferSize(&v_width, &v_height);
@@ -404,14 +404,16 @@ namespace tyro
 
         Eigen::MatrixXd Z;
         // std::string readDMATpath="/Users/rinat/Workspace/MuscleGeometrySrc/src/muscle_meshes/cube.dmat";
-        std::string readDMATpath="/Users/rinat/Workspace/MuscleGeometrySrc/src/muscle_meshes/cylinder3D.dmat";
+        // std::string readDMATpath="/Users/rinat/Workspace/MuscleGeometrySrc/src/muscle_meshes/cylinder3D.dmat";
+        std::string readDMATpath="/Users/rinat/Workspace/MuscleGeometrySrc/src/muscle_meshes/cylinder3DFull.dmat";
         igl::readDMAT(readDMATpath, Z);
+        
         // igl::deserialize(Z, "Z", "/Users/rinat/Workspace/MuscleGeometrySrc/src/muscle_meshes/dino/Z");
         assert(Z.rows()>0);
         Eigen::VectorXd MV, MV2;
         Eigen::VectorXi MC;
         Eigen::VectorXi MT;
-        MV = Z.col(0);      
+        MV = Z.col(3);      
 
         
         

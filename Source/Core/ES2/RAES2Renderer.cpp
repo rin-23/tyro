@@ -35,7 +35,7 @@ namespace tyro
 	ES2Renderer::ES2Renderer(ES2Context* glContext)
 	{		
 		mContext = glContext;
-		mClearColor = Wm5::Vector4f(200 / 255.0f, 200 / 255.0f, 200 / 255.0f, 1.0f);
+		mClearColor[0] = 200/255.0f; mClearColor[1] = 200/255.0f; mClearColor[2]=200/255.0f; mClearColor[3]=1.0f;;
 		glContext->getFramebufferSize(&mViewWidth, &mViewHeight);
 		GL_CHECK_ERROR;
 
@@ -206,9 +206,12 @@ namespace tyro
 		//DisableAttributes(effect->GetVertexFormat(), renderable->GetVertexBuffer());
 	}
 
-	void ES2Renderer::SetClearColor(const Wm5::Vector4f& clearColor) 
+	void ES2Renderer::SetClearColor(float r, float g, float b, float a) 
 	{
-		mClearColor = clearColor;
+		mClearColor[0] = r; 
+		mClearColor[1] = g; 
+		mClearColor[2] = b; 
+		mClearColor[3] = a; 
 		glClearColor(mClearColor[0], mClearColor[1], mClearColor[2], mClearColor[3]);
 	}
 

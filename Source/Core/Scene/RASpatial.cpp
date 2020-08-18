@@ -8,8 +8,8 @@
 
 #include "RASpatial.h"
 #include "RAVisibleSet.h"
-#include "Wm5AVector.h"
-#include "Wm5APoint.h"
+// #include "Wm5AVector.h"
+// #include "Wm5APoint.h"
 #include "RAES2BBox.h"
 
 namespace tyro
@@ -82,23 +82,23 @@ namespace tyro
     void Spatial::GetHitProxies(tyro::VisibleSet* visibleSet)
     {}
     
-    Wm5::Vector3f Spatial::ConvertWorldToLocalPosition(const Wm5::Vector3f& pos) const
-    {
-        return WorldTransform.InverseTransform() * Wm5::APoint(pos);
-    }
+    // Wm5::Vector3f Spatial::ConvertWorldToLocalPosition(const Wm5::Vector3f& pos) const
+    // {
+    //     return WorldTransform.InverseTransform() * Wm5::APoint(pos);
+    // }
     
-    Wm5::Vector3f Spatial::ConvertWorldToLocalOrientation(const Wm5::Vector3f& vec) const
-    {
-        return WorldTransform.GetRotate().Inverse() * Wm5::AVector(vec);
-    }
+    // Wm5::Vector3f Spatial::ConvertWorldToLocalOrientation(const Wm5::Vector3f& vec) const
+    // {
+    //     return WorldTransform.GetRotate().Inverse() * Wm5::AVector(vec);
+    // }
     
-    Wm5::Vector3f Spatial::ConvertLocalToWorldPosition(const Wm5::Vector3f& pos) const
-    {
-        return WorldTransform * Wm5::APoint(pos);
-    }
+    // Wm5::Vector3f Spatial::ConvertLocalToWorldPosition(const Wm5::Vector3f& pos) const
+    // {
+    //     return WorldTransform * Wm5::APoint(pos);
+    // }
     
-    Wm5::Vector3f Spatial::ConvertLocalToWorldOrientation(const Wm5::Vector3f& vec) const
-    {
-        return WorldTransform.GetRotate() * Wm5::AVector(vec);
-    }
+    // Wm5::Vector3f Spatial::ConvertLocalToWorldOrientation(const Wm5::Vector3f& vec) const
+    // {
+    //     return WorldTransform.GetRotate() * Wm5::AVector(vec);
+    // }
 }
